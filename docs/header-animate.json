@@ -1,0 +1,21 @@
+{
+  "style": "none",
+  "subject": "docs/header.md",
+
+  "input":"docs/header/gg1.png",
+
+  "iterations": 2,
+  "aspect_ratio": "16:9",
+
+  "video": {
+    "model": "grok-imagine-video",
+    "duration": 3,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  },
+
+  "output": "docs/header/logo",
+
+  "concurrency": 10,
+  "grid": false
+}

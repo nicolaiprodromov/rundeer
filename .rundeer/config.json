@@ -1,0 +1,68 @@
+{
+  "style": "none",
+  "subject": "only a 20x20px black square positioned at (x=10, y=10) on a white background",
+  "motion": null,
+
+  "input": [],
+
+  "output": "test",
+
+  "batch": {
+    "iterations": 1,
+    "concurrency": null,
+    "grid": false,
+    "grid_options": {
+      "rows": "auto",
+      "columns": "auto",
+      "padding": 10,
+      "bg_color": "#000000"
+    },
+    "grid_only": false
+  },
+
+  "references": {
+    "ids": [0],
+    "pad": true,
+    "quality": 85
+  },
+
+  "image": {
+    "model": "grok-imagine-image-pro",
+    "aspect_ratio": "16:9",
+    "resolution": "1k"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 10,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  },
+
+  "_schema": {
+    "style":              "Folder name under rundeer/brain/ (e.g. 'Moebius', 'Goya').",
+    "subject":            "Subject text; fills [subject] in the style prompt.",
+    "motion":             "Motion/camera description; fills [motion] (video/extend only). null = unset.",
+    "input":              "Default input path(s) for edit/merge. null = unset.",
+    "output":             "Output path as a string: 'dir/base_name'. Outputs become <base_name>_01.png, <base_name>_02.png, ...",
+    "batch.iterations":   "Number of images/videos to generate per run.",
+    "batch.concurrency":  "Parallel workers (null = default: 10 image, 1 video).",
+    "batch.grid":         "Assemble a grid of all outputs (images always; videos require ffmpeg).",
+    "references.ids":     "Style reference indices from brain/<style>/Reference/ (max 5). IGNORED for video when --start-frame is used (xAI API restriction).",
+    "references.pad":     "Pad references to the target aspect ratio before sending (true/false).",
+    "references.quality": "JPEG quality for encoded references (1-100).",
+    "image.model":        "Image model: grok-imagine-image or grok-imagine-image-pro.",
+    "image.aspect_ratio": "Image aspect: 1:1, 3:4, 4:3, 9:16, 16:9, 2:3, 3:2, 9:19.5, 19.5:9, 9:20, 20:9, 1:2, 2:1.",
+    "image.resolution":   "Output resolution: 1k or 2k. null = API default (1k).",
+    "video.model":        "Video model: grok-imagine-video.",
+    "video.aspect_ratio": "Video aspect ratio.",
+    "video.duration":     "Seconds (1-15).",
+    "video.resolution":   "480p or 720p.",
+    "video.concurrency":  "Video-specific parallel workers override.",
+    "video.output_dir":   "Video-specific output dir override; null = inherit output.dir.",
+    "__cli_only__":       "Runtime-only flags: --config <path>, --start-frame <path> (image-to-video), --source <url|path> (extend), --input <paths> (edit/merge, 1-5), --dry-run, --no-tui."
+  }
+}
+

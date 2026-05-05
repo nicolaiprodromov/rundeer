@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply cinematic motion blur: add directional horizontal motion blur consistent with a 180-degree shutter angle at 24fps, with length appropriate for moderate fast subject movement. The blur should feel organic like an optical smear from a real camera shutter, not a digital filter. Preserve relatively sharp areas of the frame that would be stationary relative to camera motion. The result should increase the perceived motion and cinematic feel of the image as if captured mid-action.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_motion_blur"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

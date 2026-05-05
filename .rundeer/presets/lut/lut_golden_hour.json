@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a golden hour / magic hour LUT. See .rundeer/luts/golden_hour.md for the full LUT specification. Flood the frame with warm amber-gold from a low directional sun angle, introduce long soft shadows with a cool purple-blue fill, slightly overexpose highlights to a creamy roll-off, intensify warm skin tone rendering, add a subtle atmospheric haze in the far background, make sky gradients transition from deep orange-red at the horizon to warm cobalt above. Preserve all composition and subject identity.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "lut_golden_hour"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

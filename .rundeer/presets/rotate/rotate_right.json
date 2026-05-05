@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Rotate the existing subject into a true right profile view showing the subject's right side. Preserve the exact same identity, anatomy, proportions, hairstyle, clothing, accessories, colors, materials, markings, lighting direction, scene context, camera distance, crop, and overall realism. Keep all asymmetric details consistent with the subject's actual right side. Do not change the art style, outfit design, expression, pose intent, or background.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "right_view"
+  },
+
+  "batch": {
+    "iterations": 1,
+    "concurrency": null,
+    "grid": false
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 85
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

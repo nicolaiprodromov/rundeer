@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a natural optical vignette: darken the image corners and edges with a smooth radial falloff, centered slightly below the geometric center to simulate real optical lens vignetting. The vignette should be subtle — darkening corners by approximately 1.0 to 1.5 stops with a wide, soft feathering radius. Add a faint desaturation in the darkened zones. The effect should feel like it was part of the optical image capture rather than added in post — present but never distracting.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_vignette"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Rotate the existing subject into a semi-profile right view, roughly a 45-degree three-quarter angle showing mostly the subject's right side while keeping some front visibility. Preserve the exact same identity, anatomy, proportions, hairstyle, clothing, accessories, colors, materials, markings, lighting direction, scene context, camera distance, crop, and overall realism. Keep asymmetric details accurate to the subject's right side. Do not change the art style, outfit design, expression, pose intent, or background.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "semi_profile_right_view"
+  },
+
+  "batch": {
+    "iterations": 1,
+    "concurrency": null,
+    "grid": false
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 85
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

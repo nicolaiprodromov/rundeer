@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Restore this damaged or aged photograph: remove scratches, dust, creases, tears, and foxing spots. Repair faded or missing areas by inpainting from surrounding context. Correct uneven chemical staining and color shift. Stabilize brightness and contrast. Remove physical damage artifacts while preserving the natural character and period feel of the image. The result should look like the original undamaged photograph as it appeared when first printed.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "enhance_restore"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

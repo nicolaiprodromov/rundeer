@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply an anime cel-shading LUT. See .rundeer/luts/anime_cel.md for the full LUT specification. Quantize colors into flat cel-like bands with hard transitions between shadows, midtones, and highlights. Saturate primary and secondary colors strongly. Add a faint line-art enhancement to edges. Remove photographic gradients in favor of flat fills. Colors should look hand-painted and ink-keyed as if scanned from animation cels. Keep the color palette bold and deliberately limited. Preserve all composition and subject identity.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "lut_anime_cel"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

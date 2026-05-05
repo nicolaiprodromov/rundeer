@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Rotate the existing subject into a true front view. Preserve the exact same identity, anatomy, age, proportions, hairstyle, clothing, accessories, colors, materials, markings, lighting direction, scene context, camera distance, crop, and overall realism. Reconstruct any currently hidden details consistently and conservatively. Do not mirror asymmetric details unless they would physically appear that way. Do not change the art style, outfit design, expression, or background.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "front_view"
+  },
+
+  "batch": {
+    "iterations": 1,
+    "concurrency": null,
+    "grid": false
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 85
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

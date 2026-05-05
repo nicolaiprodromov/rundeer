@@ -1,0 +1,99 @@
+thick smog
+acid rain
+hazy pollution
+steam from manholes
+distant sirens
+blaring horns
+rumbling subways
+grilled onions
+exhaust fumes
+damp concrete
+fried food aroma
+garbage stench
+ozone after rain
+burnt rubber
+wet asphalt
+tinny music
+bass thump
+echoing voices
+mechanical clatter
+street preacher
+protest chants
+busker guitar
+broken neon buzz
+flickering fluorescent
+holographic glitch
+oil rainbow slick
+moss in cracks
+wildflowers in asphalt
+spiderweb window cracks
+chalk hopscotch
+missing pet flyers
+rave posters
+political graffiti
+gang tags
+political murals
+abandoned stroller
+overturned barricade
+street performer
+flaming poi spinner
+cardboard encampment
+shopping cart fortress
+leaking hydrant
+rusted fire escape
+tangled extension cords
+pigeon coop rooftop
+satellite dishes forest
+tarpaulin lean-to
+battery powered radio
+bootleg dvd vendor
+check cashing outlet
+adult bookstore
+laundromat steam
+pawn shop bars
+vape cloud
+fast food wrappers mountain
+syringe litter
+lottery ticket puddle
+protest remnants
+burnt out car
+flattened tires
+spiderwebbed windshield
+# more unique random city details
+rooftop garden gone wild
+illegal rooftop party lights
+drone delivery crash site
+ev charging station vandalism
+smartphone repair kiosk
+electric scooter graveyard
+augmented reality billboard hack
+street art AR overlay
+flooded basement pump
+sewer flood grate
+underground club entrance
+rooftop beehive
+community mural wall
+ghost bike memorial
+pop up art installation
+abandoned bike share dock
+smart city sensor failure
+facial recognition camera blindspot
+drone surveillance shadow
+bitcoin atm heist remnants
+evicted tenant belongings pile
+gentrification protest signs
+food truck grease trap
+night market lantern strings
+black market vendor stall
+underground fight club flyer
+# weather and time variants
+pouring neon rain
+humid summer midnight
+fog shrouded dawn
+blizzard trapped streets
+heatwave mirage
+golden hour pollution glow
+blue hour siren symphony
+witching hour empty streets
+rush hour gridlock
+after hours neon solitude

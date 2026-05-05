@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>rundeer · console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&family=Geist+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <div class="shell">
+      <header class="masthead" role="banner">
+        <div class="masthead-left">
+          <pre class="ascii-deer" aria-hidden="true" id="asciiDeer"></pre>
+          <div class="wordmark">
+            <h1 class="wordmark-title">rundeer<span class="wordmark-cursor" aria-hidden="true"></span></h1>
+            <p class="wordmark-meta">
+              <span class="kbd">v<span id="versionTag">…</span></span>
+              <span class="dot" aria-hidden="true"></span>
+              <span id="projectRoot" class="project-path">resolving project…</span>
+            </p>
+          </div>
+        </div>
+        <div class="masthead-right">
+          <dl class="stat-strip" aria-label="Project state">
+            <div class="stat">
+              <dt>keys</dt>
+              <dd id="keyStatus">—</dd>
+            </div>
+            <div class="stat">
+              <dt>styles</dt>
+              <dd id="stylesStat">—</dd>
+            </div>
+            <div class="stat">
+              <dt>artifacts</dt>
+              <dd id="artifactsStat">—</dd>
+            </div>
+            <div class="stat">
+              <dt>config</dt>
+              <dd id="configStat">—</dd>
+            </div>
+          </dl>
+          <button class="btn btn-ghost" id="refreshButton" type="button">
+            <span class="btn-glyph" aria-hidden="true">↻</span> Reload
+          </button>
+          <button class="btn btn-ghost" id="settingsButton" type="button">
+            <span class="btn-glyph" aria-hidden="true">⚙</span> Settings
+          </button>
+        </div>
+      </header>
+
+      <main id="main" class="workbench">
+        <nav class="rail" aria-label="Command">
+          <p class="rail-label">commands</p>
+          <ol class="rail-list">
+            <li><button class="rail-item is-active" data-command="image" type="button"><span class="rail-num">01</span><span class="rail-name">Image</span></button></li>
+            <li><button class="rail-item" data-command="video" type="button"><span class="rail-num">02</span><span class="rail-name">Video</span></button></li>
+            <li><button class="rail-item" data-command="edit" type="button"><span class="rail-num">03</span><span class="rail-name">Edit</span></button></li>
+            <li><button class="rail-item" data-command="merge" type="button"><span class="rail-num">04</span><span class="rail-name">Merge</span></button></li>
+            <li><button class="rail-item" data-command="extend" type="button"><span class="rail-num">05</span><span class="rail-name">Extend</span></button></li>
+            <li><button class="rail-item" data-command="batch" type="button"><span class="rail-num">06</span><span class="rail-name">Batch</span></button></li>
+            <li><button class="rail-item" data-command="benchmark" type="button"><span class="rail-num">07</span><span class="rail-name">Benchmark</span></button></li>
+          </ol>
+          <p class="rail-foot" aria-hidden="true">⌨ ↵ run · ⇧↵ dry-run</p>
+        </nav>
+
+        <section class="composer" aria-label="Run composer">
+          <header class="composer-head">
+            <div>
+              <p class="eyebrow"><span class="eyebrow-num">01</span>compose</p>
+              <h2 class="composer-title" id="commandTitle">Image</h2>
+              <p class="composer-sub" id="commandSub">A batch of stills routed through the chosen style brain.</p>
+            </div>
+            <div class="composer-actions">
+              <button class="btn btn-ghost" id="dryRunButton" type="button">Dry-run</button>
+              <button class="btn btn-primary" id="runButton" type="button"><span class="btn-glyph" aria-hidden="true">▶</span> Run</button>
+            </div>
+          </header>
+
+          <form id="runForm" class="composer-form" autocomplete="off">
+            <fieldset class="field-block field-prompt">
+              <legend><span class="legend-num">A</span>Subject <span class="legend-hint">type @ to reference definitions or files</span></legend>
+              <div class="mention-host">
+                <textarea id="subject" rows="3" spellcheck="true" placeholder="A courier crossing a desert megacity, last light catching the spires."></textarea>
+                <div id="mentionPopover" class="mention-popover" hidden role="listbox" aria-label="Mention suggestions"></div>
+              </div>
+              <label class="ctl wide command-video command-edit command-extend">
+                <span>Motion</span>
+                <textarea id="motion" rows="2" spellcheck="true" placeholder="slow dolly in, restrained camera"></textarea>
+              </label>
+            </fieldset>
+
+            <fieldset class="field-block field-style">
+              <legend><span class="legend-num">B</span>Style brain</legend>
+              <div class="row row-3">
+                <label class="ctl"><span>Style</span><select id="style"></select></label>
+                <label class="ctl"><span>Iterations</span><input id="iterations" type="number" min="1" value="1" inputmode="numeric"></label>
+                <label class="ctl"><span>Concurrency</span><input id="concurrency" type="number" min="1" placeholder="auto" inputmode="numeric"></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-block command-image command-edit command-merge">
+              <legend><span class="legend-num">C</span>Image params</legend>
+              <div class="row row-3">
+                <label class="ctl"><span>Model</span><select id="imageModel"></select></label>
+                <label class="ctl"><span>Aspect</span><select id="imageAspectRatio"></select></label>
+                <label class="ctl"><span>Resolution</span><select id="imageResolution"></select></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-block command-video command-edit command-extend">
+              <legend><span class="legend-num">C</span>Video params</legend>
+              <div class="row row-3">
+                <label class="ctl"><span>Model</span><select id="videoModel"></select></label>
+                <label class="ctl"><span>Aspect</span><select id="videoAspectRatio"></select></label>
+                <label class="ctl"><span>Resolution</span><select id="videoResolution"></select></label>
+                <label class="ctl"><span>Duration <em>s</em></span><input id="duration" type="number" min="1" max="15" value="6" inputmode="numeric"></label>
+                <label class="ctl"><span>Concurrency</span><input id="videoConcurrency" type="number" min="1" value="1" inputmode="numeric"></label>
+                <label class="ctl"><span>Output dir</span><input id="videoOutputDir" type="text" placeholder="inherit"></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-block">
+              <legend><span class="legend-num">D</span>Inputs</legend>
+              <div class="row row-3">
+                <label class="ctl wide command-image command-edit command-merge command-video"><span>Input paths</span><input id="input" type="text" placeholder="image.png, frame.png"></label>
+                <label class="ctl command-video"><span>Start frame</span><input id="startFrame" type="text" placeholder="frames/hero.png"></label>
+                <label class="ctl command-extend"><span>Source clip</span><input id="source" type="text" placeholder="clip.mp4 or https://…"></label>
+                <label class="ctl command-edit"><span>Edit type</span>
+                  <select id="editType">
+                    <option value="image">image</option>
+                    <option value="video">video</option>
+                  </select>
+                </label>
+                <label class="ctl command-batch"><span>Batch file</span><input id="batchFile" type="text" value=".rundeer/batch.json"></label>
+                <label class="ctl command-benchmark"><span>Benchmark config</span><input id="benchmarkConfig" type="text" value=".rundeer/benchmark.json"></label>
+                <label class="ctl command-benchmark"><span>Template</span><input id="benchmarkTemplate" type="text" value=".rundeer/benchmark/position/position.md"></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-block">
+              <legend><span class="legend-num">E</span>Output</legend>
+              <div class="row row-3">
+                <label class="ctl"><span>Directory</span><input id="outputDir" type="text" value=".rundeer/outputs"></label>
+                <label class="ctl"><span>Name</span><input id="outputName" type="text" value="output"></label>
+              </div>
+            </fieldset>
+
+            <details class="fold">
+              <summary><span class="fold-num">F</span>References <span class="fold-meta" id="referenceMeta"></span></summary>
+              <div class="fold-body">
+                <div class="ref-toolbar">
+                  <input id="refSearch" class="search" type="search" placeholder="search references…">
+                  <div class="ref-toolbar-right">
+                    <button class="btn btn-ghost btn-tiny" id="refExpandAll" type="button">expand</button>
+                    <button class="btn btn-ghost btn-tiny" id="refCollapseAll" type="button">collapse</button>
+                    <button class="btn btn-ghost btn-tiny" id="refClearSelection" type="button">clear</button>
+                  </div>
+                </div>
+                <div class="reference-tree" id="referenceTree" aria-live="polite"></div>
+                <div class="row row-3">
+                  <label class="ctl"><span>Selected ids</span><input id="references" type="text" placeholder="0,3,7"></label>
+                  <label class="ctl ctl-toggle"><input id="padReference" type="checkbox" checked><span>Pad references</span></label>
+                  <label class="ctl"><span>JPEG quality</span><input id="refQuality" type="number" min="1" max="100" value="85"></label>
+                </div>
+              </div>
+            </details>
+
+            <details class="fold">
+              <summary><span class="fold-num">G</span>Definitions</summary>
+              <div class="fold-body">
+                <div id="definitionRows" class="definition-rows"></div>
+                <button class="btn btn-ghost btn-tiny" id="addDefinitionButton" type="button">+ Add definition</button>
+              </div>
+            </details>
+
+            <details class="fold">
+              <summary><span class="fold-num">H</span>Grid &amp; chain</summary>
+              <div class="fold-body">
+                <div class="row row-3">
+                  <label class="ctl ctl-toggle"><input id="grid" type="checkbox"><span>Build grid</span></label>
+                  <label class="ctl ctl-toggle"><input id="gridOnly" type="checkbox"><span>Keep grid only</span></label>
+                  <label class="ctl"><span>Rows</span><input id="gridRows" type="text" value="auto"></label>
+                  <label class="ctl"><span>Columns</span><input id="gridColumns" type="text" value="auto"></label>
+                  <label class="ctl"><span>Padding</span><input id="gridPadding" type="number" min="0" value="0"></label>
+                  <label class="ctl"><span>Background</span><input id="gridBgColor" type="text" value="#000000"></label>
+                  <label class="ctl ctl-toggle command-edit"><input id="chain" type="checkbox"><span>Chain edits</span></label>
+                  <label class="ctl ctl-toggle command-edit"><input id="chainCompose" type="checkbox"><span>Mask compose</span></label>
+                  <label class="ctl command-edit"><span>Threshold</span><input id="chainThreshold" type="number" value="12"></label>
+                  <label class="ctl command-edit"><span>Override</span><input id="chainOverride" type="number" value="50"></label>
+                  <label class="ctl command-edit"><span>Dilate</span><input id="chainDilate" type="number" value="6"></label>
+                  <label class="ctl command-edit"><span>Feather</span><input id="chainFeather" type="number" value="8"></label>
+                  <label class="ctl command-edit"><span>Min region</span><input id="chainMinRegion" type="number" value="64"></label>
+                </div>
+              </div>
+            </details>
+
+            <details class="fold">
+              <summary><span class="fold-num">I</span>Config JSON</summary>
+              <div class="fold-body">
+                <textarea id="extraConfig" class="code-area" rows="6" spellcheck="false" placeholder='{"batch":{"grid":true}}'></textarea>
+              </div>
+            </details>
+          </form>
+        </section>
+
+        <aside class="aside" aria-label="Project context">
+          <section class="output-panel" id="outputPanel" data-panel="output">
+            <header class="panel-head">
+              <p class="eyebrow"><span class="eyebrow-num">02</span>output</p>
+              <div class="output-status">
+                <span class="status-pill" id="runStatus" data-state="idle">Idle</span>
+                <span class="run-id" id="runId">no run</span>
+                <button class="icon-btn" id="copyOutputButton" type="button" title="Copy output" aria-label="Copy output">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="4.5" y="4.5" width="8" height="9" rx="1"/><path d="M3 11V3a1 1 0 0 1 1-1h6"/></svg>
+                  <span>copy</span>
+                </button>
+                <button class="icon-btn panel-collapse" id="outputCollapseButton" type="button" title="Hide output" aria-label="Hide output" aria-expanded="true" aria-controls="terminalOutput">
+                  <span aria-hidden="true">−</span><span>hide</span>
+                </button>
+              </div>
+            </header>
+            <div class="terminal-wrap">
+              <pre id="terminalOutput" class="terminal" aria-live="polite"><span class="terminal-empty">stdout streams here when a run starts.</span></pre>
+              <div class="terminal-scrim" aria-hidden="true"></div>
+            </div>
+          </section>
+
+          <section class="files-panel" id="filesPanel" data-panel="files">
+            <header class="panel-head">
+              <p class="eyebrow"><span class="eyebrow-num">03</span>files <span class="panel-meta" id="filesRoot"></span></p>
+              <div class="panel-actions">
+                <button class="icon-btn panel-collapse" id="filesCollapseButton" type="button" title="Hide files" aria-label="Hide files" aria-expanded="true" aria-controls="fileTree">
+                  <span aria-hidden="true">−</span><span>hide</span>
+                </button>
+                <button class="btn btn-ghost btn-tiny" id="treeExpandAll" type="button">open all</button>
+                <button class="btn btn-ghost btn-tiny" id="treeCollapseAll" type="button">close all</button>
+              </div>
+            </header>
+            <input id="fileSearch" class="search" type="search" placeholder="filter the workspace tree…" aria-label="Find a file">
+            <div id="fileTree" class="file-tree"></div>
+          </section>
+        </aside>
+      </main>
+
+      <section class="dock" id="artifactDock" aria-label="Artifacts">
+        <header class="dock-head">
+          <div class="dock-head-left">
+            <p class="eyebrow"><span class="eyebrow-num">04</span>artifacts <span class="panel-meta" id="artifactCount"></span></p>
+            <h2 class="dock-title">Outputs &amp; grids</h2>
+          </div>
+          <div class="dock-actions">
+            <input id="artifactSearch" class="search search-inline" type="search" placeholder="search artifacts…">
+            <div class="seg" role="tablist" aria-label="Artifact view">
+              <button class="seg-btn is-active" data-view="grid" type="button">grid</button>
+              <button class="seg-btn" data-view="tree" type="button">tree</button>
+            </div>
+            <div class="seg" role="group" aria-label="Tile size">
+              <button class="seg-btn" data-size="sm" type="button">S</button>
+              <button class="seg-btn is-active" data-size="md" type="button">M</button>
+              <button class="seg-btn" data-size="lg" type="button">L</button>
+            </div>
+            <button class="btn btn-ghost btn-tiny" id="dockExpandButton" type="button">large</button>
+            <button class="btn btn-ghost btn-tiny" id="dockCollapseButton" type="button" aria-expanded="true" aria-controls="dockBody">hide</button>
+            <button class="btn btn-ghost btn-tiny" id="refreshArtifactsButton" type="button">refresh</button>
+          </div>
+        </header>
+        <div class="dock-body" id="dockBody">
+          <div id="artifactTree" class="artifact-tree" hidden></div>
+          <div id="artifactGrid" class="artifact-grid" data-size="md"></div>
+        </div>
+      </section>
+
+      <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Artifact viewer">
+        <header class="lightbox-head">
+          <div class="lightbox-title">
+            <strong id="lightboxName">—</strong>
+            <span class="lightbox-meta" id="lightboxMeta"></span>
+          </div>
+          <div class="lightbox-actions">
+            <button class="icon-btn" id="lightboxZoomOut" type="button" title="Zoom out">−</button>
+            <span class="lightbox-zoom" id="lightboxZoom">100%</span>
+            <button class="icon-btn" id="lightboxZoomIn" type="button" title="Zoom in">+</button>
+            <button class="icon-btn" id="lightboxFit" type="button" title="Fit to view">⤢</button>
+            <button class="icon-btn" id="lightboxOpen" type="button" title="Open in new tab">↗</button>
+            <button class="icon-btn" id="lightboxCopy" type="button" title="Copy path">⌘</button>
+            <button class="icon-btn" id="lightboxClose" type="button" title="Close (esc)" aria-label="Close">×</button>
+          </div>
+        </header>
+        <div class="lightbox-body" id="lightboxBody"></div>
+        <aside class="lightbox-side" id="lightboxSide"></aside>
+      </div>
+
+      <div id="settingsPage" class="settings-page" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <button class="settings-backdrop" id="settingsBackdrop" type="button" aria-label="Close settings"></button>
+        <section class="settings-sheet" aria-label="Settings">
+          <header class="settings-head">
+            <div>
+              <p class="eyebrow"><span class="eyebrow-num">05</span>settings</p>
+              <h2 id="settingsTitle" class="settings-title">Console settings</h2>
+              <p class="settings-path" id="settingsConfigPath">.rundeer/config.json</p>
+            </div>
+            <button class="icon-btn" id="settingsClose" type="button" aria-label="Close settings">×</button>
+          </header>
+
+          <form id="settingsForm" class="settings-form">
+            <section class="settings-section">
+              <h3>Web console</h3>
+              <div class="row row-3">
+                <label class="ctl"><span>Artifact view</span>
+                  <select id="settingsArtifactView">
+                    <option value="grid">grid</option>
+                    <option value="tree">tree</option>
+                  </select>
+                </label>
+                <label class="ctl"><span>Artifact size</span>
+                  <select id="settingsArtifactSize">
+                    <option value="sm">small</option>
+                    <option value="md">medium</option>
+                    <option value="lg">large</option>
+                  </select>
+                </label>
+                <label class="ctl ctl-toggle"><input id="settingsDockExpanded" type="checkbox"><span>Large artifacts</span></label>
+                <label class="ctl ctl-toggle"><input id="settingsOutputOnRun" type="checkbox"><span>Open output on run</span></label>
+                <label class="ctl ctl-toggle"><input id="settingsOutputPanelOpen" type="checkbox"><span>Show output</span></label>
+                <label class="ctl ctl-toggle"><input id="settingsFilesPanelOpen" type="checkbox"><span>Show files</span></label>
+                <label class="ctl ctl-toggle"><input id="settingsArtifactsPanelOpen" type="checkbox"><span>Show artifacts</span></label>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <h3>Rate limiter</h3>
+              <div class="row row-3">
+                <label class="ctl ctl-toggle"><input id="settingsRateEnabled" type="checkbox"><span>Enabled</span></label>
+                <label class="ctl"><span>Per second</span><input id="settingsRateSecond" type="number" min="0" step="1" placeholder="unlimited" inputmode="numeric"></label>
+                <label class="ctl"><span>Per minute</span><input id="settingsRateMinute" type="number" min="0" step="1" placeholder="unlimited" inputmode="numeric"></label>
+                <label class="ctl"><span>Per hour</span><input id="settingsRateHour" type="number" min="0" step="1" placeholder="unlimited" inputmode="numeric"></label>
+                <label class="ctl"><span>Per day</span><input id="settingsRateDay" type="number" min="0" step="1" placeholder="unlimited" inputmode="numeric"></label>
+              </div>
+            </section>
+
+            <footer class="settings-actions">
+              <span class="settings-status" id="settingsStatus" role="status"></span>
+              <button class="btn btn-ghost" id="settingsCancel" type="button">Cancel</button>
+              <button class="btn btn-primary" id="settingsSave" type="submit">Save</button>
+            </footer>
+          </form>
+        </section>
+      </div>
+
+      <footer class="ledger" aria-label="Console ledger">
+        <span>local · stdlib · single-process</span>
+        <span class="ledger-mid" id="ledgerCommand">image</span>
+        <span>ctrl-c in terminal to stop</span>
+      </footer>
+    </div>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

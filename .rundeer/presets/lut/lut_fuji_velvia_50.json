@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply the look of Fujifilm Velvia 50 reversal (slide) film. See .rundeer/luts/fuji_velvia_50.md for the full LUT specification. Hyper-saturated greens and reds, deep inky shadows, ultra-sharp micro-contrast, punchy vivid colors especially in foliage and sky. Slight magenta bias in shadows, blue-shifted sky rendering, and that iconic high-chroma, near-garish but beautiful saturation. Colors should pop as if dye-transfer printed. Preserve all composition, lighting, and subject identity.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "lut_fuji_velvia_50"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

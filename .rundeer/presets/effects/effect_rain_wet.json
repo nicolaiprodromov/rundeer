@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Add rain and wet surface effects: overlay a naturalistic rain streak layer with depth-varying rain density (heavier in background, lighter in foreground), add wet-surface specular reflections on horizontal surfaces such as roads, rooftops, and skin, add small water droplets on the lens edge areas creating out-of-focus bokeh beads, introduce a slight overall desaturation and cool temperature shift typical of overcast rainy conditions. The rain should feel heavy, real, and cinematically moody.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_rain"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

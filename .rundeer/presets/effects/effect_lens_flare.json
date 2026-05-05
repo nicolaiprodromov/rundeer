@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Add an anamorphic lens flare from the primary light source in the scene: introduce a characteristic horizontal blue-cyan streak flare crossing the frame, add circular bokeh ghost reflections along the flare axis, apply a subtle overall frame bloom from the light source, add a slight diffraction starburst on any specular highlights. The flare should feel like a high-quality anamorphic prime lens such as Panavision C-Series or Cooke anamorphic — cinematic and optical, not digital or fake.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_anamorphic_flare"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

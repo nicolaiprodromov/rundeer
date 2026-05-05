@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a luminance and chroma noise reduction pass: remove high-frequency sensor noise and film grain while preserving real edge detail and texture. Smooth color noise in shadows especially. Retain fine edge sharpness and avoid the plastic over-smoothed look that destroys texture. The result should appear clean and broadcast-ready — free of noise but not artificially smooth. Do not alter subject colors, lighting, or composition in any way.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "enhance_denoise"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 92
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

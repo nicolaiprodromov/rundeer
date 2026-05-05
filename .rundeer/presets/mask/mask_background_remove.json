@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Remove the background completely. Isolate the foreground subject with a clean hard mask edge. Fill the background with pure neutral 50% grey (#808080) to allow easy compositing. Preserve fine edge detail including hair strands, fur, and thin objects. Do not alter the foreground subject's colors, lighting, or detail in any way. The result should be a clean subject-on-grey compositing plate.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "mask_bg_remove"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

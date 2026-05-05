@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Generate a clean subject matte output: render the image with the primary subject as a solid white silhouette against a pure black background. Preserve all edge sub-pixel information including semi-transparent areas, hair strands, soft edges, and any motion blur along the subject boundary. The output should be a high-quality alpha/matte channel image suitable for direct use in compositing software. Do not simplify or erode fine edges.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "mask_subject_matte"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Recompose this image as an extreme close-up: zoom into the most dramatically expressive detail of the primary subject — the eyes, a specific facial feature, a hand, or a key object — and fill the entire frame with this detail. Apply a shallow depth of field appropriate to an extreme macro or very long lens close-up perspective, with surrounding areas softly out of focus. Render fine surface texture and micro-detail with high fidelity. The composition should be tight, tense, and cinematically intentional.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "camera_extreme_closeup"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

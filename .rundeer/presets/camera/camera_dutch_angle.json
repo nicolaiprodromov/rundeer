@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a Dutch angle composition: rotate the camera roll by approximately 15 to 25 degrees clockwise, recompose the frame to keep the primary subject centered while the horizon tilts. Preserve all scene content, lighting, colors, and subject identity. The result should feel psychologically unsettling and dramatically tense, as if the camera itself is physically canted — a classic noir and thriller composition technique signaling psychological instability or danger.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "camera_dutch_angle"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

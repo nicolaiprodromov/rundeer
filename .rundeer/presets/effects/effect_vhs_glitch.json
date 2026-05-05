@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a VHS tape degradation effect: add horizontal sync jitter and tape-dropout scan lines, introduce chroma smearing with color bleeding especially on high-contrast edges, add tracking noise artifacts along the bottom of the frame, desaturate slightly with a warm magnetic tape hue shift, introduce faint white noise and brief random static bursts, add a faint VHS time-code or tracking bar artifact. The result should look exactly like a well-watched VHS dub recorded in the 1980s.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_vhs_glitch"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 85
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

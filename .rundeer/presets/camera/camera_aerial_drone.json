@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Recompose this image as an aerial drone perspective: shift the camera viewpoint to a steep downward angle (60 to 90 degrees from horizontal), recreate the subject from this high-angle or near-top-down perspective while preserving all identity, proportions, colors, clothing, and scene details. Render appropriate foreshortening and aerial depth compression. The result should look like a natural drone shot from 100 to 200 meters altitude — expansive, geometric, slightly abstract.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "camera_aerial"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "16:9"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

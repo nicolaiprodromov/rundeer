@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Recompose this image from a dramatic low-angle hero shot: lower the camera to approximately knee height or ground level and tilt up toward the subject, creating the classic upward perspective foreshortening that makes the subject appear powerful, imposing, and heroic. The sky or ceiling should be visible above the subject. Visible ground should be minimal. Preserve all subject identity, proportions, clothing, and scene lighting while adapting the geometry to this low upward perspective.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "camera_low_angle_hero"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

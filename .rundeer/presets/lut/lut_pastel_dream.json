@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a pastel dreamlike LUT. See .rundeer/luts/pastel_dream.md for the full LUT specification. Lift blacks substantially, reduce overall contrast, push all colors toward soft muted pastels with lavender shadows, rose-pink midtones, and milky cream highlights. Desaturate deep saturated colors, add a faint blue-purple halation around edges, give the image a dreamy, ethereal, soft-focus feel as if shot through a diffusion filter on Ektachrome pushed one stop. Preserve all composition and subject identity.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "lut_pastel_dream"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

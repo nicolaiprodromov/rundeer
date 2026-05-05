@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply lens chromatic aberration: laterally offset the red color channel slightly in one direction, keep the green channel in place as the reference, offset the blue channel in the opposite direction, creating color fringing most visible at high-contrast edges toward the frame corners and periphery. Add a faint purple fringe on backlit high-contrast edges. The amount should be noticeable but optically realistic — equivalent to an uncorrected vintage prime lens wide open.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_chromatic_aberration"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

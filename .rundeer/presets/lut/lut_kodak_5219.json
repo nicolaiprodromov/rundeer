@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply the look of Kodak Vision3 5219 500T motion picture film stock. See .rundeer/luts/kodak_vision3_5219.md for the full LUT specification. Rich dense shadows with a warm chocolate-brown base, bright saturated midtones with natural skin tones, gentle highlight roll-off that avoids clipping. Introduce subtle silver halide grain scaled for 35mm 2K scan. Colors should feel organic, slightly warm, with cinematic depth and the characteristic tungsten-balanced orange mask of the film base. Preserve all composition, lighting, and subject identity.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "lut_kodak_5219"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

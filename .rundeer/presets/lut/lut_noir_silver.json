@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a silver gelatin black-and-white noir LUT. See .rundeer/luts/noir_silver_gelatin.md for the full LUT specification. Convert to monochrome using a luminance-weighted channel mixer that favors the red channel for natural skin tones, deep shadow crush, bright specular highlights with a silver metallic sheen, high overall contrast, subtle vignette. Add a faint warm ivory tone to the paper base (not pure white), giving the feel of developed silver-gelatin fiber paper. Preserve all composition, lighting, and subject identity.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "lut_noir_silver"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

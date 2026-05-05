@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a cool Nordic/Scandinavian cinematic grade: desaturate globally, push shadows toward deep blue-teal, keep midtones neutral silver-grey, add the faintest cyan tint to highlights. Reduce saturation in warm channels. Slight crush on highlights. Preserve all composition, lighting, and subject identity. The mood should feel cold, quiet, austere, overcast — like a grey Scandinavian winter morning.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "grade_cool_nordic"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

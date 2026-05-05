@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a cinematic teal-and-orange grade: push shadows and midtone neutrals toward deep teal-cyan, warm skin tones and highlights to amber-orange, lift black point slightly, increase overall contrast and saturation in the orange channel, desaturate greens and blues in the midtones. Preserve scene composition, lighting direction, and all subject detail. The result should feel like a modern Hollywood blockbuster color grade.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "grade_teal_orange"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

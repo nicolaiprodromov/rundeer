@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a high-frequency detail sharpening pass: enhance edge micro-contrast using a fine-radius unsharp mask, sharpen fine texture detail in surfaces, fabric, hair, and skin pores without introducing haloing or oversharpening artifacts. Preserve smooth tonal gradients in skies and out-of-focus areas — do not sharpen soft bokeh regions. The result should look like a crisper, more resolute capture of the same image, as if shot with a sharper lens or at a higher resolution.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "enhance_sharpen"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 92
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

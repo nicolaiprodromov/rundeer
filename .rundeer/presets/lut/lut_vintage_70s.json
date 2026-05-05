@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a vintage 1970s photochemical LUT. See .rundeer/luts/vintage_70s.md for the full LUT specification. Lift blacks to a warm dark brown (characteristic of aged C-41 processing), introduce strong faded highlights with a greenish-yellow cast, push skin tones toward orange-amber, desaturate blues and cyans, add a subtle halation around light sources, and introduce slight color banding in smooth gradients to simulate aging photographic printing. Preserve all composition and subject identity.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "lut_vintage_70s"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

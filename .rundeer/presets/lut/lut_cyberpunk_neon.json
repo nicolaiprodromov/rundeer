@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a cyberpunk neon LUT. See .rundeer/luts/cyberpunk_neon.md for the full LUT specification. Crush shadows to near-black, push neon pink and electric cyan into the highlights and rim-lit areas, introduce deep purple-blue midtones, add lens-bloom glow around bright light sources, slight chromatic fringing on high-contrast edges. The atmosphere should feel rain-slicked, electric, dystopian nightlife with garish neon saturating an otherwise dark frame. Preserve all composition and subject identity.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "lut_cyberpunk_neon"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

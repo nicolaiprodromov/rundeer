@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Upscale and enhance this image to 4K resolution quality: apply AI super-resolution to recover and reconstruct lost detail, sharpen fine texture in surfaces and edges, increase overall perceived resolution. Fix any compression artifacts or blocking if present. The result should look as if it were natively captured at 4K — crisp, detailed, without upscaling artifacts or oversharpening haloes. Preserve all colors, lighting, and subject identity perfectly.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "enhance_upscale_4k"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 95
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

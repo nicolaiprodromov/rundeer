@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Add volumetric atmospheric fog: introduce layered depth fog that grows denser with distance from the camera, add god rays and crepuscular light shafts if a light source is present in the scene, scatter ambient light throughout the fog volume giving it a soft internal luminosity, slightly desaturate and lighten distant objects, add a faint cool blue-grey aerial haze on the horizon. The fog should feel physically accurate and cinematic — present and atmospheric but not obscuring the subject entirely.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_volumetric_fog"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a professional skin retouching pass: smooth skin tone micro-texture and minor blemishes while fully preserving pores, hair, eyes, lips, and all natural skin depth. Do not alter facial structure, proportions, age indicators, or identity — this is a light retouch, not a transformation. The result should look like a high-end beauty retouch — natural and polished. Preserve all non-skin areas of the image completely unchanged.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "enhance_skin_smooth"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 92
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

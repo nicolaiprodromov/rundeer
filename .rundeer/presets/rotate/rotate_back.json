@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Rotate the existing subject into a true back view from behind. Preserve the exact same identity, body shape, hairstyle, clothing, accessories, colors, materials, markings, lighting direction, scene context, camera distance, crop, and overall realism. Reconstruct the unseen back-side details consistently and conservatively so they logically match the visible front-side design. Do not add new elements or change the art style, outfit design, or background.",
+  "motion": null,
+
+  "input": "reuben/beatrice/beatrice3.png",
+
+  "output": {
+    "dir": "reuben/beatrice/ref/",
+    "name": "back_view"
+  },
+
+  "batch": {
+    "iterations": 10,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 85
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

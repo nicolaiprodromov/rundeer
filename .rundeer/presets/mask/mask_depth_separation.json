@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a multi-plane depth separation pass: analyze the spatial depth in the image, keep the dominant mid-ground subject in perfect critical focus, apply a graduated defocus to the far background (strong lens blur at maximum distance), and apply a slight foreground defocus to any elements in front of the subject plane. The depth-of-field gradient should feel natural and optically correct, as if shot with an 85mm f/1.8 prime lens. Preserve all subject color and identity perfectly.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "mask_depth_separation"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

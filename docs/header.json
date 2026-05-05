@@ -1,0 +1,27 @@
+{
+  "style": "none",
+  "subject": "docs/header.md",
+  "output": "docs/deer",
+  "iterations": 30,
+  "aspect_ratio": "16:9",
+
+  "definitions":{
+    "@fractal":".rundeer/def/fractal.py"
+  },
+
+  "image": {
+    "model": "grok-imagine-image-pro",
+    "aspect_ratio": "16:9",
+    "resolution": "2k"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "duration": 3,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  },
+
+  "concurrency": 10,
+  "grid": false
+}

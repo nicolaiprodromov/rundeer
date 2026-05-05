@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a bleach bypass film grade: retain silver grain through the process, desaturate the image significantly while preserving luminance, crush blacks hard, lift highlights slightly, increase contrast in the midtones. Colors that remain should be muted and slightly greenish. Add a fine silver halide grain texture. The overall mood should feel raw, desaturated, gritty — as if the bleach step was skipped in the chemical development process.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "grade_bleach_bypass"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

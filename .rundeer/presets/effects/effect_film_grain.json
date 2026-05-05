@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Add authentic photographic film grain: apply luminance-weighted silver-halide grain that is heavier in shadow and midtone areas and finer in highlights, sized and distributed to match 35mm ISO 800 film. The grain should be organic and spatially random, not tiled or obviously digital. Color grain should be minimal — slight magenta-green clumping in shadow areas only. Preserve all underlying color, detail, and composition unchanged; the grain should sit on top as a natural overlay.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_film_grain"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

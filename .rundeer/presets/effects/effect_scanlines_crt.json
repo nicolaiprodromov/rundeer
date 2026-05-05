@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a CRT monitor scanline effect: overlay horizontal scanlines at standard 480i phosphor pitch, add slight inter-scanline bloom and glow in bright areas, introduce a faint phosphor afterglow in very bright regions, apply mild barrel distortion at frame edges simulating a CRT curve, and apply a subtle shadow-mask phosphor dot pattern. Add a very faint green phosphor tint to the overall image. The result should feel like viewing through a high-quality broadcast CRT monitor from the late 1980s.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_crt_scanlines"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 85
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

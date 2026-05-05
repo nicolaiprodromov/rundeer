@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Isolate the primary foreground subject and render the background with a strong shallow depth-of-field bokeh blur, using the foreground subject as the in-focus plane. Simulate approximately f/1.4 lens blur — smooth, circular, pleasant bokeh in the out-of-focus background. Preserve all foreground subject detail, color fidelity, and edge sharpness exactly. The background should become a creamy, separated bokeh layer behind the crisp subject.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "mask_fg_isolate"
+  },
+
+  "batch": {
+    "iterations": 2,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

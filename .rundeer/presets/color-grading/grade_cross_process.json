@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a cross-process film grade (E-6 slide film processed in C-41 chemistry): push greens and yellows in highlights aggressively, shift shadows toward deep cyan-blue, add strong contrast and color aberration in the midtones, slightly oversaturate the entire image with a chemical, unpredictable quality. Skin tones should look faintly greenish. High contrast with clipped highlights. Preserve subject identity and composition while giving the image an intentionally altered photochemical character.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "grade_cross_process"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

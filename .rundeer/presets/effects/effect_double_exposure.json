@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Create a double exposure effect: blend the existing subject with a secondary in-camera exposure layer using a nature or sky texture as the second exposure. Blend luminance values so that brighter regions of the secondary layer show through the midtones of the primary subject while darker background areas of the primary let the secondary layer through. The primary subject should remain recognizable. The result should feel intentional and artistic, like a darkroom double exposure on slide film.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "effect_double_exposure"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}

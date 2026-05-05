@@ -1,0 +1,38 @@
+{
+  "style": "none",
+  "subject": "Apply a warm golden cinematic grade: push overall color temperature toward warm amber, add a subtle orange-yellow cast to highlights, introduce a gentle copper warmth in midtones, keep shadows cool with a slight blue-purple undertone for contrast. Lift blacks to a warm charcoal, slightly increase saturation in warm channels only. Preserve all composition, lighting, and subject identity. Think Golden Age Hollywood warmth — rich, inviting, timeless.",
+  "motion": null,
+
+  "input": null,
+
+  "output": {
+    "dir": ".rundeer/outputs",
+    "name": "grade_warm_cinematic"
+  },
+
+  "batch": {
+    "iterations": 4,
+    "concurrency": null,
+    "grid": true
+  },
+
+  "references": {
+    "ids": [],
+    "pad": true,
+    "quality": 90
+  },
+
+  "image": {
+    "model": "grok-imagine-image",
+    "aspect_ratio": "1:1"
+  },
+
+  "video": {
+    "model": "grok-imagine-video",
+    "aspect_ratio": "16:9",
+    "duration": 6,
+    "resolution": "720p",
+    "concurrency": 1,
+    "output_dir": null
+  }
+}
