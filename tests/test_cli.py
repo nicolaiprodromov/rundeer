@@ -40,6 +40,18 @@ def test_dry_run_video_no_api(tmp_style, tmp_path, monkeypatch, capsys):
     assert "Jobs: 1" in capsys.readouterr().out
 
 
+def test_video_start_frame_rejects_video_file(tmp_style, tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    clip = tmp_path / "clip.mp4"
+    clip.write_bytes(b"not an image")
+
+    rc = cli.main(["video", "--style=TestStyle", "--subject=deer",
+                   f"--start-frame={clip}", "--dry-run", "--no-tui"])
+
+    assert rc == 2
+    assert "--start-frame must be an image file" in capsys.readouterr().err
+
+
 def test_dry_run_merge_requires_input(tmp_style, tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     rc = cli.main(["merge", "--style=TestStyle", "--subject=x",

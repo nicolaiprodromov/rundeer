@@ -51,6 +51,9 @@ from rundeer.core.config import (
 from rundeer.cli.tui import PlainReporter, TuiReporter, pick_reporter
 
 
+START_FRAME_IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
+
+
 COMMON_OPTS = """
 Common options:
     -h --help                  Show help for this command.
@@ -395,6 +398,10 @@ def cmd_video(argv: List[str]) -> int:
         sf = Path(start_frame).expanduser()
         if not sf.exists():
             print(f"error: start frame not found: {sf}", file=sys.stderr)
+            return 2
+        if sf.suffix.lower() not in START_FRAME_IMAGE_EXTS:
+            allowed = ", ".join(sorted(START_FRAME_IMAGE_EXTS))
+            print(f"error: --start-frame must be an image file ({allowed}); got: {sf}", file=sys.stderr)
             return 2
         start_frame = sf
         # xAI video API forbids combining image_url with reference_image_urls.

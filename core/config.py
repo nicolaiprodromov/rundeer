@@ -69,13 +69,6 @@ def _env_file_candidates(project_root: Path) -> List[Path]:
 
 
 def load_project_env(project_root: Optional[Path | str] = None) -> None:
-    """Load the project-local .env file.
-
-    rundeer intentionally reads only ``<project_root>/.env``. It does not
-    walk ancestor folders, read ``.devcontainer/.env``, or read
-    ``.rundeer/.env``. Values from the local file are written into
-    ``os.environ`` so SDKs and definition scripts see the same environment.
-    """
     root = Path(project_root).expanduser() if project_root else Path.cwd()
     root = root.resolve()
     cache_key = str(root)

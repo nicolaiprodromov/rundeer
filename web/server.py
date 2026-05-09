@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 import uuid
+import urllib.request
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -136,6 +137,8 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         try:
             if path in {"/", "/index.html"}:
                 self._send_static(STATIC_DIR / "index.html")
+            elif path == "/nodes":
+                self._send_static(STATIC_DIR / "node-editor.html")
             elif path.startswith("/static/"):
                 self._send_static(safe_static_path(path.removeprefix("/static/")))
             elif path == "/api/state":
@@ -160,6 +163,8 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(artifact_meta(self.server.project_root, rel))
             elif path.startswith("/api/runs/"):
                 self._send_json(get_run(self.server, path.rsplit("/", 1)[-1]))
+            elif path == "/api/runs":
+                self._send_json({"runs": list_runs(self.server)})
             elif path == "/api/file":
                 rel = (query.get("path") or [""])[0]
                 self._send_project_file(rel)
@@ -185,6 +190,10 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(start_run(self.server, payload))
             elif parsed.path == "/api/settings":
                 self._send_json(save_settings(self.server.project_root, payload))
+            elif parsed.path == "/api/filter-prompt":
+                self._send_json(filter_prompt(self.server.project_root, payload))
+            elif parsed.path == "/api/compress-image":
+                self._send_json(compress_image(self.server.project_root, payload))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not found")
         except ValueError as exc:
@@ -350,6 +359,113 @@ def save_settings(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         })
     write_project_config(root, raw)
     return load_settings(root)
+
+
+def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Call the xAI chat completions API to transform a prompt.
+
+    Reads MODEL_API_KEY and BASE_URL from environment (project .env loaded via
+    subprocess environment). Never logs the key value.
+    """
+    from rundeer.core.config import load_project_env  # lazy import
+
+    load_project_env(str(root))
+
+    prompt_text = str(payload.get("prompt") or "")
+    instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
+    model_name = str(payload.get("model_name") or "grok-3-mini-fast")
+    api_key = str(payload.get("model_api_key") or "") or os.environ.get("MODEL_API_KEY", "")
+    base_url = os.environ.get("BASE_URL", "https://api.x.ai")
+
+    if not api_key:
+        return {"error": "MODEL_API_KEY not set (provide via .env or model_api_key prop)", "filtered_prompt": prompt_text}
+
+    chat_url = base_url.rstrip("/") + "/v1/chat/completions"
+    body = json.dumps({
+        "model": model_name,
+        "messages": [
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": prompt_text},
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1024,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        chat_url,
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310 – local API call
+            data = json.loads(resp.read().decode("utf-8"))
+        filtered = data["choices"][0]["message"]["content"]
+        return {"filtered_prompt": filtered}
+    except urllib.error.HTTPError as exc:
+        body_err = exc.read().decode("utf-8", errors="replace")[:300]
+        return {"error": f"HTTP {exc.code}: {body_err}", "filtered_prompt": prompt_text}
+    except Exception as exc:  # noqa: BLE001
+        return {"error": str(exc), "filtered_prompt": prompt_text}
+
+
+def compress_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Compress an image to reduce file size for chained edit/merge calls.
+
+    Inputs: path (project-relative), quality (0-100), max_dimension (optional).
+    Output: writes to .rundeer/cache/compressed/ and returns {path, bytes, originalBytes}.
+    """
+    from PIL import Image  # lazy import
+
+    rel = str(payload.get("path") or "").strip()
+    if not rel:
+        raise ValueError("path is required")
+    quality = int(payload.get("quality") or 75)
+    quality = max(1, min(100, quality))
+    max_dim = payload.get("max_dimension")
+    max_dim = int(max_dim) if max_dim else 0
+
+    src = safe_project_path(root, rel)
+    if not src.is_file():
+        raise FileNotFoundError(rel)
+
+    cache_dir = root / ".rundeer" / "cache" / "compressed"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    suffix = ".jpg" if quality < 95 else src.suffix.lower()
+    if suffix not in (".jpg", ".jpeg", ".png", ".webp"):
+        suffix = ".jpg"
+    dest_name = f"{src.stem}_q{quality}{('_' + str(max_dim)) if max_dim else ''}{suffix}"
+    dest = cache_dir / dest_name
+
+    original_bytes = src.stat().st_size
+
+    with Image.open(src) as im:
+        im.load()
+        if max_dim and (im.width > max_dim or im.height > max_dim):
+            im.thumbnail((max_dim, max_dim), Image.LANCZOS)
+        save_kwargs: Dict[str, Any] = {}
+        if suffix in (".jpg", ".jpeg"):
+            if im.mode in ("RGBA", "LA", "P"):
+                im = im.convert("RGB")
+            save_kwargs = {"quality": quality, "optimize": True, "progressive": True}
+            fmt = "JPEG"
+        elif suffix == ".webp":
+            save_kwargs = {"quality": quality, "method": 6}
+            fmt = "WEBP"
+        else:  # PNG
+            save_kwargs = {"optimize": True}
+            fmt = "PNG"
+        im.save(dest, format=fmt, **save_kwargs)
+
+    return {
+        "path": relpath(root, dest),
+        "bytes": dest.stat().st_size,
+        "originalBytes": original_bytes,
+    }
 
 
 def env_summary(root: Path) -> Dict[str, bool]:
@@ -896,12 +1012,43 @@ def get_run(server: RundeerWebServer, run_id: str) -> Dict[str, Any]:
         return dict(record)
 
 
+def list_runs(server: RundeerWebServer) -> List[Dict[str, Any]]:
+    """Return summaries of recent runs (newest first)."""
+    with server.runs_lock:
+        runs = list(server.runs.values())
+    runs.sort(key=lambda r: r.get("startedAt") or 0, reverse=True)
+    summaries: List[Dict[str, Any]] = []
+    for r in runs[:50]:
+        cmd = r.get("command") or []
+        # Skip the python -c bootstrap; show what comes after
+        if cmd[:2] == [sys.executable, "-c"]:
+            display = " ".join(cmd[3:])
+        else:
+            display = " ".join(cmd)
+        summaries.append({
+            "id": r.get("id"),
+            "status": r.get("status"),
+            "command": display,
+            "startedAt": r.get("startedAt"),
+            "endedAt": r.get("endedAt"),
+            "returncode": r.get("returncode"),
+            "outputTail": (r.get("output") or "")[-400:],
+        })
+    return summaries
+
+
 def new_run_id() -> str:
     return time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:8]
 
 
 _BOOTSTRAP = (
-    "import sys; from rundeer.cli.commands import main; sys.exit(main(sys.argv[1:]))"
+    "import sys, os; "
+    "_cwd = os.getcwd(); "
+    "_parent = os.path.dirname(_cwd); "
+    "sys.path = [p for p in sys.path if p not in ('', '.', _cwd)]; "
+    "sys.path.insert(0, _parent); "
+    "from rundeer.cli.commands import main; "
+    "sys.exit(main(sys.argv[1:]))"
 )
 
 

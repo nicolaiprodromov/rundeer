@@ -193,7 +193,7 @@ CLI flags win over config files. If no config path is provided, rundeer reads `.
 }
 ```
 
-rundeer loads environment values only from the project-root `.env` file. It does not read parent `.env` files, `.devcontainer/.env`, or `.rundeer/.env`. Use `VISION_API_KEY` for image and video generation, `MODEL_API_KEY` for definition scripts that call language models, and `BASE_URL` as the shared API endpoint. Keep real secrets in `.env`; commit only `.env.example`.
+rundeer loads environment values only from the project-root `.env` file. It does not read parent `.env` files, or `.rundeer/.env`. Use `VISION_API_KEY` for image and video generation, `MODEL_API_KEY` for definition scripts that call language models, and `BASE_URL` as the shared API endpoint.
 
 ## Styles And References
 
