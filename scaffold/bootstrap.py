@@ -111,7 +111,21 @@ DEFAULT_CONFIG = {
     "batch": {
         "iterations": 5,
         "concurrency": None,
-        "grid": False
+        "grid": False,
+        "grid_only": False,
+        "grid_options": {
+            "rows": "auto",
+            "columns": "auto",
+            "padding": 0,
+            "bg_color": "#000000"
+        },
+        "chain": False,
+        "chain_compose": False,
+        "chain_threshold": 12,
+        "chain_override": 50,
+        "chain_dilate": 6,
+        "chain_feather": 8,
+        "chain_min_region": 64
     },
 
     "references": {
@@ -122,7 +136,8 @@ DEFAULT_CONFIG = {
 
     "image": {
         "model": "grok-imagine-image",
-        "aspect_ratio": "1:1"
+        "aspect_ratio": "1:1",
+        "resolution": None
     },
 
     "video": {
@@ -162,15 +177,28 @@ DEFAULT_CONFIG = {
         "batch.iterations":  "Number of images/videos to generate per run.",
         "batch.concurrency": "Parallel workers (null = default: 10 image, 1 video).",
         "batch.grid":        "Assemble a grid of all outputs (images always; videos require ffmpeg).",
+        "batch.grid_only":   "Delete individual outputs after building a grid.",
+        "batch.grid_options.rows":     "Grid row count, or 'auto'.",
+        "batch.grid_options.columns":  "Grid column count, or 'auto'.",
+        "batch.grid_options.padding":  "Grid padding in pixels.",
+        "batch.grid_options.bg_color": "Grid background color.",
+        "batch.chain":       "For edit runs, feed each output into the next iteration.",
+        "batch.chain_compose":"For chained image edits, preserve unchanged pixels with mask compositing.",
+        "batch.chain_threshold":"Mask threshold for chain compositing.",
+        "batch.chain_override":"Override mask threshold for strong changes.",
+        "batch.chain_dilate": "Mask dilation for chain compositing.",
+        "batch.chain_feather":"Mask feather radius for chain compositing.",
+        "batch.chain_min_region":"Minimum changed region size for chain compositing.",
         "references.ids":    "Style reference indices from brain/<style>/Reference/ (max 5). Ignored for video when --start-frame is set.",
         "references.pad":    "Pad references to the target aspect ratio (true/false).",
         "references.quality":"JPEG quality for encoded references (1-100).",
         "image.model":       "Image model: grok-imagine-image or grok-imagine-image-pro.",
         "image.aspect_ratio":"Image aspect: 1:1, 3:4, 4:3, 9:16, 16:9, 2:3, 3:2, 9:19.5, 19.5:9, 9:20, 20:9, 1:2, 2:1.",
+        "image.resolution":  "Image resolution: null, 1k, or 2k.",
         "video.model":       "Video model: grok-imagine-video.",
         "video.aspect_ratio":"Video aspect ratio (same choices as image).",
         "video.duration":    "Seconds (1-15).",
-        "video.resolution":  "480p or 720p.",
+        "video.resolution":  "480p, 720p, or 1080p.",
         "video.concurrency": "Video-specific parallel workers override.",
         "video.output_dir":  "Video-specific output dir override; null = inherit output.dir.",
         "rate_limits.enabled":    "Enable API request rate limiting.",

@@ -623,10 +623,12 @@ Usage:
     web [options]
 
 Options:
-    -h --help          Show this help.
-    --host=<host>      Host interface. [default: 127.0.0.1]
-    --port=<port>      Port to bind. Use 0 for a free port. [default: 8787]
-    --open             Open the console in the default browser.
+    -h --help            Show this help.
+    --host=<host>        Host interface. [default: 127.0.0.1]
+    --port=<port>        Port to bind. Use 0 for a free port. [default: 8787]
+    --open               Open the console in the default browser.
+    --agent-port=<port>  WebSocket port for the chat agent. [default: 0]
+    --no-agent           Disable the in-browser agent chat.
 """
 
 
@@ -634,11 +636,19 @@ def cmd_web(argv: List[str]) -> int:
     args = docopt(WEB_USAGE, argv=argv)
     from rundeer.web.server import serve
 
+    agent_port_raw = args.get("--agent-port")
+    try:
+        agent_port = int(agent_port_raw) if agent_port_raw not in (None, "", "0") else None
+    except (TypeError, ValueError):
+        agent_port = None
+
     return serve(
         host=args.get("--host") or "127.0.0.1",
         port=int(args.get("--port") or 8787),
         project_root=Path.cwd(),
         open_browser=bool(args.get("--open")),
+        enable_agent=not bool(args.get("--no-agent")),
+        agent_port=agent_port,
     )
 
 

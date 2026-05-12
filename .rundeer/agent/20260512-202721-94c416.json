@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "20260512-202721-94c416",
+  "title": "hi",
+  "model": "xai/grok-4-latest",
+  "created_at": 1778617641.5205605,
+  "updated_at": 1778617643.6486466,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[user edited graph between turns]\n  added: n130(folder-bundle), n131(loop-decompose), n132(loop-output), n135(text-input), n136(text-input), n137(text-input), n138(text-join), n139(text-join)\n  +22 edge(s)\n\n[graph snapshot: 22 nodes (6× text-input, 3× text-join, 2× number-input, 2× preview, 2× reroute, 1× cmd-edit, 1× create-bundle, 1× folder-bundle, 1× loop-decompose, 1× loop-output), 22 edges]\n\nhi"
+    },
+    {
+      "role": "assistant",
+      "content": null
+    }
+  ],
+  "events": []
+}

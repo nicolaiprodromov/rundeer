@@ -17,7 +17,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
-from urllib.parse import parse_qs, quote, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse, urlunparse
 
 from rundeer import __version__
 from rundeer.core.config import brain_dir, normalize_config, normalize_rate_limits, normalize_web_settings
@@ -69,6 +69,8 @@ def serve(
     port: int = 8787,
     project_root: Optional[Path] = None,
     open_browser: bool = False,
+    enable_agent: bool = True,
+    agent_port: Optional[int] = None,
 ) -> int:
     root = (project_root or Path.cwd()).resolve()
     ensure_rundeer_dir(root)
@@ -79,6 +81,29 @@ def serve(
 
     server_thread = threading.Thread(target=httpd.serve_forever, name="rundeer-web", daemon=True)
     server_thread.start()
+
+    # Optional: spin up the agent WebSocket server in a daemon thread.
+    if enable_agent:
+        try:
+            from rundeer.web.agent.ws_server import start_agent_ws_server
+            from rundeer.web.agent.config import get_agent_settings, resolve_ws_port
+            settings = get_agent_settings(root)
+            if agent_port is not None:
+                settings.ws_port = int(agent_port)
+            if settings.enabled:
+                effective_port = resolve_ws_port(settings, actual_port)
+                handle = start_agent_ws_server(httpd, web_port=actual_port)
+                if handle is not None:
+                    httpd.agent_handle = handle
+                    httpd.agent_port = handle.ws_port
+                    httpd.agent_settings = handle.settings
+                    log_line(f"agent ws on ws://{shown_host}:{handle.ws_port}", dim=True)
+                else:
+                    log_line(f"agent disabled (settings)", dim=True)
+                    _ = effective_port
+        except Exception as exc:  # noqa: BLE001
+            log_line(f"agent failed to start: {exc}", dim=True)
+
     if open_browser:
         try:
             webbrowser.open(url)
@@ -87,6 +112,12 @@ def serve(
     try:
         run_console(url=url, project_root=root, server=httpd)
     finally:
+        try:
+            handle = getattr(httpd, "agent_handle", None)
+            if handle is not None:
+                handle.stop()
+        except Exception:  # noqa: BLE001
+            pass
         httpd.shutdown()
         httpd.server_close()
         server_thread.join(timeout=2)
@@ -104,6 +135,9 @@ class RundeerWebServer(ThreadingHTTPServer):
         self.request_count = 0
         self.last_request: Optional[str] = None
         self.started_at = time.time()
+        self.agent_handle: Any = None
+        self.agent_port: Optional[int] = None
+        self.agent_settings: Any = None
 
     def record_request(self, method: str, path: str) -> None:
         with self.runs_lock:
@@ -135,20 +169,27 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         query = parse_qs(parsed.query)
         self.server.record_request("GET", path)
         try:
-            if path in {"/", "/index.html"}:
-                self._send_static(STATIC_DIR / "index.html")
-            elif path == "/nodes":
+            if path in {"/", "/index.html", "/nodes", "/explore", "/runs", "/graphs"}:
                 self._send_static(STATIC_DIR / "node-editor.html")
+            elif path == "/classic":
+                # Legacy form-based UI kept under /classic for fallback.
+                self._send_static(STATIC_DIR / "index.html")
             elif path.startswith("/static/"):
                 self._send_static(safe_static_path(path.removeprefix("/static/")))
             elif path == "/api/state":
-                self._send_json(build_state(self.server.project_root))
+                light = (query.get("light") or ["0"])[0] in {"1", "true", "yes"}
+                state = build_state(self.server.project_root, light=light)
+                state["agent"] = _agent_state(self.server)
+                self._send_json(state)
             elif path == "/api/settings":
                 self._send_json(load_settings(self.server.project_root))
             elif path == "/api/artifacts":
-                self._send_json({"artifacts": list_artifacts(self.server.project_root)})
+                extra_dirs = query.get("dir") or []
+                self._send_json({"artifacts": list_artifacts(self.server.project_root, extra_dirs=extra_dirs)})
             elif path == "/api/files":
                 self._send_json({"files": list_files(self.server.project_root, query)})
+            elif path == "/api/folder-list":
+                self._send_json(list_folder(self.server.project_root, query))
             elif path == "/api/tree":
                 rel = (query.get("path") or [""])[0]
                 self._send_json({"tree": build_file_tree(self.server.project_root, rel)})
@@ -168,6 +209,15 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             elif path == "/api/file":
                 rel = (query.get("path") or [""])[0]
                 self._send_project_file(rel)
+            elif path == "/api/thumb":
+                rel = (query.get("path") or [""])[0]
+                try:
+                    size = int((query.get("size") or ["256"])[0])
+                except ValueError:
+                    size = 256
+                size = max(32, min(1024, size))
+                thumb = ensure_thumbnail(self.server.project_root, rel, size)
+                self._send_file(thumb, cache=True)
             elif path == "/api/logo":
                 self._send_json({"frames": load_logo_frames()})
             else:
@@ -194,6 +244,8 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(filter_prompt(self.server.project_root, payload))
             elif parsed.path == "/api/compress-image":
                 self._send_json(compress_image(self.server.project_root, payload))
+            elif parsed.path == "/api/compress":
+                self._send_json(compress_dispatch(self.server.project_root, payload))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not found")
         except ValueError as exc:
@@ -274,7 +326,7 @@ def project_url(rel: str) -> str:
     return f"/api/file?path={quote(rel)}"
 
 
-def build_state(root: Path) -> Dict[str, Any]:
+def build_state(root: Path, *, light: bool = False) -> Dict[str, Any]:
     config_path = root / ".rundeer" / "config.json"
     config_error = None
     raw_config = read_project_config(root)
@@ -284,23 +336,43 @@ def build_state(root: Path) -> Dict[str, Any]:
         except json.JSONDecodeError as exc:
             config_error = str(exc)
     normalized = normalize_config(dict(raw_config)) if raw_config else normalize_config({})
-    return {
+    payload: Dict[str, Any] = {
         "version": __version__,
         "projectRoot": str(root),
         "configPath": relpath(root, config_path),
         "config": {"raw": raw_config, "normalized": normalized, "error": config_error},
-        "styles": list_styles(root),
-        "definitions": list_definitions(root),
-        "presets": list_presets(root),
-        "artifacts": list_artifacts(root),
+        "styles": list_styles(root, with_references=not light),
         "env": env_summary(root),
         "options": option_data(),
-        "batch": batch_summary(root),
     }
+    if not light:
+        payload["definitions"] = list_definitions(root)
+        payload["presets"] = list_presets(root)
+        payload["artifacts"] = list_artifacts(root)
+        payload["batch"] = batch_summary(root)
+    return payload
 
 
 def config_path(root: Path) -> Path:
     return root / ".rundeer" / "config.json"
+
+
+def _agent_state(server: "RundeerWebServer") -> Dict[str, Any]:
+    handle = getattr(server, "agent_handle", None)
+    if handle is None:
+        return {"enabled": False, "reason": "agent server not running"}
+    settings = getattr(server, "agent_settings", None)
+    out: Dict[str, Any] = {
+        "enabled": True,
+        "port": getattr(server, "agent_port", None),
+        "host": getattr(handle, "host", "127.0.0.1"),
+    }
+    if settings is not None:
+        try:
+            out.update(settings.to_safe_dict())
+        except Exception:  # noqa: BLE001
+            pass
+    return out
 
 
 def read_project_config(root: Path) -> Dict[str, Any]:
@@ -361,6 +433,68 @@ def save_settings(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     return load_settings(root)
 
 
+def chat_completions_url(base_url: str) -> str:
+    raw = (base_url or "https://api.x.ai/v1").strip() or "https://api.x.ai/v1"
+    if "://" not in raw:
+        raw = f"https://{raw}"
+    parsed = urlparse(raw)
+    path = parsed.path.rstrip("/")
+    if path.endswith("/chat/completions"):
+        final_path = path
+    elif path.endswith("/v1"):
+        final_path = f"{path}/chat/completions"
+    else:
+        final_path = f"{path}/v1/chat/completions" if path else "/v1/chat/completions"
+    return urlunparse(parsed._replace(path=final_path, params="", query="", fragment=""))
+
+
+def _coerce_filter_image_values(value: Any) -> List[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        values = value
+    elif isinstance(value, str):
+        values = value.split(",") if "," in value else [value]
+    else:
+        values = [value]
+    return [str(item).strip() for item in values if str(item or "").strip()]
+
+
+def filter_prompt_image_urls(root: Path, value: Any) -> List[str]:
+    values = _coerce_filter_image_values(value)
+    if not values:
+        return []
+    from rundeer.core.media import encode_image  # lazy import; PIL-backed
+
+    image_urls: List[str] = []
+    cache_dir = root / ".rundeer" / "cache" / "filter-prompt"
+    for raw in values:
+        image_ref = raw
+        if image_ref.startswith(("http://", "https://", "data:image/")):
+            image_urls.append(image_ref)
+            continue
+        if image_ref.startswith("/api/file"):
+            image_ref = (parse_qs(urlparse(image_ref).query).get("path") or [""])[0]
+        path = safe_project_path(root, image_ref)
+        if not path.is_file():
+            raise FileNotFoundError(image_ref)
+        if path.suffix.lower() not in IMAGE_EXTS:
+            raise ValueError(f"unsupported image input: {image_ref}")
+        image_urls.append(encode_image(path, pad=False, quality=85, cache_dir=cache_dir))
+    return image_urls
+
+
+def filter_prompt_messages(prompt_text: str, instructions: str, image_urls: List[str]) -> List[Dict[str, Any]]:
+    user_content: Any = prompt_text
+    if image_urls:
+        user_content = [{"type": "text", "text": prompt_text or "Use the attached images as visual context."}]
+        user_content.extend({"type": "image_url", "image_url": {"url": url}} for url in image_urls)
+    return [
+        {"role": "system", "content": instructions},
+        {"role": "user", "content": user_content},
+    ]
+
+
 def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     """Call the xAI chat completions API to transform a prompt.
 
@@ -375,18 +509,20 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
     model_name = str(payload.get("model_name") or "grok-3-mini-fast")
     api_key = str(payload.get("model_api_key") or "") or os.environ.get("MODEL_API_KEY", "")
-    base_url = os.environ.get("BASE_URL", "https://api.x.ai")
+    base_url = os.environ.get("BASE_URL", "https://api.x.ai/v1")
 
     if not api_key:
         return {"error": "MODEL_API_KEY not set (provide via .env or model_api_key prop)", "filtered_prompt": prompt_text}
 
-    chat_url = base_url.rstrip("/") + "/v1/chat/completions"
+    try:
+        image_urls = filter_prompt_image_urls(root, payload.get("images") or payload.get("image_urls") or payload.get("input"))
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"image input: {exc}", "filtered_prompt": prompt_text}
+
+    chat_url = chat_completions_url(base_url)
     body = json.dumps({
         "model": model_name,
-        "messages": [
-            {"role": "system", "content": instructions},
-            {"role": "user", "content": prompt_text},
-        ],
+        "messages": filter_prompt_messages(prompt_text, instructions, image_urls),
         "temperature": 0.7,
         "max_tokens": 1024,
     }).encode("utf-8")
@@ -468,6 +604,120 @@ def compress_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+IMAGE_COMPRESS_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".tif"}
+VIDEO_COMPRESS_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
+
+
+def compress_dispatch(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Dispatch compression by input kind: image / video / bundle.
+
+    Text compression is handled client-side via /api/filter-prompt.
+    """
+    kind = str(payload.get("kind") or "auto").strip().lower()
+    if kind == "bundle":
+        return _compress_bundle(root, payload)
+    rel = str(payload.get("path") or "").strip()
+    if not rel:
+        raise ValueError("path is required")
+    ext = Path(rel).suffix.lower()
+    if kind == "auto":
+        if ext in IMAGE_COMPRESS_EXTS:
+            return compress_image(root, payload)
+        if ext in VIDEO_COMPRESS_EXTS:
+            return _compress_video(root, payload)
+        # Fall back: try image compression first; if it fails, surface error.
+        return compress_image(root, payload)
+    if kind == "image":
+        return compress_image(root, payload)
+    if kind == "video":
+        return _compress_video(root, payload)
+    raise ValueError(f"unknown compress kind: {kind}")
+
+
+def _compress_video(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    if shutil.which("ffmpeg") is None:
+        return {"error": "ffmpeg not found on PATH; install ffmpeg to compress videos"}
+    rel = str(payload.get("path") or "").strip()
+    src = safe_project_path(root, rel)
+    if not src.is_file():
+        raise FileNotFoundError(rel)
+    quality = int(payload.get("quality") or 75)
+    quality = max(1, min(100, quality))
+    # Map 1..100 quality → CRF 51..18 (lower CRF = higher quality).
+    crf = int(round(51 - (quality / 100.0) * 33))
+    max_dim = int(payload.get("max_dimension") or 0)
+
+    cache_dir = root / ".rundeer" / "cache" / "compressed"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    dest_name = f"{src.stem}_q{quality}{('_' + str(max_dim)) if max_dim else ''}.mp4"
+    dest = cache_dir / dest_name
+
+    original_bytes = src.stat().st_size
+    cmd = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+        "-i", str(src),
+        "-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "96k",
+        "-movflags", "+faststart",
+    ]
+    if max_dim:
+        # Scale longest side to max_dim, preserving aspect, force even dims.
+        cmd[-1:-1] = ["-vf", f"scale='if(gt(iw,ih),min({max_dim},iw),-2)':'if(gt(iw,ih),-2,min({max_dim},ih))'"]
+    cmd.append(str(dest))
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except FileNotFoundError as exc:
+        return {"error": f"ffmpeg invocation failed: {exc}"}
+    if proc.returncode != 0:
+        return {"error": f"ffmpeg failed: {(proc.stderr or '').strip()[:400]}"}
+    return {
+        "path": relpath(root, dest),
+        "bytes": dest.stat().st_size,
+        "originalBytes": original_bytes,
+    }
+
+
+def _compress_bundle(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    import zipfile  # lazy
+    paths = payload.get("paths") or []
+    if not isinstance(paths, list) or not paths:
+        raise ValueError("paths is required (non-empty list)")
+    out_dir_rel = str(payload.get("output_dir") or ".rundeer/cache/compressed").strip()
+    out_dir = safe_project_path(root, out_dir_rel) if out_dir_rel else root / ".rundeer" / "cache" / "compressed"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    name = str(payload.get("name") or f"bundle_{stamp}.zip").strip()
+    if not name.lower().endswith(".zip"):
+        name += ".zip"
+    dest = out_dir / name
+    total_in = 0
+    seen: set[str] = set()
+    with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        for rel in paths:
+            rel_s = str(rel or "").strip()
+            if not rel_s:
+                continue
+            src = safe_project_path(root, rel_s)
+            if not src.is_file():
+                continue
+            arc_base = Path(rel_s).name
+            arc = arc_base
+            i = 1
+            while arc in seen:
+                arc = f"{Path(arc_base).stem}_{i}{Path(arc_base).suffix}"
+                i += 1
+            seen.add(arc)
+            total_in += src.stat().st_size
+            zf.write(src, arcname=arc)
+    return {
+        "path": relpath(root, dest),
+        "bytes": dest.stat().st_size,
+        "originalBytes": total_in,
+        "items": len(seen),
+    }
+
+
 def env_summary(root: Path) -> Dict[str, bool]:
     keys = ["VISION_API_KEY", "MODEL_API_KEY", "BASE_URL"]
     return {key: bool(os.environ.get(key) or env_file_has_key(root, key)) for key in keys}
@@ -484,7 +734,7 @@ def env_file_has_key(root: Path, key: str) -> bool:
     return False
 
 
-def list_styles(root: Path) -> List[Dict[str, Any]]:
+def list_styles(root: Path, *, with_references: bool = True) -> List[Dict[str, Any]]:
     styles: List[Dict[str, Any]] = []
     base = brain_dir()
     if not base.exists():
@@ -492,14 +742,15 @@ def list_styles(root: Path) -> List[Dict[str, Any]]:
     for style_dir in sorted((path for path in base.iterdir() if path.is_dir()), key=lambda path: path.name.lower()):
         prompt_path = style_dir / f"{style_dir.name.lower()}.md"
         prompt = prompt_path.read_text(encoding="utf-8", errors="ignore")[:2400] if prompt_path.exists() else ""
-        ref_dir = style_dir / "Reference"
-        references = []
-        if ref_dir.exists():
-            references = [
-                file_payload(root, ref, reference_id=reference_id(ref.name))
-                for ref in sorted(ref_dir.iterdir(), key=lambda path: path.name.lower())
-                if ref.is_file() and ref.suffix.lower() in IMAGE_EXTS
-            ]
+        references: List[Dict[str, Any]] = []
+        if with_references:
+            ref_dir = style_dir / "Reference"
+            if ref_dir.exists():
+                references = [
+                    file_payload(root, ref, reference_id=reference_id(ref.name))
+                    for ref in sorted(ref_dir.iterdir(), key=lambda path: path.name.lower())
+                    if ref.is_file() and ref.suffix.lower() in IMAGE_EXTS
+                ]
         styles.append({
             "name": style_dir.name,
             "path": relpath(root, style_dir),
@@ -541,8 +792,20 @@ def list_presets(root: Path) -> List[Dict[str, Any]]:
     return [file_payload(root, path) for path in iter_files(base, root)][:400]
 
 
-def list_artifacts(root: Path) -> List[Dict[str, Any]]:
+def list_artifacts(root: Path, extra_dirs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     roots = [root / ".rundeer" / "outputs", root / ".rundeer" / "benchmark" / "position" / "outputs", root / "docs"]
+    # Caller-supplied directories let runs that write outside the default
+    # roots (e.g. a user-specified output_dir like "hurl_test/") still be
+    # discoverable by findArtifactsForRun on the client.
+    for rel in (extra_dirs or []):
+        if not rel:
+            continue
+        try:
+            extra = safe_project_path(root, rel)
+        except Exception:
+            continue
+        if extra and extra not in roots:
+            roots.append(extra)
     artifacts: List[Dict[str, Any]] = []
     seen = set()
     for base in roots:
@@ -557,7 +820,7 @@ def list_artifacts(root: Path) -> List[Dict[str, Any]]:
             seen.add(resolved)
             artifacts.append(file_payload(root, path))
     artifacts.sort(key=lambda item: item.get("mtime", 0), reverse=True)
-    return artifacts[:240]
+    return artifacts[:1000]
 
 
 def list_files(root: Path, query: Dict[str, List[str]]) -> List[Dict[str, Any]]:
@@ -584,6 +847,256 @@ def list_files(root: Path, query: Dict[str, List[str]]) -> List[Dict[str, Any]]:
         if len(files) >= 500:
             break
     return sorted(files, key=lambda item: item["path"].lower())
+
+
+ANIMATED_EXTS = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".avi", ".gif", ".webp", ".apng"}
+
+
+def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
+    rel = (query.get("path") or [""])[0]
+    kind = (query.get("kind") or ["all"])[0]
+    recursive = (query.get("recursive") or ["0"])[0] in {"1", "true", "yes"}
+    if not rel:
+        return {"paths": [], "error": "no path"}
+    try:
+        target = safe_project_path(root, rel)
+    except PermissionError as exc:
+        return {"paths": [], "error": str(exc)}
+    if not target.exists():
+        return {"paths": [], "error": f"path not found: {rel}"}
+
+    # Single animated file → extract frames.
+    if target.is_file() and target.suffix.lower() in ANIMATED_EXTS:
+        try:
+            fps = float((query.get("fps") or [""])[0] or 0) or None
+        except ValueError:
+            fps = None
+        # start/end are 1-based, inclusive frame indices (0 = unset).
+        try:
+            start = int((query.get("start") or [""])[0] or 0) or 0
+        except ValueError:
+            start = 0
+        try:
+            end = int((query.get("end") or [""])[0] or 0) or 0
+        except ValueError:
+            end = 0
+        fmt = ((query.get("format") or ["png"])[0] or "png").lower()
+        if fmt not in {"png", "jpg", "jpeg", "webp"}:
+            fmt = "png"
+        return extract_frames(
+            root, target, fps=fps, start=start, end=end, fmt=fmt,
+        )
+
+    if not target.is_dir():
+        return {"paths": [], "error": f"not a folder or supported animated file: {rel}"}
+    folder = target
+    out: List[str] = []
+    if recursive:
+        candidates = iter_files(folder, root)
+    else:
+        candidates = (p for p in sorted(folder.iterdir()) if p.is_file() and not skip_file(p, root))
+    for path in candidates:
+        suffix = path.suffix.lower()
+        if kind == "image" and suffix not in IMAGE_EXTS:
+            continue
+        if kind == "video" and suffix not in VIDEO_EXTS:
+            continue
+        if kind == "media" and suffix not in IMAGE_EXTS | VIDEO_EXTS:
+            continue
+        out.append(relpath(root, path))
+    out.sort(key=str.lower)
+    # start/end are 1-based, inclusive item indices.
+    try:
+        start_i = int((query.get("start") or [""])[0] or 0) or 0
+    except ValueError:
+        start_i = 0
+    try:
+        end_i = int((query.get("end") or [""])[0] or 0) or 0
+    except ValueError:
+        end_i = 0
+    lo = max(0, start_i - 1) if start_i > 0 else 0
+    hi = end_i if end_i > 0 else len(out)
+    if lo or hi != len(out):
+        out = out[lo:hi]
+    return {"paths": out, "count": len(out), "source": "folder"}
+
+
+def extract_frames(
+    root: Path,
+    video: Path,
+    *,
+    fps: Optional[float],
+    start: int,
+    end: int,
+    fmt: str,
+) -> Dict[str, Any]:
+    if shutil.which("ffmpeg") is None:
+        return {"paths": [], "error": "ffmpeg not found on PATH; install ffmpeg to extract frames"}
+
+    # Cache key based on source mtime + extraction params so re-running the
+    # same node is fast and idempotent.
+    try:
+        stat = video.stat()
+    except OSError as exc:
+        return {"paths": [], "error": f"stat failed: {exc}"}
+    import hashlib
+    key_src = f"{video.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{fps}|{start}|{end}|{fmt}"
+    key = hashlib.sha1(key_src.encode("utf-8")).hexdigest()[:16]
+    cache_root = root / ".rundeer" / "cache" / "frames"
+    out_dir = cache_root / f"{video.stem}-{key}"
+    manifest = out_dir / "frames.json"
+
+    if manifest.exists():
+        try:
+            data = json.loads(manifest.read_text())
+            paths = data.get("paths") or []
+            if paths and all((root / p).exists() for p in paths):
+                return {"paths": paths, "count": len(paths), "source": "frames", "cached": True}
+        except Exception:
+            pass
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # Wipe any stale partial files.
+    for child in out_dir.iterdir():
+        try:
+            child.unlink()
+        except OSError:
+            pass
+
+    pattern = out_dir / f"frame_%06d.{fmt}"
+    # start/end are 1-based inclusive frame indices on the OUTPUT stream
+    # (after any optional fps resample). Translate to 0-based for ffmpeg's
+    # `select` filter and use -frames:v to cap output count.
+    start_idx = max(1, start) if start > 0 else 1
+    end_idx = end if (end and end >= start_idx) else 0
+    count = (end_idx - start_idx + 1) if end_idx > 0 else 0
+
+    cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(video)]
+    vf: List[str] = []
+    if fps and fps > 0:
+        vf.append(f"fps={fps}")
+    if start_idx > 1 and end_idx > 0:
+        vf.append(f"select='between(n\\,{start_idx - 1}\\,{end_idx - 1})'")
+    elif start_idx > 1:
+        vf.append(f"select='gte(n\\,{start_idx - 1})'")
+    elif end_idx > 0:
+        vf.append(f"select='lte(n\\,{end_idx - 1})'")
+    if any(f.startswith("select=") for f in vf):
+        vf.append("setpts=N/FRAME_RATE/TB")
+    if vf:
+        cmd += ["-vf", ",".join(vf), "-vsync", "vfr"]
+    if count > 0:
+        cmd += ["-frames:v", str(count)]
+    if fmt in {"jpg", "jpeg"}:
+        cmd += ["-q:v", "2"]
+    cmd += [str(pattern)]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.decode("utf-8", "replace") if exc.stderr else ""
+        return {"paths": [], "error": f"ffmpeg failed: {stderr.strip() or exc}"}
+
+    frames = sorted(p for p in out_dir.iterdir() if p.is_file() and p.suffix.lower().lstrip(".") in {"png", "jpg", "jpeg", "webp"})
+    paths = [relpath(root, p) for p in frames]
+    try:
+        manifest.write_text(json.dumps({"paths": paths, "source": str(video)}, indent=2))
+    except OSError:
+        pass
+    return {"paths": paths, "count": len(paths), "source": "frames", "cached": False}
+
+
+def ensure_thumbnail(root: Path, rel: str, size: int) -> Path:
+    """Return a path to a cached thumbnail for an image or video.
+
+    Caches under `.rundeer/cache/thumbs/<sha1>_<size>.jpg`. Key includes the
+    source mtime + size so edits invalidate the cache automatically.
+    """
+    if not rel:
+        raise FileNotFoundError("no path")
+    src = safe_project_path(root, rel)
+    if not src.is_file():
+        raise FileNotFoundError(rel)
+    stat = src.stat()
+    import hashlib
+    key_src = f"{src.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{size}"
+    key = hashlib.sha1(key_src.encode("utf-8")).hexdigest()[:16]
+    cache_dir = root / ".rundeer" / "cache" / "thumbs"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    dest = cache_dir / f"{key}_{size}.jpg"
+    if dest.exists() and dest.stat().st_size > 0:
+        return dest
+
+    # Cap concurrent heavy decode work so a flood of tile requests doesn't
+    # melt the CPU and starve regular API requests.
+    with _THUMB_SEM:
+        if dest.exists() and dest.stat().st_size > 0:
+            return dest
+        # Coalesce duplicate concurrent requests for the same thumbnail:
+        # while one worker generates `dest`, others block on a per-key lock
+        # and then read the freshly produced file from disk.
+        lock = _thumb_lock_for(key)
+        with lock:
+            if dest.exists() and dest.stat().st_size > 0:
+                return dest
+            _generate_thumbnail(src, dest, size)
+    return dest
+
+
+_THUMB_SEM = threading.Semaphore(max(2, (os.cpu_count() or 2) // 2))
+_THUMB_LOCKS: Dict[str, threading.Lock] = {}
+_THUMB_LOCKS_GUARD = threading.Lock()
+
+
+def _thumb_lock_for(key: str) -> threading.Lock:
+    with _THUMB_LOCKS_GUARD:
+        lock = _THUMB_LOCKS.get(key)
+        if lock is None:
+            lock = threading.Lock()
+            _THUMB_LOCKS[key] = lock
+        return lock
+
+
+def _generate_thumbnail(src: Path, dest: Path, size: int) -> None:
+    suffix = src.suffix.lower()
+    try:
+        if suffix in IMAGE_EXTS:
+            from PIL import Image
+            with Image.open(src) as im:
+                im.load()
+                if im.mode in ("RGBA", "LA", "P"):
+                    im = im.convert("RGB")
+                im.thumbnail((size, size), Image.LANCZOS)
+                im.save(dest, format="JPEG", quality=82, optimize=True, progressive=True)
+        elif suffix in VIDEO_EXTS or suffix in ANIMATED_EXTS:
+            if shutil.which("ffmpeg") is None:
+                _write_placeholder_thumb(dest, size)
+            else:
+                cmd = [
+                    "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                    "-ss", "0", "-i", str(src),
+                    "-frames:v", "1",
+                    "-vf", f"scale='min({size},iw)':'min({size},ih)':force_original_aspect_ratio=decrease",
+                    "-q:v", "3",
+                    str(dest),
+                ]
+                try:
+                    subprocess.run(cmd, check=True, capture_output=True, timeout=30)
+                except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                    _write_placeholder_thumb(dest, size)
+        else:
+            _write_placeholder_thumb(dest, size)
+    except Exception:
+        _write_placeholder_thumb(dest, size)
+
+
+def _write_placeholder_thumb(dest: Path, size: int) -> None:
+    try:
+        from PIL import Image
+        Image.new("RGB", (max(16, size // 8), max(16, size // 8)), (24, 24, 24)).save(
+            dest, format="JPEG", quality=70
+        )
+    except Exception:
+        dest.write_bytes(b"")
 
 
 def iter_files(base: Path, root: Path) -> Iterable[Path]:
@@ -1133,12 +1646,18 @@ def _pick(payload: Dict[str, Any], section_key: str, sub_key: str, *flat_keys: s
 
 def build_run_config(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     output = _section(payload, "output")
+    batch = _section(payload, "batch")
     image = _section(payload, "image")
     video = _section(payload, "video")
     references = _section(payload, "references")
     grid = _section(payload, "grid")
     chain = _section(payload, "chain")
     inputs = _section(payload, "inputs")
+    grid_options = batch.get("grid_options") if isinstance(batch.get("grid_options"), dict) else {}
+
+    ref_ids: Any = references.get("ids") if "ids" in references else payload.get("reference")
+    if ref_ids is None and "references" in payload and not isinstance(payload.get("references"), dict):
+        ref_ids = payload.get("references")
 
     output_dir = clean_str(output.get("dir")) or clean_str(payload.get("outputDir")) or ".rundeer/outputs"
     output_name = clean_str(output.get("name")) or clean_str(payload.get("outputName")) or "output"
@@ -1150,26 +1669,62 @@ def build_run_config(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         "input": clean_str(inputs.get("input")) or clean_str(payload.get("input")) or None,
         "output": {"dir": output_dir, "name": output_name},
         "batch": {
-            "iterations": coerce_int(payload.get("iterations"), 1),
-            "concurrency": coerce_optional_int(payload.get("concurrency")),
-            "grid": _coerce_bool(grid.get("enabled"), payload.get("grid"), default=False),
-            "grid_only": _coerce_bool(grid.get("only"), payload.get("gridOnly"), default=False),
+            "iterations": coerce_int(batch.get("iterations") if "iterations" in batch else payload.get("iterations"), 1),
+            "concurrency": coerce_optional_int(batch.get("concurrency") if "concurrency" in batch else payload.get("concurrency")),
+            "grid": _coerce_bool(batch.get("grid") if "grid" in batch else None, grid.get("enabled"), payload.get("grid"), default=False),
+            "grid_only": _coerce_bool(batch.get("grid_only") if "grid_only" in batch else None, grid.get("only"), payload.get("gridOnly"), default=False),
             "grid_options": {
-                "rows": clean_str(grid.get("rows")) or clean_str(payload.get("gridRows")) or "auto",
-                "columns": clean_str(grid.get("columns")) or clean_str(payload.get("gridColumns")) or "auto",
-                "padding": coerce_int(grid.get("padding") if "padding" in grid else payload.get("gridPadding"), 0),
-                "bg_color": clean_str(grid.get("bg")) or clean_str(payload.get("gridBgColor")) or "#000000",
+                "rows": clean_str(grid_options.get("rows")) or clean_str(grid.get("rows")) or clean_str(payload.get("gridRows")) or "auto",
+                "columns": clean_str(grid_options.get("columns")) or clean_str(grid.get("columns")) or clean_str(payload.get("gridColumns")) or "auto",
+                "padding": coerce_int(
+                    grid_options.get("padding") if "padding" in grid_options
+                    else grid.get("padding") if "padding" in grid
+                    else payload.get("gridPadding"),
+                    0,
+                ),
+                "bg_color": (
+                    clean_str(grid_options.get("bg_color") or grid_options.get("bgColor"))
+                    or clean_str(grid.get("bg_color") or grid.get("bg"))
+                    or clean_str(payload.get("gridBgColor"))
+                    or "#000000"
+                ),
             },
-            "chain": _coerce_bool(chain.get("enabled"), payload.get("chain"), default=False),
-            "chain_compose": _coerce_bool(chain.get("compose"), payload.get("chainCompose"), default=False),
-            "chain_threshold": coerce_int(chain.get("threshold") if "threshold" in chain else payload.get("chainThreshold"), 12),
-            "chain_override": coerce_int(chain.get("override") if "override" in chain else payload.get("chainOverride"), 50),
-            "chain_dilate": coerce_int(chain.get("dilate") if "dilate" in chain else payload.get("chainDilate"), 6),
-            "chain_feather": coerce_int(chain.get("feather") if "feather" in chain else payload.get("chainFeather"), 8),
-            "chain_min_region": coerce_int(chain.get("minRegion") if "minRegion" in chain else payload.get("chainMinRegion"), 64),
+            "chain": _coerce_bool(batch.get("chain") if "chain" in batch else None, chain.get("enabled"), payload.get("chain"), default=False),
+            "chain_compose": _coerce_bool(batch.get("chain_compose") if "chain_compose" in batch else None, chain.get("compose"), payload.get("chainCompose"), default=False),
+            "chain_threshold": coerce_int(
+                batch.get("chain_threshold") if "chain_threshold" in batch
+                else chain.get("threshold") if "threshold" in chain
+                else payload.get("chainThreshold"),
+                12,
+            ),
+            "chain_override": coerce_int(
+                batch.get("chain_override") if "chain_override" in batch
+                else chain.get("override") if "override" in chain
+                else payload.get("chainOverride"),
+                50,
+            ),
+            "chain_dilate": coerce_int(
+                batch.get("chain_dilate") if "chain_dilate" in batch
+                else chain.get("dilate") if "dilate" in chain
+                else payload.get("chainDilate"),
+                6,
+            ),
+            "chain_feather": coerce_int(
+                batch.get("chain_feather") if "chain_feather" in batch
+                else chain.get("feather") if "feather" in chain
+                else payload.get("chainFeather"),
+                8,
+            ),
+            "chain_min_region": coerce_int(
+                batch.get("chain_min_region") if "chain_min_region" in batch
+                else chain.get("min_region") if "min_region" in chain
+                else chain.get("minRegion") if "minRegion" in chain
+                else payload.get("chainMinRegion"),
+                64,
+            ),
         },
         "references": {
-            "ids": coerce_refs(references.get("ids") if "ids" in references else payload.get("references")),
+            "ids": coerce_refs(ref_ids),
             "pad": _coerce_bool(references.get("pad") if "pad" in references else payload.get("padReference"), default=True),
             "quality": coerce_int(references.get("quality") if "quality" in references else payload.get("refQuality"), 85),
         },

@@ -18,17 +18,19 @@
     </p>
 </div>
 
-`rundeer` is a production-minded Python CLI for AI image and video generation. It turns a single creative direction into batches of images or videos, keeps style prompts and references organized, shows live progress in a terminal UI, and saves everything into a predictable local workspace.
+`rundeer` is a CLI-backed visual workbench for AI image and video generation. It turns a single creative direction into repeatable batches, keeps style prompts and references organized, lets you wire runs as node graphs in the browser, and saves everything into a predictable local workspace.
 
-It is built for iteration: generate more than one thing, compare the set, keep the strongest output, then edit, merge, extend, benchmark, or run the next batch.
+It is built for iteration: sketch a workflow as nodes, dry-run the plan, generate more than one thing, inspect the artifacts, keep the strongest output, then edit, merge, extend, benchmark, loop, or run the next graph.
 
 |  |  |
 |---|---|
-| Batch generation | Run many image or video jobs from one prompt with concurrency, retries, dry-runs, and indexed output names. |
+| Node workbench | Build image, video, edit, merge, extend, prompt, loop, and preview workflows as a browser graph. |
+| Batch generation | Run many image or video jobs from one prompt with concurrency, dry-runs, grids, and indexed output names. |
 | Style brains | Store reusable style prompts under `brain/`, attach reference images by numeric id, and keep subject text separate from house style. |
 | Full media loop | Generate images, generate videos, animate a start frame, edit images, edit videos, merge up to five images, and extend existing clips. |
-| Terminal-native workflow | Use the animated curses TUI, plain logs, or a local browser console started from the CLI. |
-| Reproducible workspace | Auto-bootstrap `.rundeer/` with config, outputs, cache, logs, benchmark templates, and a reusable agent skill. |
+| Explore and preview | Browse project files, generated artifacts, configs, logs, images, videos, JSON, and text from the web UI. |
+| CLI-backed execution | Use the same command engine from node graphs, dry-runs, curses TUI, plain logs, or the legacy `/classic` form UI. |
+| Reproducible workspace | Auto-bootstrap `.rundeer/` with config, web run configs, outputs, cache, logs, benchmark templates, and a reusable agent skill. |
 | Research hooks | Score spatial accuracy with a built-in position benchmark that writes JSON logs and CSV summaries. |
 
 ## Quickstart
@@ -48,14 +50,14 @@ cp .env.example .env
 # install rundeer
 ./rundeer.sh or ./rundeer.bat
 
-# launch rundeer webapp
-rundeer web
+# launch the node workbench and file explorer
+rundeer web --open
 
-# or run the cli
-rundeer image
+# or inspect a CLI plan without spending API credits
+rundeer image --subject="a quiet station at sunrise" --dry-run --no-tui
 ```
 
-The first real run creates `.rundeer/` in the current directory. Outputs default to `.rundeer/outputs`, references are cached in `.rundeer/cache`, and run artifacts live under `.rundeer/logs`.
+The first CLI or web command creates `.rundeer/` in the current directory. Outputs default to `.rundeer/outputs`, encoded references are cached in `.rundeer/cache`, web-triggered run configs are written to `.rundeer/web/runs/<run-id>/config.json`, and logs live under `.rundeer/logs`.
 
 Use `--dry-run` whenever you want to inspect the resolved prompt, job count, output paths, references, and definitions without spending API credits:
 
@@ -73,8 +75,28 @@ rundeer video --style=Moebius --subject="a station at sunrise" --motion="slow do
 | Compose several images into one | `python3 rundeer.py merge` |
 | Continue an existing video clip | `python3 rundeer.py extend` |
 | Execute many configs in sequence | `python3 rundeer.py batch` |
-| Operate runs from a local web console | `python3 rundeer.py web --open` |
+| Build node graphs and browse artifacts | `python3 rundeer.py web --open` |
 | Run a model placement benchmark | `python3 rundeer.py benchmark position` |
+
+### Web Workbench
+
+`rundeer web --open` starts the modern browser workbench. The default app serves the same UI at `/`, `/nodes`, and `/explore`; the older form-based UI is still available at `/classic` as a fallback.
+
+The **Nodes** view is a Blender-style graph editor. The palette includes:
+
+| Category | Nodes |
+|---|---|
+| Primitives | String, Number, Image File, Video File, File Path, Reroute, String Join, Compress Image, Math, String Op |
+| Prompt | Prompt Filter, Definition |
+| Commands | Image, Video, Edit, Merge, Extend |
+| Loop | Loop · Decompose, Loop · Output |
+| Output | Preview |
+
+Command nodes expose their props as sockets, so graph edges can override static fields like subject, style, iterations, output name, or reference ids. Prompt Filter nodes accept multiple context images, letting a language model rewrite a prompt using visual information from upstream image files or generated outputs. Runs with more than one iteration produce bundles; Loop · Decompose and Loop · Output let you fan out a bundle, process each item, and collect the results again. Preview nodes display upstream image, video, or text values inline and can collapse their upstream chain for a cleaner graph.
+
+Graph execution resolves terminal command and preview nodes, calls `/api/plan` for dry-runs or `/api/run` for live runs, then polls the run record until it finishes. Web-triggered runs use the same Python CLI code as terminal commands and keep each generated config under `.rundeer/web/runs/`.
+
+The **Explore** view is a split-pane file browser and previewer for the current project. It can filter the workspace tree, open files in a separate tab, copy paths, and preview supported images, videos, JSON, text, Markdown, logs, CSV, and Python files. The Runs panel shows recent in-memory web runs and their output tails.
 
 ### Image Batch
 
@@ -166,12 +188,20 @@ CLI flags win over config files. If no config path is provided, rundeer reads `.
         "iterations": 5,
         "concurrency": null,
         "grid": true,
+        "grid_only": false,
         "grid_options": {
             "rows": "auto",
             "columns": "auto",
             "padding": 10,
             "bg_color": "#000000"
-        }
+        },
+        "chain": false,
+        "chain_compose": false,
+        "chain_threshold": 12,
+        "chain_override": 50,
+        "chain_dilate": 6,
+        "chain_feather": 8,
+        "chain_min_region": 64
     },
     "references": {
         "ids": [0, 3],
@@ -188,18 +218,41 @@ CLI flags win over config files. If no config path is provided, rundeer reads `.
         "aspect_ratio": "16:9",
         "duration": 6,
         "resolution": "720p",
-        "concurrency": 1
+        "concurrency": 1,
+        "output_dir": null
+    },
+    "rate_limits": {
+        "enabled": false,
+        "per_second": null,
+        "per_minute": null,
+        "per_hour": null,
+        "per_day": null
+    },
+    "web": {
+        "artifact_view": "grid",
+        "artifact_size": "md",
+        "dock_expanded": false,
+        "output_open_on_run": true,
+        "output_panel_open": true,
+        "files_panel_open": true,
+        "artifacts_panel_open": true
     }
 }
 ```
 
-rundeer loads environment values only from the project-root `.env` file. It does not read parent `.env` files, or `.rundeer/.env`. Use `VISION_API_KEY` for image and video generation, `MODEL_API_KEY` for definition scripts that call language models, and `BASE_URL` as the shared API endpoint.
+rundeer loads environment values only from the project-root `.env` file. It does not read parent `.env` files, or `.rundeer/.env`. Use `VISION_API_KEY` for image and video generation, `MODEL_API_KEY` for definition scripts and Prompt Filter nodes that call language models, and `BASE_URL` as the shared API endpoint. `BASE_URL` may be the API root (`https://api.x.ai`) or the OpenAI-compatible base (`https://api.x.ai/v1`); rundeer normalizes the final path per call.
 
 ## Styles And References
 
 A style brain is a folder under `brain/` with a Markdown prompt named after the style. The prompt can use `[subject]` and `[motion]` placeholders, while reference images live in `Reference/` and are selected by numeric prefix.
 
 ## Advanced Workflows
+
+### Node Graphs
+
+The web workbench can express workflows that are awkward as one shell command: prompt transforms, reusable file/path nodes, command chains, compressed intermediate images, loops over bundles, and inline previews. Save and load graph JSON from the bottom toolbar, or rely on local autosave while iterating.
+
+Use CLI `--dry-run --no-tui` or the `/api/plan` endpoint when you want the generated plan without spending credits. Graph command nodes call `/api/run` and stream status into the run dock.
 
 ### Dynamic Definitions
 
@@ -237,8 +290,11 @@ Set `batch.chain` to `true` to feed each edit result into the next iteration. Fo
 
 ## Benchmark
 
-> [!WARNING] 
-> WIP
+`rundeer benchmark position` renders deterministic reference images, asks the configured image model to reproduce them from a prompt template, then scores the result with SSIM, centroid position error, size ratio, IoU, and color fidelity. Per-iteration JSON logs and CSV summaries are written under `.rundeer/logs/benchmark/position/`.
+
+```bash
+python3 rundeer.py benchmark position --dry-run
+```
 
 ## Requirements
 
@@ -261,4 +317,4 @@ RUNDEER_LIVE=1 python3 -m pytest -m live tests/test_live_smoke.py
 
 ## Contributing
 
-Keep changes small, testable, and aligned with the CLI-first workflow. For feature work, add focused tests under `tests/` and verify the relevant command with `--dry-run` before calling the live API.
+Keep changes small, testable, and aligned with the CLI-backed workflow. For feature work, add focused tests under `tests/` and verify the relevant command or graph path with `--dry-run` before calling the live API.

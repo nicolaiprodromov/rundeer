@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "20260512-204130-61fa29",
+  "title": "hi from fresh",
+  "model": "xai/grok-4-latest",
+  "created_at": 1778618490.3378122,
+  "updated_at": 1778618500.8990822,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[graph is currently empty]\n\nhi from fresh"
+    },
+    {
+      "role": "assistant",
+      "content": "hi. graph's empty—want a quick image starter? describe a subject."
+    }
+  ],
+  "events": []
+}

@@ -1,0 +1,207 @@
+{
+  "schema": 1,
+  "id": "20260512-212950-d4fe9d",
+  "title": "Make a simple image-generation graph for a small black square. Add whatever node",
+  "model": "xai/grok-4-latest",
+  "created_at": 1778621390.7521262,
+  "updated_at": 1778621438.4964414,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[graph is currently empty]\n\nMake a simple image-generation graph for a small black square. Add whatever nodes are needed and connect them properly so the prompt flows into the image node and the image result flows into a preview. Do not run it."
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": [
+        {
+          "id": "call_39923195",
+          "type": "function",
+          "function": {
+            "name": "add_node",
+            "arguments": "{\"type\":\"text-input\",\"node_id\":\"prompt\"}"
+          }
+        },
+        {
+          "id": "call_73668503",
+          "type": "function",
+          "function": {
+            "name": "set_node_prop",
+            "arguments": "{\"node_id\":\"prompt\",\"key\":\"value\",\"value\":{\"value\":\"small black square\"}}"
+          }
+        },
+        {
+          "id": "call_84122668",
+          "type": "function",
+          "function": {
+            "name": "add_node",
+            "arguments": "{\"type\":\"run-trigger\",\"node_id\":\"trigger\"}"
+          }
+        },
+        {
+          "id": "call_52413852",
+          "type": "function",
+          "function": {
+            "name": "add_node",
+            "arguments": "{\"type\":\"cmd-image\",\"node_id\":\"gen\"}"
+          }
+        },
+        {
+          "id": "call_95504835",
+          "type": "function",
+          "function": {
+            "name": "set_node_prop",
+            "arguments": "{\"node_id\":\"gen\",\"key\":\"style\",\"value\":{\"value\":\"none\"}}"
+          }
+        },
+        {
+          "id": "call_79786558",
+          "type": "function",
+          "function": {
+            "name": "add_node",
+            "arguments": "{\"type\":\"preview\",\"node_id\":\"view\"}"
+          }
+        },
+        {
+          "id": "call_99463941",
+          "type": "function",
+          "function": {
+            "name": "connect_nodes",
+            "arguments": "{\"from_node\":\"prompt\",\"from_socket\":\"out\",\"to_node\":\"gen\",\"to_socket\":\"subject\"}"
+          }
+        },
+        {
+          "id": "call_50710474",
+          "type": "function",
+          "function": {
+            "name": "connect_nodes",
+            "arguments": "{\"from_node\":\"trigger\",\"from_socket\":\"run\",\"to_node\":\"gen\",\"to_socket\":\"trigger\"}"
+          }
+        },
+        {
+          "id": "call_00639733",
+          "type": "function",
+          "function": {
+            "name": "connect_nodes",
+            "arguments": "{\"from_node\":\"gen\",\"from_socket\":\"out\",\"to_node\":\"view\",\"to_socket\":\"in\"}"
+          }
+        },
+        {
+          "id": "call_63521931",
+          "type": "function",
+          "function": {
+            "name": "move_node",
+            "arguments": "{\"node_id\":\"prompt\",\"x\":100,\"y\":100}"
+          }
+        },
+        {
+          "id": "call_22948527",
+          "type": "function",
+          "function": {
+            "name": "move_node",
+            "arguments": "{\"node_id\":\"trigger\",\"x\":100,\"y\":0}"
+          }
+        },
+        {
+          "id": "call_86295221",
+          "type": "function",
+          "function": {
+            "name": "move_node",
+            "arguments": "{\"node_id\":\"gen\",\"x\":400,\"y\":0}"
+          }
+        },
+        {
+          "id": "call_61139066",
+          "type": "function",
+          "function": {
+            "name": "move_node",
+            "arguments": "{\"node_id\":\"view\",\"x\":700,\"y\":0}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_39923195",
+      "name": "add_node",
+      "content": "{\"patch\": [{\"op\": \"add_node\", \"type\": \"text-input\", \"x\": 0.0, \"y\": 0.0, \"props\": {}, \"id\": \"prompt\"}], \"summary\": \"add text-input @ (0,0)\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_73668503",
+      "name": "set_node_prop",
+      "content": "{\"patch\": [{\"op\": \"set_node_props\", \"id\": \"prompt\", \"props\": {\"value\": {\"value\": \"small black square\"}}}], \"summary\": \"set prompt.value\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_84122668",
+      "name": "add_node",
+      "content": "{\"patch\": [{\"op\": \"add_node\", \"type\": \"run-trigger\", \"x\": 0.0, \"y\": 0.0, \"props\": {}, \"id\": \"trigger\"}], \"summary\": \"add run-trigger @ (0,0)\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_52413852",
+      "name": "add_node",
+      "content": "{\"patch\": [{\"op\": \"add_node\", \"type\": \"cmd-image\", \"x\": 0.0, \"y\": 0.0, \"props\": {}, \"id\": \"gen\"}], \"summary\": \"add cmd-image @ (0,0)\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_95504835",
+      "name": "set_node_prop",
+      "content": "{\"patch\": [{\"op\": \"set_node_props\", \"id\": \"gen\", \"props\": {\"style\": {\"value\": \"none\"}}}], \"summary\": \"set gen.style\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_79786558",
+      "name": "add_node",
+      "content": "{\"patch\": [{\"op\": \"add_node\", \"type\": \"preview\", \"x\": 0.0, \"y\": 0.0, \"props\": {}, \"id\": \"view\"}], \"summary\": \"add preview @ (0,0)\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_99463941",
+      "name": "connect_nodes",
+      "content": "{\"patch\": [{\"op\": \"add_edge\", \"fromNode\": \"prompt\", \"fromSocket\": \"out\", \"toNode\": \"gen\", \"toSocket\": \"subject\"}], \"summary\": \"connect prompt.out → gen.subject\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_50710474",
+      "name": "connect_nodes",
+      "content": "{\"patch\": [{\"op\": \"add_edge\", \"fromNode\": \"trigger\", \"fromSocket\": \"run\", \"toNode\": \"gen\", \"toSocket\": \"trigger\"}], \"summary\": \"connect trigger.run → gen.trigger\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_00639733",
+      "name": "connect_nodes",
+      "content": "{\"patch\": [{\"op\": \"add_edge\", \"fromNode\": \"gen\", \"fromSocket\": \"out\", \"toNode\": \"view\", \"toSocket\": \"in\"}], \"summary\": \"connect gen.out → view.in\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_63521931",
+      "name": "move_node",
+      "content": "{\"patch\": [{\"op\": \"move_node\", \"id\": \"prompt\", \"x\": 100.0, \"y\": 100.0}], \"summary\": \"move prompt\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_22948527",
+      "name": "move_node",
+      "content": "{\"patch\": [{\"op\": \"move_node\", \"id\": \"trigger\", \"x\": 100.0, \"y\": 0.0}], \"summary\": \"move trigger\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_86295221",
+      "name": "move_node",
+      "content": "{\"patch\": [{\"op\": \"move_node\", \"id\": \"gen\", \"x\": 400.0, \"y\": 0.0}], \"summary\": \"move gen\"}"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_61139066",
+      "name": "move_node",
+      "content": "{\"patch\": [{\"op\": \"move_node\", \"id\": \"view\", \"x\": 700.0, \"y\": 0.0}], \"summary\": \"move view\"}"
+    },
+    {
+      "role": "assistant",
+      "content": "Graph created: prompt → cmd-image (none style) → preview, with run-trigger."
+    }
+  ],
+  "events": []
+}

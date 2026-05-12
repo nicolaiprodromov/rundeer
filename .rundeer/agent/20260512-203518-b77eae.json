@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "20260512-203518-b77eae",
+  "title": "hi",
+  "model": "xai/grok-4-latest",
+  "created_at": 1778618118.7235687,
+  "updated_at": 1778618120.8105214,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[graph is currently empty]\n\nhi"
+    },
+    {
+      "role": "assistant",
+      "content": null
+    }
+  ],
+  "events": []
+}

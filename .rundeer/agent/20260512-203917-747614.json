@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "20260512-203917-747614",
+  "title": "say hello in 5 words",
+  "model": "xai/grok-4-latest",
+  "created_at": 1778618357.1239605,
+  "updated_at": 1778618406.8940134,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[graph is currently empty]\n\nsay hello in 5 words"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello from the rundeer agent."
+    }
+  ],
+  "events": []
+}

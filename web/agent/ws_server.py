@@ -1,0 +1,308 @@
+"""WebSocket server for the rundeer agent.
+
+Runs in a dedicated thread with its own asyncio loop. Shares state with the
+HTTP server (project root + runs registry) by holding a reference.
+
+Protocol (JSON messages):
+  client → server:
+    { "type": "hello" }
+    { "type": "list_conversations" }
+    { "type": "new_conversation", "title"?: str }
+    { "type": "load_conversation", "id": str }
+    { "type": "delete_conversation", "id": str }
+    { "type": "graph_snapshot", "graph": {...} }   # sent on changes / before user_message
+    { "type": "user_message", "text": str, "images"?: [data_url, ...], "graph"?: {...} }
+    { "type": "confirm_response", "approved": bool, "call_id"?: str }
+    { "type": "cancel" }
+    { "type": "ping" }
+
+  server → client:
+    { "type": "ready", "settings": {...}, "conversation": {...} }
+    { "type": "conversation_list", "items": [...] }
+    { "type": "conversation_loaded", "conversation": {...}, "events_replay": [...] }
+    + every event produced by Conversation.run_turn (token, tool_call, tool_result, graph_patch, confirm_request, graph_diff_note, done, error, cancelled, message_start, message_end)
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import threading
+import time
+import traceback
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import websockets
+from websockets.exceptions import ConnectionClosed
+
+from .config import AgentSettings, resolve_ws_port
+from .conversation import Conversation, evt
+from .persistence import (
+    delete_conversation,
+    list_conversations,
+    load_conversation,
+    new_conversation,
+)
+
+
+log = logging.getLogger("rundeer.agent.ws")
+
+
+class AgentWSServer:
+    def __init__(self, *, server: Any, settings: AgentSettings, ws_port: int, host: str = "127.0.0.1") -> None:
+        self.server = server
+        self.settings = settings
+        self.ws_port = ws_port
+        self.host = host
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
+        self.thread: Optional[threading.Thread] = None
+        self._ws_server = None
+        self._shutdown_evt: Optional[asyncio.Event] = None
+
+    # ── Public lifecycle ──────────────────────────────────────────────────
+    def start(self) -> int:
+        ready = threading.Event()
+        err_box: Dict[str, Any] = {}
+
+        def _run():
+            loop = asyncio.new_event_loop()
+            self.loop = loop
+            asyncio.set_event_loop(loop)
+            self._shutdown_evt = asyncio.Event()
+            try:
+                loop.run_until_complete(self._serve(ready, err_box))
+            except Exception as exc:  # noqa: BLE001
+                err_box["error"] = exc
+                ready.set()
+            finally:
+                try:
+                    loop.run_until_complete(loop.shutdown_asyncgens())
+                except Exception:  # noqa: BLE001
+                    pass
+                loop.close()
+
+        self.thread = threading.Thread(target=_run, name="rundeer-agent-ws", daemon=True)
+        self.thread.start()
+        ready.wait(timeout=10)
+        if "error" in err_box:
+            raise err_box["error"]
+        return self.ws_port
+
+    def stop(self) -> None:
+        if self.loop is None or self._shutdown_evt is None:
+            return
+        try:
+            self.loop.call_soon_threadsafe(self._shutdown_evt.set)
+        except Exception:  # noqa: BLE001
+            pass
+        if self.thread and self.thread.is_alive():
+            self.thread.join(timeout=2)
+
+    # ── Internals ─────────────────────────────────────────────────────────
+    async def _serve(self, ready: threading.Event, err_box: Dict[str, Any]) -> None:
+        try:
+            self._ws_server = await websockets.serve(
+                self._handler,
+                self.host,
+                self.ws_port,
+                max_size=8 * 1024 * 1024,  # allow image data URLs up to ~8 MB
+                ping_interval=20,
+                ping_timeout=20,
+            )
+        except Exception as exc:  # noqa: BLE001
+            err_box["error"] = exc
+            ready.set()
+            return
+        # If port was 0, capture the actual one
+        try:
+            for sock in self._ws_server.sockets or []:
+                self.ws_port = sock.getsockname()[1]
+                break
+        except Exception:  # noqa: BLE001
+            pass
+        ready.set()
+        try:
+            await self._shutdown_evt.wait()
+        finally:
+            self._ws_server.close()
+            await self._ws_server.wait_closed()
+
+    async def _handler(self, ws) -> None:
+        try:
+            await self._session(ws)
+        except ConnectionClosed:
+            pass
+        except Exception as exc:  # noqa: BLE001
+            log.error("agent ws session crashed: %s\n%s", exc, traceback.format_exc())
+            try:
+                await ws.send(json.dumps(evt("error", message=f"server error: {exc}")))
+            except Exception:  # noqa: BLE001
+                pass
+
+    async def _session(self, ws) -> None:
+        root: Path = self.server.project_root
+        conv: Optional[Conversation] = None
+        turn_task: Optional[asyncio.Task] = None
+
+        async def send(payload: Dict[str, Any]) -> None:
+            try:
+                await ws.send(json.dumps(payload, default=str))
+            except (ConnectionClosed, RuntimeError):
+                raise
+
+        # Greet
+        await send(evt(
+            "ready",
+            settings=self.settings.to_safe_dict(),
+            ws_port=self.ws_port,
+            project=str(root),
+        ))
+
+        async for raw in ws:
+            try:
+                msg = json.loads(raw) if isinstance(raw, (str, bytes, bytearray)) else {}
+            except json.JSONDecodeError:
+                await send(evt("error", message="invalid JSON"))
+                continue
+            if not isinstance(msg, dict):
+                continue
+            kind = msg.get("type")
+
+            if kind == "ping":
+                await send(evt("pong"))
+                continue
+
+            if kind == "list_conversations":
+                await send(evt("conversation_list", items=list_conversations(root)))
+                continue
+
+            if kind == "new_conversation":
+                rec = new_conversation(root, model=self.settings.model, title=msg.get("title") or "New conversation")
+                conv = Conversation.from_record(self.settings, root, self.server, rec)
+                await send(evt("conversation_loaded", conversation=_conv_summary(rec), events_replay=[]))
+                continue
+
+            if kind == "load_conversation":
+                cid = msg.get("id")
+                rec = load_conversation(root, cid or "")
+                if rec is None:
+                    await send(evt("error", message=f"no such conversation: {cid}"))
+                    continue
+                conv = Conversation.from_record(self.settings, root, self.server, rec)
+                await send(evt("conversation_loaded", conversation=_conv_summary(rec), events_replay=_replay_events(rec)))
+                continue
+
+            if kind == "delete_conversation":
+                delete_conversation(root, msg.get("id") or "")
+                await send(evt("conversation_list", items=list_conversations(root)))
+                continue
+
+            if kind == "graph_snapshot":
+                if conv is None:
+                    continue
+                conv.update_snapshot(msg.get("graph") or {})
+                # Don't mark as seen — only mark seen when actually injected.
+                continue
+
+            if kind == "confirm_response":
+                if conv is None:
+                    continue
+                conv.resolve_confirm({
+                    "approved": bool(msg.get("approved")),
+                    "call_id": msg.get("call_id"),
+                })
+                continue
+
+            if kind == "cancel":
+                if conv is not None:
+                    conv.cancel()
+                if turn_task is not None and not turn_task.done():
+                    turn_task.cancel()
+                continue
+
+            if kind == "user_message":
+                if turn_task is not None and not turn_task.done():
+                    # Give the previous task a brief grace period to finish
+                    # — the `done` event is yielded just before the task
+                    # actually returns, so a fast client can race here.
+                    try:
+                        await asyncio.wait_for(asyncio.shield(turn_task), timeout=0.2)
+                    except (asyncio.TimeoutError, asyncio.CancelledError):
+                        pass
+                    if turn_task is not None and not turn_task.done():
+                        await send(evt("error", message="a turn is already running; cancel first"))
+                        continue
+                if conv is None:
+                    rec = new_conversation(root, model=self.settings.model)
+                    conv = Conversation.from_record(self.settings, root, self.server, rec)
+                    await send(evt("conversation_loaded", conversation=_conv_summary(rec), events_replay=[]))
+                if isinstance(msg.get("graph"), dict):
+                    conv.update_snapshot(msg["graph"])
+                text = str(msg.get("text") or "")
+                images = msg.get("images") or []
+                if not isinstance(images, list):
+                    images = []
+                images = [str(u) for u in images if isinstance(u, str) and u.startswith(("data:", "http://", "https://", "/api/"))]
+
+                async def _run_turn():
+                    try:
+                        async for event in conv.run_turn(text, attached_images=images):
+                            await send(event)
+                    except asyncio.CancelledError:
+                        await send(evt("cancelled"))
+                    except Exception as exc:  # noqa: BLE001
+                        log.error("turn crashed: %s\n%s", exc, traceback.format_exc())
+                        await send(evt("error", message=f"turn crashed: {exc}"))
+
+                turn_task = asyncio.create_task(_run_turn())
+                continue
+
+            await send(evt("error", message=f"unknown message type: {kind}"))
+
+
+def _conv_summary(rec: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "id": rec.get("id"),
+        "title": rec.get("title"),
+        "model": rec.get("model"),
+        "created_at": rec.get("created_at"),
+        "updated_at": rec.get("updated_at"),
+        "message_count": sum(1 for m in rec.get("messages") or [] if m.get("role") in {"user", "assistant"}),
+    }
+
+
+def _replay_events(rec: Dict[str, Any]) -> list:
+    """Reconstruct a minimal event stream for UI replay when reopening a conversation."""
+    out = []
+    for m in rec.get("messages") or []:
+        role = m.get("role")
+        if role == "user":
+            content = m.get("content")
+            if isinstance(content, list):
+                text_parts = [b.get("text") for b in content if isinstance(b, dict) and b.get("type") == "text"]
+                images = [b.get("image_url", {}).get("url") for b in content if isinstance(b, dict) and b.get("type") == "image_url"]
+                out.append(evt("replay_user", text="\n".join(t for t in text_parts if t), images=[u for u in images if u]))
+            else:
+                out.append(evt("replay_user", text=content or "", images=[]))
+        elif role == "assistant":
+            out.append(evt("replay_assistant", text=m.get("content") or "", tool_calls=m.get("tool_calls") or []))
+        elif role == "tool":
+            try:
+                result = json.loads(m.get("content") or "{}")
+            except json.JSONDecodeError:
+                result = {"raw": (m.get("content") or "")[:400]}
+            out.append(evt("replay_tool_result", name=m.get("name"), id=m.get("tool_call_id"), result=result))
+    return out
+
+
+def start_agent_ws_server(server: Any, *, web_port: int) -> Optional[AgentWSServer]:
+    """Resolve settings, start the WS server, return the handle (or None if disabled)."""
+    from .config import get_agent_settings
+    settings = get_agent_settings(server.project_root)
+    if not settings.enabled:
+        return None
+    port = resolve_ws_port(settings, web_port)
+    handle = AgentWSServer(server=server, settings=settings, ws_port=port, host=settings.ws_host)
+    handle.start()
+    return handle
