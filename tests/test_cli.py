@@ -21,6 +21,27 @@ def test_unknown_command(capsys):
     assert rc == 2
 
 
+def test_web_uses_env_ports(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text(
+        "PORT=8787\nAGENT_PORT=8788\nMODEL_NAME=grok-4.3\nMODEL_API_KEY=test\nBASE_URL=https://api.x.ai/v1\n",
+        encoding="utf-8",
+    )
+    captured = {}
+
+    def fake_serve(**kwargs):
+        captured.update(kwargs)
+        return 0
+
+    import rundeer.web.server as server
+
+    monkeypatch.setattr(server, "serve", fake_serve)
+    rc = cli.main(["web", "--open"])
+    assert rc == 0
+    assert captured["port"] == 8787
+    assert captured["agent_port"] == 8788
+
+
 def test_dry_run_image_no_api(tmp_style, tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     # Ensure no VISION_API_KEY needed since dry-run shouldn't create a client

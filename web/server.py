@@ -92,7 +92,7 @@ def serve(
                 settings.ws_port = int(agent_port)
             if settings.enabled:
                 effective_port = resolve_ws_port(settings, actual_port)
-                handle = start_agent_ws_server(httpd, web_port=actual_port)
+                handle = start_agent_ws_server(httpd, web_port=actual_port, settings=settings)
                 if handle is not None:
                     httpd.agent_handle = handle
                     httpd.agent_port = handle.ws_port
@@ -220,6 +220,12 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_file(thumb, cache=True)
             elif path == "/api/logo":
                 self._send_json({"frames": load_logo_frames()})
+            elif path == "/api/agent/brain-graph":
+                self._send_json(_brain_graph_payload(self.server.project_root))
+            elif path == "/api/agent/tools-catalog":
+                self._send_json({"tools": _tools_catalog()})
+            elif path == "/api/agent/brain-list":
+                self._send_json({"brains": _brain_list(self.server.project_root)})
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not found")
         except PermissionError as exc:
@@ -244,8 +250,27 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(filter_prompt(self.server.project_root, payload))
             elif parsed.path == "/api/compress-image":
                 self._send_json(compress_image(self.server.project_root, payload))
+            elif parsed.path == "/api/blur-image":
+                self._send_json(blur_image(self.server.project_root, payload))
             elif parsed.path == "/api/compress":
                 self._send_json(compress_dispatch(self.server.project_root, payload))
+            elif parsed.path == "/api/uv/coordinate":
+                from .uv_api import coordinate as _uv_coord
+                self._send_json(_uv_coord(self.server.project_root, payload))
+            elif parsed.path == "/api/uv/vector":
+                from .uv_api import vector as _uv_vec
+                self._send_json(_uv_vec(self.server.project_root, payload))
+            elif parsed.path == "/api/uv/mapping":
+                from .uv_api import mapping as _uv_map
+                self._send_json(_uv_map(self.server.project_root, payload))
+            elif parsed.path == "/api/uv/mix":
+                from .uv_api import mix as _uv_mix
+                self._send_json(_uv_mix(self.server.project_root, payload))
+            elif parsed.path == "/api/uv/render":
+                from .uv_api import render as _uv_render
+                self._send_json(_uv_render(self.server.project_root, payload))
+            elif parsed.path == "/api/agent/brain-graph":
+                self._send_json(_save_brain_graph_payload(self.server.project_root, payload))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not found")
         except ValueError as exc:
@@ -320,6 +345,49 @@ def relpath(root: Path, path: Path) -> str:
         return path.resolve().relative_to(root.resolve()).as_posix()
     except ValueError:
         return str(path)
+
+
+# ── Agent brain graph endpoints ───────────────────────────────────────────
+
+def _brain_graph_payload(root: Path) -> Dict[str, Any]:
+    from .agent.brain_graph import compile_brain_graph, load_or_seed_brain_graph
+    graph = load_or_seed_brain_graph(root)
+    compiled = compile_brain_graph(graph)
+    return {"graph": graph, "compiled": compiled.to_dict()}
+
+
+def _save_brain_graph_payload(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    from .agent.brain_graph import save_brain_graph
+    graph = (payload or {}).get("graph")
+    if not isinstance(graph, dict):
+        raise ValueError("missing or invalid 'graph' payload")
+    compiled = save_brain_graph(root, graph)
+    return {"ok": True, "compiled": compiled.to_dict()}
+
+
+def _tools_catalog() -> List[Dict[str, Any]]:
+    from .agent.tools import ALL_TOOLS
+    return [
+        {
+            "name": t.name,
+            "description": t.description,
+            "category": t.category,
+            "destructive": bool(t.destructive),
+        }
+        for t in ALL_TOOLS
+    ]
+
+
+def _brain_list(root: Path) -> List[str]:
+    out: List[str] = []
+    brains_dir = root / "brain"
+    if not brains_dir.is_dir():
+        return out
+    for entry in sorted(brains_dir.iterdir()):
+        if entry.is_dir() and not entry.name.startswith("."):
+            out.append(entry.name)
+    return out
+
 
 
 def project_url(rel: str) -> str:
@@ -507,10 +575,13 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
     prompt_text = str(payload.get("prompt") or "")
     instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
-    model_name = str(payload.get("model_name") or "grok-3-mini-fast")
+    model_override = str(payload.get("model") or "").strip()
+    model_name = model_override or (os.environ.get("MODEL_NAME") or "").strip()
     api_key = str(payload.get("model_api_key") or "") or os.environ.get("MODEL_API_KEY", "")
     base_url = os.environ.get("BASE_URL", "https://api.x.ai/v1")
 
+    if not model_name:
+        return {"error": "MODEL_NAME not set (provide via .env or model prop)", "filtered_prompt": prompt_text}
     if not api_key:
         return {"error": "MODEL_API_KEY not set (provide via .env or model_api_key prop)", "filtered_prompt": prompt_text}
 
@@ -519,13 +590,65 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as exc:  # noqa: BLE001
         return {"error": f"image input: {exc}", "filtered_prompt": prompt_text}
 
-    chat_url = chat_completions_url(base_url)
-    body = json.dumps({
+    def _opt_num(key: str) -> Any:
+        v = payload.get(key)
+        if v is None or v == "":
+            return None
+        try:
+            n = float(v)
+        except (TypeError, ValueError):
+            return None
+        return n
+
+    def _opt_int(key: str) -> Any:
+        v = _opt_num(key)
+        return None if v is None else int(v)
+
+    request_body: Dict[str, Any] = {
         "model": model_name,
         "messages": filter_prompt_messages(prompt_text, instructions, image_urls),
-        "temperature": 0.7,
-        "max_tokens": 1024,
-    }).encode("utf-8")
+    }
+
+    reasoning_effort = str(payload.get("reasoning_effort") or "").strip().lower()
+    is_reasoning = reasoning_effort in {"none", "low", "medium", "high", "xhigh"}
+    if is_reasoning:
+        request_body["reasoning_effort"] = reasoning_effort
+
+    temperature = _opt_num("temperature")
+    if temperature is not None:
+        request_body["temperature"] = temperature
+    top_p = _opt_num("top_p")
+    if top_p is not None:
+        request_body["top_p"] = top_p
+    max_tokens = _opt_int("max_tokens")
+    if max_tokens is not None and max_tokens > 0:
+        request_body["max_tokens"] = max_tokens
+    else:
+        request_body["max_tokens"] = 1024
+    seed = _opt_int("seed")
+    if seed is not None:
+        request_body["seed"] = seed
+
+    # presence/frequency/stop are NOT supported on reasoning models per xAI docs.
+    if not is_reasoning:
+        fp = _opt_num("frequency_penalty")
+        if fp is not None:
+            request_body["frequency_penalty"] = fp
+        pp = _opt_num("presence_penalty")
+        if pp is not None:
+            request_body["presence_penalty"] = pp
+        stop_raw = payload.get("stop")
+        if isinstance(stop_raw, str) and stop_raw.strip():
+            stop_list = [s.strip() for s in stop_raw.split(",") if s.strip()]
+            if stop_list:
+                request_body["stop"] = stop_list if len(stop_list) > 1 else stop_list[0]
+        elif isinstance(stop_raw, list):
+            stop_list = [str(s).strip() for s in stop_raw if str(s).strip()]
+            if stop_list:
+                request_body["stop"] = stop_list
+
+    chat_url = chat_completions_url(base_url)
+    body = json.dumps(request_body).encode("utf-8")
 
     req = urllib.request.Request(
         chat_url,
@@ -537,7 +660,7 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310 – local API call
+        with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310 – local API call
             data = json.loads(resp.read().decode("utf-8"))
         filtered = data["choices"][0]["message"]["content"]
         return {"filtered_prompt": filtered}
@@ -606,6 +729,76 @@ def compress_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
 IMAGE_COMPRESS_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".tif"}
 VIDEO_COMPRESS_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
+
+
+def blur_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Gaussian-blur an image and return the cached output path.
+
+    Inputs: path (project-relative), radius (float, pixels).
+    Output: writes to .rundeer/cache/blurred/ and returns {path, bytes, radius}.
+    Preserves the source format (PNG stays PNG, JPEG stays JPEG, etc.).
+    """
+    from PIL import Image, ImageFilter  # lazy import — Pillow is already a Compress dep
+
+    rel = str(payload.get("path") or "").strip()
+    if not rel:
+        raise ValueError("path is required")
+    try:
+        radius = float(payload.get("radius") if payload.get("radius") is not None else 4)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"radius must be a number: {exc}") from exc
+    if radius < 0:
+        radius = 0.0
+    # Cap to a reasonable upper bound to keep PIL responsive on big inputs.
+    radius = min(radius, 500.0)
+
+    src = safe_project_path(root, rel)
+    if not src.is_file():
+        raise FileNotFoundError(rel)
+
+    ext = src.suffix.lower()
+    if ext not in IMAGE_COMPRESS_EXTS:
+        raise ValueError(f"unsupported image extension: {ext or '(none)'}")
+
+    cache_dir = root / ".rundeer" / "cache" / "blurred"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Tag the cached filename with the radius so distinct settings don't
+    # collide. Use a stable, filesystem-safe stringification.
+    r_tag = f"{radius:.2f}".rstrip("0").rstrip(".") or "0"
+    r_tag = r_tag.replace(".", "p")
+    # Normalise the output extension: PIL's GaussianBlur can't preserve
+    # animated GIF frames; collapse those to PNG so we always emit a
+    # single-frame, fully-blurred raster.
+    out_ext = ext if ext in (".png", ".jpg", ".jpeg", ".webp") else ".png"
+    dest = cache_dir / f"{src.stem}_blur{r_tag}{out_ext}"
+
+    with Image.open(src) as im:
+        im.load()
+        # Preserve alpha where possible. Gaussian blur on "P"/"LA" modes
+        # is undefined in PIL — coerce to RGBA/RGB first.
+        if im.mode in ("P", "LA"):
+            im = im.convert("RGBA")
+        blurred = im.filter(ImageFilter.GaussianBlur(radius=radius))
+        save_kwargs: Dict[str, Any] = {}
+        if out_ext in (".jpg", ".jpeg"):
+            if blurred.mode in ("RGBA", "LA"):
+                blurred = blurred.convert("RGB")
+            save_kwargs = {"quality": 95, "optimize": True, "progressive": True}
+            fmt = "JPEG"
+        elif out_ext == ".webp":
+            save_kwargs = {"quality": 95, "method": 6}
+            fmt = "WEBP"
+        else:
+            save_kwargs = {"optimize": True}
+            fmt = "PNG"
+        blurred.save(dest, format=fmt, **save_kwargs)
+
+    return {
+        "path": relpath(root, dest),
+        "bytes": dest.stat().st_size,
+        "radius": radius,
+    }
 
 
 def compress_dispatch(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -871,6 +1064,11 @@ def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
             fps = float((query.get("fps") or [""])[0] or 0) or None
         except ValueError:
             fps = None
+        try:
+            modulo = int((query.get("modulo") or [""])[0] or 1)
+        except ValueError:
+            modulo = 1
+        modulo = max(1, modulo)
         # start/end are 1-based, inclusive frame indices (0 = unset).
         try:
             start = int((query.get("start") or [""])[0] or 0) or 0
@@ -884,7 +1082,7 @@ def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
         if fmt not in {"png", "jpg", "jpeg", "webp"}:
             fmt = "png"
         return extract_frames(
-            root, target, fps=fps, start=start, end=end, fmt=fmt,
+            root, target, fps=fps, start=start, end=end, fmt=fmt, modulo=modulo,
         )
 
     if not target.is_dir():
@@ -918,6 +1116,13 @@ def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
     hi = end_i if end_i > 0 else len(out)
     if lo or hi != len(out):
         out = out[lo:hi]
+    try:
+        modulo_i = int((query.get("modulo") or [""])[0] or 1)
+    except ValueError:
+        modulo_i = 1
+    modulo_i = max(1, modulo_i)
+    if modulo_i > 1:
+        out = [path for idx, path in enumerate(out) if idx % modulo_i == 0]
     return {"paths": out, "count": len(out), "source": "folder"}
 
 
@@ -929,6 +1134,7 @@ def extract_frames(
     start: int,
     end: int,
     fmt: str,
+    modulo: int = 1,
 ) -> Dict[str, Any]:
     if shutil.which("ffmpeg") is None:
         return {"paths": [], "error": "ffmpeg not found on PATH; install ffmpeg to extract frames"}
@@ -940,7 +1146,8 @@ def extract_frames(
     except OSError as exc:
         return {"paths": [], "error": f"stat failed: {exc}"}
     import hashlib
-    key_src = f"{video.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{fps}|{start}|{end}|{fmt}"
+    modulo = max(1, int(modulo or 1))
+    key_src = f"{video.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{fps}|{start}|{end}|{fmt}|{modulo}"
     key = hashlib.sha1(key_src.encode("utf-8")).hexdigest()[:16]
     cache_root = root / ".rundeer" / "cache" / "frames"
     out_dir = cache_root / f"{video.stem}-{key}"
@@ -969,19 +1176,23 @@ def extract_frames(
     # `select` filter and use -frames:v to cap output count.
     start_idx = max(1, start) if start > 0 else 1
     end_idx = end if (end and end >= start_idx) else 0
-    count = (end_idx - start_idx + 1) if end_idx > 0 else 0
+    count = ((end_idx - start_idx) // modulo + 1) if end_idx > 0 else 0
 
     cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(video)]
     vf: List[str] = []
     if fps and fps > 0:
         vf.append(f"fps={fps}")
-    if start_idx > 1 and end_idx > 0:
-        vf.append(f"select='between(n\\,{start_idx - 1}\\,{end_idx - 1})'")
-    elif start_idx > 1:
-        vf.append(f"select='gte(n\\,{start_idx - 1})'")
-    elif end_idx > 0:
-        vf.append(f"select='lte(n\\,{end_idx - 1})'")
-    if any(f.startswith("select=") for f in vf):
+    select_terms: List[str] = []
+    start_zero = start_idx - 1
+    if start_idx > 1:
+        select_terms.append(f"gte(n\\,{start_zero})")
+    if end_idx > 0:
+        select_terms.append(f"lte(n\\,{end_idx - 1})")
+    if modulo > 1:
+        select_terms.append(f"eq(mod(n-{start_zero}\\,{modulo})\\,0)")
+    if select_terms:
+        select_expr = "*".join(select_terms)
+        vf.append(f"select='{select_expr}'")
         vf.append("setpts=N/FRAME_RATE/TB")
     if vf:
         cmd += ["-vf", ",".join(vf), "-vsync", "vfr"]

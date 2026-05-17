@@ -1,13 +1,16 @@
 import json
 import sys
+from pathlib import Path
 
 from rundeer.web.server import (
     build_cli_command,
     build_run_config,
     chat_completions_url,
+    extract_frames,
     filter_prompt_image_urls,
     filter_prompt_messages,
     filter_prompt,
+    list_folder,
     load_settings,
     save_settings,
 )
@@ -73,13 +76,14 @@ def test_filter_prompt_uses_normalized_v1_base_url(tmp_path, monkeypatch):
         return _FakeHTTPResponse()
 
     monkeypatch.setenv("MODEL_API_KEY", "model-key")
+    monkeypatch.setenv("MODEL_NAME", "grok-4.3")
     monkeypatch.setenv("BASE_URL", "https://api.x.ai/v1")
     monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
 
     result = filter_prompt(tmp_path, {
         "prompt": "make it better",
         "instructions": "tighten",
-        "model_name": "grok-4.3",
+        "model_name": "stale-node-model",
     })
 
     assert result == {"filtered_prompt": "filtered prompt"}
@@ -119,6 +123,7 @@ def test_filter_prompt_posts_multimodal_body(tmp_path, monkeypatch, png_bytes):
         return _FakeHTTPResponse()
 
     monkeypatch.setenv("MODEL_API_KEY", "model-key")
+    monkeypatch.setenv("MODEL_NAME", "grok-4.3")
     monkeypatch.setenv("BASE_URL", "https://api.x.ai/v1")
     monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
 
@@ -126,10 +131,11 @@ def test_filter_prompt_posts_multimodal_body(tmp_path, monkeypatch, png_bytes):
         "prompt": "turn this into an image prompt",
         "instructions": "use visual facts from the image",
         "images": ["sample.png"],
-        "model_name": "grok-4.3",
+        "model_name": "stale-node-model",
     })
 
     assert result == {"filtered_prompt": "filtered prompt"}
+    assert seen["body"]["model"] == "grok-4.3"
     content = seen["body"]["messages"][1]["content"]
     assert content[0] == {"type": "text", "text": "turn this into an image prompt"}
     assert content[1]["type"] == "image_url"
@@ -214,3 +220,45 @@ def test_web_cli_command_uses_current_python(tmp_path):
     )
 
     assert command[:2] == [sys.executable, "-c"]
+
+
+def test_list_folder_applies_modulo_after_range(tmp_path):
+    frame_dir = tmp_path / "frames"
+    frame_dir.mkdir()
+    for idx in range(1, 8):
+        (frame_dir / f"frame_{idx:02d}.png").write_bytes(b"png")
+
+    result = list_folder(tmp_path, {
+        "path": ["frames"],
+        "kind": ["image"],
+        "start": ["2"],
+        "end": ["6"],
+        "modulo": ["2"],
+    })
+
+    assert result["paths"] == ["frames/frame_02.png", "frames/frame_04.png", "frames/frame_06.png"]
+    assert result["count"] == 3
+
+
+def test_extract_frames_uses_modulo_filter(tmp_path, monkeypatch):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"video")
+    seen = {}
+
+    def fake_run(cmd, check, capture_output):
+        seen["cmd"] = cmd
+        out_pattern = Path(cmd[-1])
+        out_pattern.parent.mkdir(parents=True, exist_ok=True)
+        for idx in range(1, 4):
+            (out_pattern.parent / f"frame_{idx:06d}.png").write_bytes(b"png")
+
+    monkeypatch.setattr("rundeer.web.server.shutil.which", lambda name: "/usr/bin/ffmpeg")
+    monkeypatch.setattr("rundeer.web.server.subprocess.run", fake_run)
+
+    result = extract_frames(tmp_path, video, fps=None, start=2, end=8, fmt="png", modulo=3)
+
+    cmd = seen["cmd"]
+    assert cmd[cmd.index("-vf") + 1] == "select='gte(n\\,1)*lte(n\\,7)*eq(mod(n-1\\,3)\\,0)',setpts=N/FRAME_RATE/TB"
+    assert cmd[cmd.index("-frames:v") + 1] == "3"
+    assert [Path(path).name for path in result["paths"]] == ["frame_000001.png", "frame_000002.png", "frame_000003.png"]
+    assert result["count"] == 3

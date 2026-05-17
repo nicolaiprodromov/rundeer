@@ -958,7 +958,8 @@ select {
 .ledger-mid { color: var(--gold-soft); }
 
 /* Visibility helpers */
-.is-hidden { display: none !important; }
+.is-hidden,
+[hidden] { display: none !important; }
 
 /* ====================================================================
    New: file tree, reference tree, mention popover, premium output,

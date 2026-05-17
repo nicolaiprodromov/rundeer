@@ -24,7 +24,6 @@ def settings():
         enabled=True,
         model="xai/fake-model",
         api_key="fake",
-        fallback_models=[],
         max_tool_iterations=4,
     )
 
@@ -100,14 +99,14 @@ def test_system_prompt_caches_stable_sections(monkeypatch, tmp_path: Path):
     (ref_dir / "a.jpg").write_bytes(b"jpg")
     monkeypatch.setattr(prompt_mod, "brain_dir", lambda: brain_root)
     prompt_mod._brain_summary_cached.cache_clear()
-    prompt_mod._tool_summary.cache_clear()
+    prompt_mod._tool_summary_cached.cache_clear()
 
     first = prompt_mod.build_system_prompt(tmp_path, project_name="rundeer")
     second = prompt_mod.build_system_prompt(tmp_path, project_name="rundeer")
 
     assert first == second
     assert prompt_mod._brain_summary_cached.cache_info().hits >= 1
-    assert prompt_mod._tool_summary.cache_info().hits >= 1
+    assert prompt_mod._tool_summary_cached.cache_info().hits >= 1
 
 
 def test_system_prompt_lists_real_common_socket_ids():
@@ -131,6 +130,16 @@ def _connection_graph() -> dict[str, Any]:
         },
         "edges": [],
     }
+
+
+def _runnable_graph() -> dict[str, Any]:
+    graph = _connection_graph()
+    graph["edges"] = [
+        {"id": "e1", "fromNode": "prompt1", "fromSocket": "out", "toNode": "image1", "toSocket": "subject"},
+        {"id": "e2", "fromNode": "trigger1", "fromSocket": "run", "toNode": "image1", "toSocket": "trigger"},
+        {"id": "e3", "fromNode": "image1", "fromSocket": "out", "toNode": "preview1", "toSocket": "in"},
+    ]
+    return graph
 
 
 def test_connect_nodes_normalizes_common_socket_label_guesses():
@@ -188,6 +197,42 @@ def test_connect_nodes_tool_receives_graph_snapshot():
     assert TOOLS_BY_NAME["connect_nodes"].needs_graph is True
 
 
+def test_run_graph_tool_uses_connected_run_trigger_patch():
+    from rundeer.web.agent.tools_impl.execution import run_graph_tool
+
+    result = run_graph_tool(server=object(), graph=_runnable_graph())
+
+    assert result["summary"] == "run trigger trigger1 in browser"
+    assert result["patch"] == [{"op": "run_trigger", "id": "trigger1", "dryRun": False}]
+
+
+def test_plan_graph_tool_dry_runs_browser_graph_patch():
+    from rundeer.web.agent.tools_impl.execution import plan_graph_tool
+
+    result = plan_graph_tool(root=Path.cwd(), graph=_runnable_graph(), trigger_node="trigger1")
+
+    assert result["summary"] == "dry-run trigger trigger1 in browser"
+    assert result["patch"] == [{"op": "run_trigger", "id": "trigger1", "dryRun": True}]
+
+
+def test_run_graph_tool_can_run_explicit_subset_without_server_fallback():
+    from rundeer.web.agent.tools_impl.execution import run_graph_tool
+
+    result = run_graph_tool(server=object(), graph=_runnable_graph(), subset=["image1", "preview1"])
+
+    assert result["summary"] == "run graph in browser"
+    assert result["patch"] == [{"op": "run_graph", "dryRun": False, "subset": ["image1", "preview1"]}]
+
+
+def test_run_graph_tools_receive_graph_snapshot():
+    from rundeer.web.agent.tools import TOOLS_BY_NAME
+
+    assert TOOLS_BY_NAME["plan_graph"].needs_graph is True
+    assert TOOLS_BY_NAME["run_graph"].needs_graph is True
+    assert "trigger_node" in TOOLS_BY_NAME["plan_graph"].parameters["properties"]
+    assert "trigger_node" in TOOLS_BY_NAME["run_graph"].parameters["properties"]
+
+
 def test_node_editor_preserves_agent_node_ids_and_props():
     source = (Path(__file__).resolve().parents[1] / "web" / "static" / "node-editor.js").read_text(encoding="utf-8")
     assert "function genNodeId(preferredId = null)" in source
@@ -199,8 +244,28 @@ def test_node_editor_preserves_agent_node_ids_and_props():
     assert "function genId(prefix)" not in source
 
 
+def test_node_editor_agent_patch_can_run_graph_and_trigger():
+    source = (Path(__file__).resolve().parents[1] / "web" / "static" / "node-editor.js").read_text(encoding="utf-8")
+    assert 'case "run_graph"' in source
+    assert 'void runGraph(opts);' in source
+    assert 'case "run_trigger"' in source
+    assert 'void runFromTrigger(id, { dryRun: Boolean(op.dryRun) });' in source
+    assert 'executeCommandNode(node, inputs, opts)' in source
+    assert 'dryRun: Boolean(opts.dryRun)' in source
+
+
 def test_agent_client_pushes_snapshot_immediately_after_patch():
     source = (Path(__file__).resolve().parents[1] / "web" / "static" / "agent.js").read_text(encoding="utf-8")
     patch_case = source[source.index('case "graph_patch":'):source.index('case "confirm_request":')]
     assert "cfg.applyGraphPatch" in patch_case
     assert "pushSnapshot(true);" in patch_case
+
+
+def test_agent_client_renders_reasoning_stream_and_replay():
+    source = (Path(__file__).resolve().parents[1] / "web" / "static" / "agent.js").read_text(encoding="utf-8")
+    assert 'case "reasoning"' in source
+    assert "appendReasoningDelta(streamingMsg" in source
+    assert "ev.reasoning" in source
+    css = (Path(__file__).resolve().parents[1] / "web" / "static" / "node-editor.css").read_text(encoding="utf-8")
+    assert ".ne-agent-thinking" in css
+    assert ".ne-agent-thinking-body" in css

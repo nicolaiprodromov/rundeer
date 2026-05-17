@@ -29,7 +29,15 @@ import litellm
 from .config import AgentSettings
 from .diff import diff_graphs, format_diff_note, has_changes
 from .system_prompt import build_system_prompt
-from .tools import TOOLS_BY_NAME, build_litellm_tools, invoke_tool
+from .tools import (
+    TOOLS_BY_NAME,
+    build_litellm_tools,
+    effective_spec,
+    effective_specs,
+    enabled_tool_names,
+    invoke_tool,
+    is_tool_enabled,
+)
 
 
 # Tools the client is expected to apply (patch ops) before continuing.
@@ -57,13 +65,18 @@ class Conversation:
     messages: List[Dict[str, Any]] = field(default_factory=list)
     snapshot: Dict[str, Any] = field(default_factory=lambda: {"nodes": {}, "edges": []})
     last_seen_snapshot: Dict[str, Any] = field(default_factory=lambda: {"nodes": {}, "edges": []})
+    brain_snapshot: Dict[str, Any] = field(default_factory=lambda: {"nodes": {}, "edges": []})
     pending_confirm: Optional[PendingConfirm] = None
     cancel_event: asyncio.Event = field(default_factory=asyncio.Event)
     web_search_count: int = 0
     _pending_vision: List[Dict[str, Any]] = field(default_factory=list)
     _snapshot_version: int = 0
     _snapshot_waiters: List[asyncio.Future] = field(default_factory=list)
+    _brain_snapshot_version: int = 0
+    _brain_snapshot_waiters: List[asyncio.Future] = field(default_factory=list)
     _persist_task: Optional[asyncio.Task] = None
+    _runtime: Any = None  # AgentRuntimeConfig — lazily loaded each turn
+    _effective_settings: Optional[AgentSettings] = None
 
     # ── Lifecycle ─────────────────────────────────────────────────────────
     @classmethod
@@ -113,6 +126,89 @@ class Conversation:
             return False
         pc.fut.set_result(payload or {"approved": False})
         return True
+
+    # ── Brain graph snapshot (parallel pipeline to workflow graph) ────────
+    def update_brain_snapshot(self, snapshot: Optional[Dict[str, Any]]) -> None:
+        if not isinstance(snapshot, dict):
+            return
+        self.brain_snapshot = {
+            "nodes": snapshot.get("nodes") or {},
+            "edges": snapshot.get("edges") or [],
+        }
+        self._brain_snapshot_version += 1
+        waiters = self._brain_snapshot_waiters
+        self._brain_snapshot_waiters = []
+        for fut in waiters:
+            if not fut.done():
+                fut.set_result(self._brain_snapshot_version)
+        # Clear cached runtime so the next turn reloads it.
+        self._runtime = None
+        self._effective_settings = None
+
+    async def _wait_for_brain_snapshot_after(self, version: int, *, timeout: float = 0.6) -> bool:
+        if self._brain_snapshot_version > version:
+            return True
+        fut = asyncio.get_running_loop().create_future()
+        self._brain_snapshot_waiters.append(fut)
+        try:
+            await asyncio.wait_for(fut, timeout=timeout)
+        except asyncio.TimeoutError:
+            try:
+                self._brain_snapshot_waiters.remove(fut)
+            except ValueError:
+                pass
+            return False
+        return True
+
+    # ── Runtime config (compiled brain graph) ─────────────────────────────
+    def _load_runtime(self) -> None:
+        """Refresh the cached runtime config + effective settings from disk."""
+        from .brain_graph import AgentRuntimeConfig, load_runtime_config
+        try:
+            self._runtime = load_runtime_config(self.root)
+        except Exception:  # noqa: BLE001
+            self._runtime = AgentRuntimeConfig()
+        self._effective_settings = self._merge_settings(self._runtime)
+
+    def _merge_settings(self, runtime: Any) -> AgentSettings:
+        """Layer brain-graph settings on top of the base AgentSettings."""
+        if runtime is None:
+            return self.settings
+        overrides: Dict[str, Any] = dict(getattr(runtime, "settings", {}) or {})
+        if not overrides:
+            return self.settings
+        merged = AgentSettings(
+            enabled=self.settings.enabled,
+            model=str(overrides.get("model") or self.settings.model),
+            api_key=self.settings.api_key,
+            base_url=self.settings.base_url,
+            ws_host=self.settings.ws_host,
+            ws_port=self.settings.ws_port,
+            max_tool_iterations=int(overrides.get("max_tool_iterations") or self.settings.max_tool_iterations),
+            max_file_bytes=int(overrides.get("max_file_bytes") or self.settings.max_file_bytes),
+            max_list_entries=int(overrides.get("max_list_entries") or self.settings.max_list_entries),
+            max_web_search_per_turn=int(overrides.get("max_web_search_per_turn") or self.settings.max_web_search_per_turn),
+            vision_enabled=bool(overrides.get("vision_enabled", self.settings.vision_enabled)),
+            extra=dict(self.settings.extra),
+        )
+        if "temperature" in overrides:
+            try:
+                merged.extra["temperature"] = float(overrides["temperature"])
+            except (TypeError, ValueError):
+                pass
+        return merged
+
+    @property
+    def runtime(self) -> Any:
+        return self._runtime
+
+    @property
+    def tool_overrides(self) -> Any:
+        return getattr(self._runtime, "tool_overrides", {}) if self._runtime else {}
+
+    @property
+    def effective_settings(self) -> AgentSettings:
+        return self._effective_settings or self.settings
 
     # ── Persistence helpers ───────────────────────────────────────────────
     def _persist(self) -> None:
@@ -184,6 +280,8 @@ class Conversation:
         """Run one user turn. Yields events for the WS to forward."""
         self.cancel_event.clear()
         self.web_search_count = 0
+        # Refresh compiled brain-graph config so edits take effect next turn.
+        self._load_runtime()
 
         # Build user message — optionally include an injected user-edit diff,
         # client-attached images, and the latest snapshot summary.
@@ -214,9 +312,14 @@ class Conversation:
         yield evt("message_start", role="user")
 
         # System prompt (regenerated per turn to reflect current brains)
-        system_msg = {"role": "system", "content": build_system_prompt(self.root, project_name=self.root.name)}
+        system_msg = {"role": "system", "content": build_system_prompt(
+            self.root,
+            project_name=self.root.name,
+            runtime=self._runtime,
+            enabled_tool_names=enabled_tool_names(self.tool_overrides),
+        )}
 
-        for iteration in range(self.settings.max_tool_iterations):
+        for iteration in range(self.effective_settings.max_tool_iterations):
             if self.cancel_event.is_set():
                 yield evt("cancelled")
                 return
@@ -248,26 +351,37 @@ class Conversation:
                 async for event in self._handle_tool_call(tc):
                     yield event
 
-        yield evt("error", message=f"agent exceeded {self.settings.max_tool_iterations} tool iterations")
+        yield evt("error", message=f"agent exceeded {self.effective_settings.max_tool_iterations} tool iterations")
 
     # ── LLM step (streaming) ──────────────────────────────────────────────
     async def _llm_step(self, system_msg: Dict[str, Any]) -> AsyncIterator[Dict[str, Any]]:
         msg_id = uuid.uuid4().hex[:10]
         yield evt("message_start", role="assistant", id=msg_id)
 
+        settings = self.effective_settings
+        if not settings.model:
+            yield evt("error", message="MODEL_NAME is not set in .env")
+            raise RuntimeError("MODEL_NAME is not set in .env")
         call_kwargs: Dict[str, Any] = {
-            "model": self.settings.model,
+            "model": settings.model,
             "messages": [system_msg, *self._messages_for_llm()],
-            "tools": build_litellm_tools(),
+            "tools": build_litellm_tools(self.tool_overrides),
             "tool_choice": "auto",
             "stream": True,
         }
-        if self.settings.api_key:
-            call_kwargs["api_key"] = self.settings.api_key
-        if self.settings.base_url:
-            call_kwargs["api_base"] = self.settings.base_url
-        if self.settings.fallback_models:
-            call_kwargs["fallbacks"] = list(self.settings.fallback_models)
+        if settings.api_key:
+            call_kwargs["api_key"] = settings.api_key
+        if settings.base_url:
+            call_kwargs["api_base"] = settings.base_url
+        # When MODEL_NAME has no provider prefix (e.g. `grok-4.3`), route
+        # through the OpenAI-compatible path against the user's BASE_URL.
+        # litellm requires *some* provider hint; this is not a fallback —
+        # it's the routing implied by BASE_URL being set in .env.
+        if "/" not in settings.model and settings.base_url:
+            call_kwargs["custom_llm_provider"] = "openai"
+        temp = settings.extra.get("temperature") if settings.extra else None
+        if isinstance(temp, (int, float)):
+            call_kwargs["temperature"] = float(temp)
 
         try:
             stream = await litellm.acompletion(**call_kwargs)
@@ -276,6 +390,7 @@ class Conversation:
             raise
 
         accumulated_text = ""
+        accumulated_reasoning = ""
         # Tool calls assembled across deltas: index → {id, name, arguments_str}
         tool_calls_acc: Dict[int, Dict[str, Any]] = {}
         finish_reason: Optional[str] = None
@@ -300,13 +415,19 @@ class Conversation:
                 delta = getattr(choice, "delta", None)
                 if delta is None:
                     continue
+                # Reasoning / thinking delta. Grok reasoning models stream this
+                # separately from visible assistant content.
+                reasoning = _delta_text(delta, "reasoning_content", "reasoning", "thinking")
+                if reasoning:
+                    accumulated_reasoning += reasoning
+                    yield evt("reasoning", id=msg_id, delta=reasoning)
                 # Text delta
-                text = getattr(delta, "content", None)
+                text = _delta_text(delta, "content")
                 if text:
                     accumulated_text += text
                     yield evt("token", id=msg_id, delta=text)
                 # Tool-call deltas
-                tcs = getattr(delta, "tool_calls", None)
+                tcs = _delta_field(delta, "tool_calls")
                 if tcs:
                     for tc in tcs:
                         idx = getattr(tc, "index", 0) or 0
@@ -343,6 +464,8 @@ class Conversation:
             })
 
         assistant_msg: Dict[str, Any] = {"role": "assistant", "content": accumulated_text or None}
+        if accumulated_reasoning:
+            assistant_msg["_reasoning"] = accumulated_reasoning
         if tool_calls_final:
             assistant_msg["tool_calls"] = tool_calls_final
         self.messages.append(assistant_msg)
@@ -363,11 +486,27 @@ class Conversation:
         except json.JSONDecodeError:
             args = {}
 
-        spec = TOOLS_BY_NAME.get(name)
-        yield evt("tool_call", id=call_id, name=name, arguments=args, category=(spec.category if spec else "unknown"), destructive=bool(spec and spec.destructive))
+        # Resolve overrides on top of the registered spec. Disabled tools
+        # produce an immediate error so the model learns they're unavailable.
+        base = TOOLS_BY_NAME.get(name)
+        spec = effective_spec(name, self.tool_overrides) if base is not None else None
+        disabled = base is not None and spec is None
+        yield evt(
+            "tool_call",
+            id=call_id,
+            name=name,
+            arguments=args,
+            category=(spec.category if spec else (base.category if base else "unknown")),
+            destructive=bool(spec and spec.destructive),
+        )
 
-        if spec is None:
+        if base is None:
             result = {"error": f"unknown tool: {name}"}
+        elif disabled:
+            result = {"error": f"tool '{name}' is disabled by the brain graph"}
+            yield evt("tool_result", id=call_id, name=name, status="error", result=result)
+            self._append_tool_result(call_id, name, result)
+            return
         else:
             # Confirm gate for destructive / expensive tools.
             if spec.destructive:
@@ -376,7 +515,7 @@ class Conversation:
                 # resolve it without racing.
                 fut: asyncio.Future = asyncio.get_running_loop().create_future()
                 self.pending_confirm = PendingConfirm(fut=fut, tool_name=name, arguments=args)
-                yield evt("confirm_request", id=call_id, tool=name, arguments=args, summary=_confirm_summary(name, args))
+                yield evt("confirm_request", id=call_id, tool=name, arguments=args, summary=_confirm_summary(name, args), category=spec.category)
                 try:
                     approval = await fut
                 finally:
@@ -391,8 +530,8 @@ class Conversation:
 
             # Rate-limit web search.
             if name == "web_search":
-                if self.web_search_count >= self.settings.max_web_search_per_turn:
-                    result = {"error": f"web_search rate limit exceeded ({self.settings.max_web_search_per_turn}/turn)"}
+                if self.web_search_count >= self.effective_settings.max_web_search_per_turn:
+                    result = {"error": f"web_search rate limit exceeded ({self.effective_settings.max_web_search_per_turn}/turn)"}
                     yield evt("tool_result", id=call_id, name=name, status="error", result=result)
                     self._append_tool_result(call_id, name, result)
                     return
@@ -405,11 +544,28 @@ class Conversation:
             )
 
         # If the tool emitted a graph patch, forward it to the client.
+        # Brain-graph patches (self-modify tools) are routed to a dedicated
+        # event so the frontend applies them to the brain canvas.
         if isinstance(result, dict) and isinstance(result.get("patch"), list):
-            before_patch_snapshot = self._snapshot_version
-            yield evt("graph_patch", id=call_id, name=name, ops=result["patch"], summary=result.get("summary"))
-            if result["patch"]:
-                await self._wait_for_snapshot_after(before_patch_snapshot)
+            patch_target = result.get("patch_target") or ("brain" if (spec and spec.category == "self_modify") else "workflow")
+            if patch_target == "brain":
+                before = self._brain_snapshot_version
+                yield evt(
+                    "brain_graph_patch",
+                    id=call_id, name=name,
+                    ops=result["patch"], summary=result.get("summary"),
+                )
+                if result["patch"]:
+                    await self._wait_for_brain_snapshot_after(before)
+                # Force a fresh runtime read so subsequent steps in this turn
+                # see the model's own edits.
+                self._load_runtime()
+                yield evt("brain_compiled", summary=_brain_compiled_summary(self._runtime))
+            else:
+                before_patch_snapshot = self._snapshot_version
+                yield evt("graph_patch", id=call_id, name=name, ops=result["patch"], summary=result.get("summary"))
+                if result["patch"]:
+                    await self._wait_for_snapshot_after(before_patch_snapshot)
 
         # Vision attachment: when view_image returns a data URL, queue it for
         # the next user-role injection so the model actually sees the image.
@@ -485,8 +641,23 @@ class Conversation:
         # Drop any malformed messages defensively.
         out = []
         for m in self.messages:
-            if isinstance(m, dict) and m.get("role"):
-                out.append(m)
+            if not isinstance(m, dict) or not m.get("role"):
+                continue
+            role = m.get("role")
+            if role in {"system", "user"}:
+                out.append({"role": role, "content": m.get("content") or ""})
+            elif role == "assistant":
+                clean: Dict[str, Any] = {"role": "assistant", "content": m.get("content")}
+                if m.get("tool_calls"):
+                    clean["tool_calls"] = m.get("tool_calls")
+                out.append(clean)
+            elif role == "tool":
+                out.append({
+                    "role": "tool",
+                    "tool_call_id": m.get("tool_call_id") or "",
+                    "name": m.get("name") or "",
+                    "content": m.get("content") or "",
+                })
         return out
 
 
@@ -495,6 +666,21 @@ class CancelledTurn(Exception):
 
 
 _SENTINEL = object()
+
+
+def _delta_text(delta: Any, *names: str) -> str:
+    for name in names:
+        value = _delta_field(delta, name)
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
+def _delta_field(delta: Any, name: str) -> Any:
+    value = getattr(delta, name, _SENTINEL)
+    if value is _SENTINEL and isinstance(delta, dict):
+        value = delta.get(name, _SENTINEL)
+    return None if value is _SENTINEL else value
 
 
 def _confirm_summary(tool: str, args: Dict[str, Any]) -> str:
@@ -509,7 +695,28 @@ def _confirm_summary(tool: str, args: Dict[str, Any]) -> str:
         return "run the full graph (will spend API quota)"
     if tool == "disconnect_nodes":
         return f"disconnect edge {args.get('edge_id') or args.get('to_node', '?')}.{args.get('to_socket', '?')}"
+    # Self-modify tools (brain graph mutations).
+    if tool == "set_tool_flag":
+        return f"change tool '{args.get('tool_name')}' (enabled={args.get('enabled')})"
+    if tool == "set_agent_setting":
+        return f"set agent setting {args.get('key')} = {args.get('value')!r}"
+    if tool == "set_system_prompt_section":
+        return f"rewrite brain section '{args.get('section_id') or args.get('id')}'"
+    if tool == "add_system_prompt_section":
+        body = str(args.get('body') or '')
+        return f"add new brain section ({len(body)} chars)"
+    if tool == "remove_system_prompt_section":
+        return f"remove brain section '{args.get('section_id') or args.get('id')}'"
     return f"run {tool}"
+
+
+def _brain_compiled_summary(runtime: Any) -> Dict[str, Any]:
+    if runtime is None:
+        return {"prompt_chars": 0, "tools_enabled": 0}
+    return {
+        "prompt_chars": len(getattr(runtime, "system_prompt", "") or ""),
+        "tools_enabled": sum(1 for ov in (getattr(runtime, "tool_overrides", {}) or {}).values() if getattr(ov, "enabled", True)),
+    }
 
 
 def _truncate_for_model(value: Any, *, depth: int = 0, max_str: int = 4000, max_list: int = 60) -> Any:

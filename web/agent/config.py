@@ -10,16 +10,13 @@ from typing import Any, Dict, List, Optional
 from rundeer.core.config import load_project_env
 
 
-DEFAULT_AGENT_MODEL = "xai/grok-4-latest"
-DEFAULT_FALLBACK_MODELS = ("xai/grok-3", "xai/grok-2-latest")
 DEFAULT_AGENT_PORT_OFFSET = 1
 
 
 @dataclass
 class AgentSettings:
     enabled: bool = True
-    model: str = DEFAULT_AGENT_MODEL
-    fallback_models: List[str] = field(default_factory=lambda: list(DEFAULT_FALLBACK_MODELS))
+    model: str = ""
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     ws_host: str = "127.0.0.1"
@@ -35,7 +32,6 @@ class AgentSettings:
         d = {
             "enabled": self.enabled,
             "model": self.model,
-            "fallback_models": list(self.fallback_models),
             "base_url": self.base_url,
             "max_tool_iterations": self.max_tool_iterations,
             "max_file_bytes": self.max_file_bytes,
@@ -67,22 +63,10 @@ def get_agent_settings(root: Path) -> AgentSettings:
     cfg = _read_config_json(root)
     agent_cfg = cfg.get("agent") if isinstance(cfg.get("agent"), dict) else {}
 
-    api_key = (
-        os.environ.get("AGENT_API_KEY")
-        or os.environ.get("MODEL_API_KEY")
-        or os.environ.get("XAI_API_KEY")
-        or os.environ.get("VISION_API_KEY")
-    )
-    base_url = (
-        os.environ.get("AGENT_BASE_URL")
-        or os.environ.get("BASE_URL")
-        or agent_cfg.get("base_url")
-    )
-    model = (
-        os.environ.get("AGENT_MODEL")
-        or agent_cfg.get("model")
-        or DEFAULT_AGENT_MODEL
-    )
+    # Strict, no fallbacks: .env is the single source of truth.
+    api_key = os.environ.get("MODEL_API_KEY") or ""
+    base_url = os.environ.get("BASE_URL") or None
+    model = (os.environ.get("MODEL_NAME") or "").strip()
 
     enabled_raw = agent_cfg.get("enabled", True)
     if isinstance(enabled_raw, str):
@@ -90,26 +74,20 @@ def get_agent_settings(root: Path) -> AgentSettings:
     else:
         enabled = bool(enabled_raw)
 
-    fallbacks = agent_cfg.get("fallback_models")
-    if not isinstance(fallbacks, list) or not fallbacks:
-        fallbacks = list(DEFAULT_FALLBACK_MODELS)
-    fallbacks = [str(m) for m in fallbacks if str(m).strip()]
-
     return AgentSettings(
         enabled=enabled,
-        model=str(model),
-        fallback_models=fallbacks,
-        api_key=api_key,
+        model=model,
+        api_key=api_key or None,
         base_url=str(base_url) if base_url else None,
         ws_host=str(agent_cfg.get("ws_host") or "127.0.0.1"),
-        ws_port=int(agent_cfg.get("ws_port") or 0),
+        ws_port=int(os.environ.get("AGENT_PORT") or agent_cfg.get("ws_port") or 0),
         max_tool_iterations=int(agent_cfg.get("max_tool_iterations") or 32),
         max_file_bytes=int(agent_cfg.get("max_file_bytes") or 200_000),
         max_list_entries=int(agent_cfg.get("max_list_entries") or 200),
         max_web_search_per_turn=int(agent_cfg.get("max_web_search_per_turn") or 8),
         vision_enabled=bool(agent_cfg.get("vision_enabled", True)),
         extra={k: v for k, v in agent_cfg.items() if k not in {
-            "enabled", "model", "fallback_models", "base_url", "ws_host", "ws_port",
+            "enabled", "model", "base_url", "ws_host", "ws_port",
             "max_tool_iterations", "max_file_bytes", "max_list_entries",
             "max_web_search_per_turn", "vision_enabled",
         }},

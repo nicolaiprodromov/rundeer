@@ -36,6 +36,16 @@ function canConnect(typeA, typeB) {
   // bundle  <->  scalar of same media kind
   if (baseType(typeA) === baseType(typeB)) return true;
   if ((typeA === "filepath" || typeA === "text") && (typeB === "filepath" || typeB === "text")) return true;
+  // A constant vector primitive can feed any vector-map socket: numpy
+  // broadcasts a (1,1,3) array against (H,W,C) maps server-side.
+  if ((typeA === "vector" && typeB === "vector-map") || (typeA === "vector-map" && typeB === "vector")) return true;
+  // UV / vector maps carry a .png sidecar so they wire-compatible with
+  // image consumers (cmd-edit, preview, uv-render's pixel input). The
+  // artifact resolver in resolveNode prefers the .npy when the consumer
+  // is itself a vector op.
+  if ((typeA === "vector-map" && typeB === "image") || (typeA === "image" && typeB === "vector-map")) return true;
+  if ((typeA === "vector-map" && typeB === "image-bundle") || (typeA === "image-bundle" && typeB === "vector-map")) return true;
+  if ((typeA === "vector" && typeB === "image") || (typeA === "image" && typeB === "vector")) return true;
   return false;
 }
 
@@ -90,6 +100,8 @@ const PROP_GROUPS = {
   media: { label: "media" },
   references: { label: "references" },
   chain: { label: "chain" },
+  model: { label: "model" },
+  sampling: { label: "sampling" },
 };
 
 function groupProps(group, props) {
@@ -100,7 +112,7 @@ function groupProps(group, props) {
 // edge whose effective output base-type is text. Used to conditionally render
 // the `instructions` input socket and to drive auto-helper-node creation.
 function compressInHasTextUpstream(nodeId) {
-  const edge = graph.edges.find((e) => e.toNode === nodeId && e.toSocket === "in");
+  const edge = activeIncomingEdges(nodeId, "in")[0];
   if (!edge) return false;
   const sock = outputSocketDef(edge.fromNode, edge.fromSocket);
   return baseType(sock?.type || "any") === "text";
@@ -130,7 +142,7 @@ function propGroupDefaultCollapsed(node, groupId) {
       .filter((prop) => propGroupId(prop) === groupId)
       .map((prop) => prop.id)
   );
-  const hasWiredSocket = graph.edges.some((edge) => edge.toNode === node?.id && groupSocketIds.has(edge.toSocket));
+  const hasWiredSocket = activeIncomingEdges(node?.id).some((edge) => groupSocketIds.has(edge.toSocket));
   if (hasWiredSocket) return false;
   if (groupId === "highlights") return !String(node?.props?.highlight_pairs || "").trim();
   if (groupId === "chain") return !Boolean(node.props?.chain);
@@ -144,7 +156,7 @@ function propGroupSummary(node, groupId, count) {
       .filter((prop) => propGroupId(prop) === groupId)
       .map((prop) => prop.id)
   );
-  if (graph.edges.some((edge) => edge.toNode === node?.id && groupSocketIds.has(edge.toSocket))) return "wired";
+  if (activeIncomingEdges(node?.id).some((edge) => groupSocketIds.has(edge.toSocket))) return "wired";
   if (groupId === "highlights") return String(node?.props?.highlight_pairs || "").trim() ? "on" : "off";
   if (groupId === "chain") return node.props?.chain ? "on" : "off";
   return String(count);
@@ -159,8 +171,9 @@ function outputProducesBundle(nodeId, sockId, seen = new Set()) {
   seen.add(key);
   const n = graph.nodes[nodeId];
   if (!n) return false;
+  if (isNodeMuted(n)) return false;
   if (n.type === "reroute") {
-    const incoming = graph.edges.find((e) => e.toNode === nodeId && e.toSocket === "in");
+    const incoming = activeIncomingEdges(nodeId, "in")[0];
     return incoming ? outputProducesBundle(incoming.fromNode, incoming.fromSocket, seen) : false;
   }
   if (n.type === "loop-output") return true;
@@ -177,7 +190,7 @@ function outputProducesBundle(nodeId, sockId, seen = new Set()) {
     if (directIters > 1) return true;
     // iterations may also be wired in from an upstream node — peek at the
     // source's static value so the bundle marker is still drawn pre-run.
-    const wired = graph.edges.find((e) => e.toNode === nodeId && e.toSocket === "iterations");
+    const wired = activeIncomingEdges(nodeId, "iterations")[0];
     if (wired) {
       const src = graph.nodes[wired.fromNode];
       let v;
@@ -191,6 +204,93 @@ function outputProducesBundle(nodeId, sockId, seen = new Set()) {
   const sock = def?.outputs?.find((s) => s.id === sockId);
   if (sock && /-bundle$/.test(sock.type || "")) return true;
   return false;
+}
+
+// ─── UV / Mix helpers ────────────────────────────────────────────────────
+// Small coercers shared between the `vector-op`, `mix`, and `uv-render`
+// executor cases. They turn the loosely-typed values the resolver collects
+// (paths, hex colors, numbers, arrays) into payload shapes the
+// /api/uv/* endpoints can consume.
+
+function _isUvPath(v) {
+  if (typeof v !== "string" || !v) return false;
+  // Anything with a known image-ish suffix or our cached .npy maps.
+  return /\.(npy|png|jpe?g|webp|tiff?|bmp|gif)$/i.test(v);
+}
+
+function _hexToRgba(hex) {
+  const s = String(hex || "").trim();
+  const m = /^#?([0-9a-f]{6}|[0-9a-f]{8}|[0-9a-f]{3})$/i.exec(s);
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  const a = h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1;
+  return [r, g, b, a];
+}
+
+function _rgbaToHex(rgba) {
+  const clip = (v) => Math.max(0, Math.min(255, Math.round((Number(v) || 0) * 255)));
+  const r = clip(rgba[0]).toString(16).padStart(2, "0");
+  const g = clip(rgba[1]).toString(16).padStart(2, "0");
+  const b = clip(rgba[2]).toString(16).padStart(2, "0");
+  return `#${r}${g}${b}`;
+}
+
+function _coerceVectorInput(v) {
+  if (v == null || v === "") return null;
+  if (Array.isArray(v)) return { color: v.map(Number) };
+  if (typeof v === "number") return { scalar: v };
+  if (typeof v === "string") {
+    if (_isUvPath(v)) return { path: v };
+    const rgba = _hexToRgba(v);
+    if (rgba) return { color: rgba };
+    const num = Number(v);
+    if (Number.isFinite(num)) return { scalar: num };
+  }
+  return null;
+}
+
+function _coerceMixInput(v, { isFactor } = {}) {
+  // Returns { payload, isPath, scalar?, color? } — payload is the dict that
+  // goes into the /api/uv/mix request; the other fields drive the JS fast
+  // path.
+  if (typeof v === "string" && _isUvPath(v)) {
+    return { payload: { path: v }, isPath: true };
+  }
+  if (typeof v === "string") {
+    const rgba = _hexToRgba(v);
+    if (rgba) {
+      return { payload: { color: rgba }, isPath: false, color: rgba };
+    }
+    const num = Number(v);
+    if (Number.isFinite(num)) {
+      return { payload: { scalar: num }, isPath: false, scalar: num };
+    }
+  }
+  if (Array.isArray(v)) {
+    const arr = v.map(Number);
+    return { payload: { color: arr }, isPath: false, color: arr };
+  }
+  if (typeof v === "number") {
+    return { payload: { scalar: v }, isPath: false, scalar: v };
+  }
+  // Default by role: factor → 0.5, color slot → black.
+  if (isFactor) return { payload: { scalar: 0.5 }, isPath: false, scalar: 0.5 };
+  return { payload: { color: [0, 0, 0, 1] }, isPath: false, color: [0, 0, 0, 1] };
+}
+
+function _jsBlend(a, b, mode) {
+  const pair = (fn) => a.map((va, i) => fn(va, b[i] ?? 0));
+  switch (mode) {
+    case "add":      return pair((x, y) => x + y);
+    case "multiply": return pair((x, y) => x * y);
+    case "screen":   return pair((x, y) => 1 - (1 - x) * (1 - y));
+    case "overlay":  return pair((x, y) => x < 0.5 ? 2 * x * y : 1 - 2 * (1 - x) * (1 - y));
+    default:         return b.slice(); // "mix"
+  }
 }
 
 // Parse a Sample Bundle expression into a list of integer indices given a
@@ -262,8 +362,9 @@ function effectiveBundleItemType(nodeId, socketId) {
     seen.add(`${curNode}:${curSock}`);
     const n = graph.nodes[curNode];
     if (!n) return "any";
+    if (isNodeMuted(n)) return "any";
     if (n.type === "reroute") {
-      const incoming = graph.edges.find((e) => e.toNode === curNode && e.toSocket === "in");
+      const incoming = activeIncomingEdges(curNode, "in")[0];
       if (!incoming) return "any";
       curNode = incoming.fromNode;
       curSock = incoming.fromSocket;
@@ -282,7 +383,7 @@ function outputTypeForRenderedEdge(edge, seen = new Set()) {
   seen.add(key);
   const fromNode = graph.nodes[edge.fromNode];
   if (fromNode?.type === "reroute") {
-    const incoming = graph.edges.find((e) => e.toNode === edge.fromNode && e.toSocket === "in");
+    const incoming = activeIncomingEdges(edge.fromNode, "in")[0];
     if (incoming) return outputTypeForRenderedEdge(incoming, seen);
   }
   return outputSocketDef(edge.fromNode, edge.fromSocket)?.type || "any";
@@ -297,6 +398,7 @@ const NODE_CATALOG = [
       {
         type: "text-input", label: "String", desc: "Multi-line string value (markdown · @mentions)",
         defaultWidth: 280,
+        defaultHeight: 240,
         inputs: [],
         outputs: [{ id: "out", label: "String", type: "text" }],
         props: [
@@ -324,6 +426,20 @@ const NODE_CATALOG = [
         inputs: [],
         outputs: [{ id: "out", label: "Boolean", type: "boolean" }],
         props: [{ id: "value", label: "Value", kind: "checkbox", default: false }],
+      },
+      {
+        // Constant vector primitive (3-component). Feeds Vector / Mapping /
+        // Mix wherever a vector input is expected. The value broadcasts
+        // against per-pixel maps server-side.
+        type: "vector-input", label: "Vector", desc: "Constant 3-component vector (X, Y, Z).",
+        allInline: true,
+        inputs: [],
+        outputs: [{ id: "out", label: "Vector", type: "vector" }],
+        props: [
+          { id: "x", label: "X", kind: "number", default: 0.0 },
+          { id: "y", label: "Y", kind: "number", default: 0.0 },
+          { id: "z", label: "Z", kind: "number", default: 0.0 },
+        ],
       },
       {
         // Unified file node — replaces the previous image-input/video-input/
@@ -358,6 +474,21 @@ const NODE_CATALOG = [
         props: [
           { id: "quality", label: "Quality (0–100)", kind: "range", min: 1, max: 100, step: 1, default: 75 },
           { id: "max_dimension", label: "Max Dimension (px, 0=keep)", kind: "number", default: 0 },
+        ],
+      },
+      {
+        // Gaussian blur for images. Single image path in, single blurred
+        // image path out. Bundles fan out automatically (one cached output
+        // per input) so the node slots into a loop or feeds straight into
+        // a Preview / cmd-edit downstream.
+        type: "blur-image", label: "Blur",
+        desc: "Gaussian blur an image (or bundle of images)",
+        inputs: [
+          { id: "in", label: "Image", type: "image" },
+        ],
+        outputs: [{ id: "out", label: "Blurred", type: "image" }],
+        props: [
+          { id: "radius", label: "Radius (px)", kind: "range", min: 0, max: 100, step: 0.5, default: 4 },
         ],
       },
       {
@@ -410,8 +541,20 @@ const NODE_CATALOG = [
         ],
         outputs: [{ id: "out", label: "Prompt Out", type: "text" }],
         props: [
-          { id: "model_name", label: "Model Name", kind: "text", default: "grok-3-mini-fast" },
-          { id: "model_api_key", label: "API Key override", kind: "text", default: "", placeholder: "uses env MODEL_API_KEY" },
+          ...groupProps("model", [
+            { id: "model", label: "Model override", kind: "text", default: "", placeholder: "uses env MODEL_NAME" },
+            { id: "model_api_key", label: "API Key override", kind: "text", default: "", placeholder: "uses env MODEL_API_KEY" },
+            { id: "reasoning_effort", label: "Reasoning Effort", kind: "select", options: ["default", "none", "low", "medium", "high"], default: "default" },
+          ]),
+          ...groupProps("sampling", [
+            { id: "temperature", label: "Temperature", kind: "number", default: 0.7, placeholder: "0.0 – 2.0" },
+            { id: "top_p", label: "Top P", kind: "number", default: "", placeholder: "0.0 – 1.0 (unset)" },
+            { id: "max_tokens", label: "Max Tokens", kind: "number", default: 1024 },
+            { id: "seed", label: "Seed", kind: "number", default: "", placeholder: "optional" },
+            { id: "frequency_penalty", label: "Frequency Penalty", kind: "number", default: "", placeholder: "-2.0 – 2.0 (non-reasoning only)" },
+            { id: "presence_penalty", label: "Presence Penalty", kind: "number", default: "", placeholder: "-2.0 – 2.0 (non-reasoning only)" },
+            { id: "stop", label: "Stop", kind: "text", default: "", placeholder: "comma-separated (non-reasoning only)" },
+          ]),
         ],
       },
       {
@@ -527,6 +670,7 @@ const NODE_CATALOG = [
           ]),
           ...groupProps("media", [
             { id: "fps", label: "Frames / sec (0 = native)", kind: "number", default: 0 },
+            { id: "modulo", label: "Modulo (every Nth, 1 = all)", kind: "number", default: 1 },
             { id: "start", label: "Start (item/frame #, 0 = first)", kind: "number", default: 0 },
             { id: "end", label: "End (item/frame #, 0 = all)", kind: "number", default: 0 },
             { id: "format", label: "Frame Format", kind: "select", options: ["png", "jpg", "webp"], default: "png" },
@@ -608,6 +752,97 @@ const NODE_CATALOG = [
     ],
   },
   {
+    category: "Coordinates",
+    nodes: [
+      {
+        // Coordinate node: emits a fresh UV map at the requested size.
+        // Treated as both a vector-map source and an image source: its
+        // `.png` sidecar lets it feed any image consumer (cmd-edit,
+        // preview, uv-render), while the `.npy` flows naturally into
+        // downstream vector ops.
+        type: "coordinate", label: "Coordinate",
+        desc: "Generate a UV coordinate map (R=u, G=v in [0,1]). Acts as both a vector field and an image — wire into Mapping, Vector, UV Render, Preview, or any command's image input.",
+        defaultWidth: 260,
+        defaultHeight: 240,
+        resizable: true,
+        inputs: [],
+        outputs: [{ id: "uv", label: "UV", type: "vector-map" }],
+        props: [
+          { id: "width", label: "Width (px)", kind: "number", default: 1024 },
+          { id: "height", label: "Height (px)", kind: "number", default: 1024 },
+          { id: "dpi", label: "DPI", kind: "number", default: 72 },
+          { id: "space", label: "Space", kind: "select", options: ["uv", "screen"], default: "uv" },
+        ],
+      },
+      {
+        // Blender-style Mapping (Point mode): scale → rotate → translate.
+        type: "mapping", label: "Mapping",
+        desc: "Transform a UV map: scale, rotate (deg), then translate, around a configurable pivot.",
+        inputs: [{ id: "uv", label: "UV", type: "vector-map" }],
+        outputs: [{ id: "out", label: "UV", type: "vector-map" }],
+        props: [
+          ...groupProps("location", [
+            { id: "location_x", label: "X", kind: "number", default: 0.0 },
+            { id: "location_y", label: "Y", kind: "number", default: 0.0 },
+          ]),
+          ...groupProps("rotation", [
+            { id: "rotation", label: "Rotation (deg)", kind: "number", default: 0.0 },
+          ]),
+          ...groupProps("scale", [
+            { id: "scale_x", label: "X", kind: "number", default: 1.0 },
+            { id: "scale_y", label: "Y", kind: "number", default: 1.0 },
+          ]),
+          ...groupProps("pivot", [
+            { id: "pivot_x", label: "X", kind: "number", default: 0.5 },
+            { id: "pivot_y", label: "Y", kind: "number", default: 0.5 },
+          ]),
+        ],
+      },
+    ],
+  },
+  {
+    category: "Vector",
+    nodes: [
+      {
+        // Vector operations as a true per-pixel field operator (Blender's
+        // Vector Math). A/B accept anything that can be coerced to a
+        // per-pixel field: images, UV/vector maps, vector primitives, or
+        // scalars. The backend (core.uv_ops.vector_op) broadcasts scalars
+        // and vectors against spatial maps; mismatched spatial extents
+        // are nearest-neighbor resized to the larger side.
+        type: "vector-op", label: "Vector",
+        desc: "Per-pixel vector op between two fields (image, UV map, vector, or scalar). Mirrors Blender's Vector Math node.",
+        inputs: [
+          { id: "a", label: "A", type: "any" },
+          { id: "b", label: "B", type: "any" },
+        ],
+        outputs: [{ id: "out", label: "Out", type: "any" }],
+        props: [
+          {
+            id: "op", label: "Operation", kind: "select",
+            options: ["add", "subtract", "multiply", "divide", "scale", "dot", "cross", "normalize", "length", "floor", "fract", "min", "max", "mix"],
+            default: "add",
+          },
+        ],
+      },
+      {
+        // Blender-style Mix node. Factor/A/B are prop sockets so each row is
+        // both the connectable socket and its local fallback control.
+        type: "mix", label: "Mix",
+        desc: "Blend two inputs by a factor. A/B default to color controls; factor can be a number or an image/map. Mirrors Blender's Mix node.",
+        inputs: [],
+        outputs: [{ id: "out", label: "Out", type: "any" }],
+        props: [
+          { id: "factor", label: "Factor", kind: "range", min: 0, max: 1, step: 0.01, default: 0.5, socketType: "any", passthroughWired: true },
+          { id: "a", label: "A", kind: "color", default: "#000000", socketType: "any" },
+          { id: "b", label: "B", kind: "color", default: "#ffffff", socketType: "any" },
+          { id: "mode", label: "Mode", kind: "select", options: ["mix", "add", "multiply", "screen", "overlay"], default: "mix" },
+          { id: "clamp", label: "Clamp Factor", kind: "checkbox", default: true },
+        ],
+      },
+    ],
+  },
+  {
     category: "Output",
     nodes: [
       {
@@ -619,6 +854,80 @@ const NODE_CATALOG = [
         defaultHeight: 260,
         resizable: true,
       },
+      {
+        // UV Render: samples a pixel image at the UV coordinates in `uv`.
+        // Output is a regular image path, so downstream nodes treat it
+        // exactly like any other image. Shares the Preview node's inline
+        // rendering machinery (collapse, zoom, refresh).
+        type: "uv-render", label: "UV Render",
+        desc: "Sample a pixel image using a UV coordinate map. Like Blender's Image Texture sampled by a custom UV.",
+        inputs: [
+          { id: "pixel", label: "Pixel", type: "image" },
+          { id: "uv", label: "UV", type: "vector-map" },
+        ],
+        outputs: [{ id: "out", label: "Image", type: "image" }],
+        props: [
+          { id: "interp", label: "Interpolation", kind: "select", options: ["bilinear", "nearest"], default: "bilinear" },
+          { id: "extension", label: "Extension", kind: "select", options: ["clamp", "repeat", "mirror"], default: "clamp" },
+        ],
+        defaultWidth: 320,
+        defaultHeight: 260,
+        resizable: true,
+      },
+    ],
+  },
+
+  // ─── Agent Brain ────────────────────────────────────────────────────────
+  // Three special nodes describe the chat agent: `brain` composes the
+  // system prompt + tool list, `agent` carries runtime settings and is
+  // the destination of the brain, and `tool-flag` enables/overrides a
+  // single tool. Everything else on the canvas (text-input, create-bundle,
+  // preview, …) comes from the regular palette — the brain just wires
+  // them together.
+  {
+    category: "Agent Brain",
+    nodes: [
+      {
+        type: "brain", label: "Brain",
+        desc: "Composes the agent's system prompt + tool list. Plug strings (or bundles of strings) into Sections, and Tool Flag nodes (or bundles of them) into Tools. The compiled brain text comes out as the Brain output.",
+        defaultWidth: 280,
+        inputs: [
+          { id: "sections", label: "Sections", type: "text", multi: true },
+          { id: "tools", label: "Tools", type: "any", multi: true },
+        ],
+        outputs: [{ id: "out", label: "Brain", type: "text" }],
+        props: [],
+      },
+      {
+        type: "agent", label: "Agent",
+        desc: "The chat agent itself. Connect a Brain into its input. Props are runtime overrides (model, temperature, iteration & rate caps, vision).",
+        defaultWidth: 320,
+        inputs: [{ id: "brain", label: "Brain", type: "text" }],
+        outputs: [],
+        props: [
+          { id: "model", label: "Model", kind: "text", default: "", placeholder: "inherits global agent.model" },
+          { id: "temperature", label: "Temperature", kind: "number", default: null, placeholder: "leave blank for default" },
+          { id: "max_tool_iterations", label: "Max Tool Iterations", kind: "number", default: null, placeholder: "default 12" },
+          { id: "max_web_search_per_turn", label: "Max Web Searches / Turn", kind: "number", default: null },
+          { id: "max_file_bytes", label: "Max File Bytes", kind: "number", default: null },
+          { id: "max_list_entries", label: "Max List Entries", kind: "number", default: null },
+          { id: "vision_enabled", label: "Vision Enabled", kind: "checkbox", default: true },
+        ],
+      },
+      {
+        type: "tool-flag", label: "Tool Flag",
+        desc: "Enable/disable a tool and optionally override its description, category, or destructive flag. Connect into the Brain's Tools input (directly or via a Bundle).",
+        defaultWidth: 320,
+        inputs: [],
+        outputs: [{ id: "out", label: "Tool", type: "any" }],
+        props: [
+          { id: "tool_name", label: "Tool Name", kind: "text", default: "" },
+          { id: "enabled", label: "Enabled", kind: "checkbox", default: true },
+          { id: "description", label: "Description override", kind: "textarea", default: "", placeholder: "leave blank for built-in" },
+          { id: "category", label: "Category override", kind: "select", options: ["", "read", "mutate", "execute", "vision", "self_modify"], default: "" },
+          { id: "destructive", label: "Destructive override", kind: "select", options: ["", "true", "false"], default: "" },
+        ],
+      },
     ],
   },
 ];
@@ -627,7 +936,8 @@ const NODE_BY_TYPE = Object.fromEntries(
   NODE_CATALOG.flatMap((cat) => cat.nodes.map((n) => [n.type, { ...n, category: cat.category }]))
 );
 
-const PREVIEW_TYPES = new Set(["preview", "file"]);
+const PREVIEW_TYPES = new Set(["preview", "file", "uv-render", "coordinate"]);
+const LIVE_UPDATE_TYPES = new Set(["mix"]);
 const LEGACY_PREVIEW_TYPES = new Set(["preview-image", "preview-video", "preview-text"]);
 // Legacy primitive file-source types that were folded into the unified `file`
 // node. Migrated on load.
@@ -637,6 +947,9 @@ const PREVIEW_ZOOM_MIN = 1;
 const PREVIEW_ZOOM_MAX = 4;
 const PREVIEW_ZOOM_WHEEL_SENSITIVITY = 0.0015;
 const PREVIEW_ZOOM_STEP = 1.16;
+const TEXT_ZOOM_MIN = 0.75;
+const TEXT_ZOOM_MAX = 1.8;
+const TEXT_ZOOM_WHEEL_SENSITIVITY = 0.0014;
 const FOLD_EXPOSED_GUTTER = 14;
 
 function primaryNodeResult(node, outputs) {
@@ -669,10 +982,44 @@ function stashNodeResult(nodeId, outputs) {
 // ─── Graph state ─────────────────────────────────────────────────────────────
 
 const graph = {
-  nodes: {},   // id → { id, type, x, y, props, width, lastResult, hidden, collapsedBy, foldLocked }
+  nodes: {},   // id → { id, type, x, y, props, width, lastResult, hidden, collapsedBy, foldLocked, muted }
   edges: [],
   _nextId: 1,
 };
+
+function isNodeMuted(nodeOrId) {
+  const node = typeof nodeOrId === "string" ? graph.nodes[nodeOrId] : nodeOrId;
+  return Boolean(node?.muted);
+}
+
+function isEdgeMuted(edge) {
+  if (!edge) return false;
+  return isNodeMuted(edge.fromNode) || isNodeMuted(edge.toNode);
+}
+
+function activeIncomingEdges(nodeId, socketId = null) {
+  if (!nodeId || isNodeMuted(nodeId)) return [];
+  return graph.edges.filter((edge) => {
+    if (edge.toNode !== nodeId) return false;
+    if (socketId !== null && edge.toSocket !== socketId) return false;
+    return !isEdgeMuted(edge);
+  });
+}
+
+function activeOutgoingEdges(nodeId, socketId = null) {
+  if (!nodeId || isNodeMuted(nodeId)) return [];
+  return graph.edges.filter((edge) => {
+    if (edge.fromNode !== nodeId) return false;
+    if (socketId !== null && edge.fromSocket !== socketId) return false;
+    return !isEdgeMuted(edge);
+  });
+}
+
+function mutedNodeOutputs(def) {
+  const outputs = {};
+  for (const sock of def?.outputs || []) outputs[sock.id] = "";
+  return outputs;
+}
 
 function genNodeId(preferredId = null) {
   const wanted = preferredId == null ? "" : String(preferredId).trim();
@@ -690,7 +1037,7 @@ function genEdgeId() { return `e${Date.now().toString(36)}-${Math.random().toStr
 // ─── Viewport ────────────────────────────────────────────────────────────────
 
 const vp = { x: 0, y: 0, zoom: 1 };
-const ZOOM_MIN = 0.25;
+const ZOOM_MIN = 0.08;
 const ZOOM_MAX = 2.75;
 const ZOOM_WHEEL_SENSITIVITY = 0.0018;
 const GRID_CELL_SIZE = 32;
@@ -806,12 +1153,17 @@ function addNode(type, canvasX, canvasY, opts = {}) {
     previewMode: null,
     previewIndex: 0,
     previewZoom: 1,
+    previewPanX: 0,
+    previewPanY: 0,
+    textZoom: 1,
     minimized: false,
+    muted: Boolean(opts.muted),
     collapsedPanels: {},
     lastRunMs: null,
     lastRunStatus: null,
     lastRunCount: 0,
   };
+  migrateMixNode(graph.nodes[id]);
   if (isStandaloneDecompose) {
     const outDef = NODE_BY_TYPE["loop-output"];
     const outProps = {};
@@ -829,7 +1181,11 @@ function addNode(type, canvasX, canvasY, opts = {}) {
       previewMode: null,
       previewIndex: 0,
       previewZoom: 1,
+      previewPanX: 0,
+      previewPanY: 0,
+      textZoom: 1,
       minimized: false,
+      muted: Boolean(opts.muted),
       collapsedPanels: {},
       lastRunMs: null,
       lastRunStatus: null,
@@ -862,7 +1218,11 @@ function addLoopPair(canvasX, canvasY, opts = {}) {
     previewMode: null,
     previewIndex: 0,
     previewZoom: 1,
+    previewPanX: 0,
+    previewPanY: 0,
+    textZoom: 1,
     minimized: false,
+    muted: Boolean(opts.muted),
     collapsedPanels: {},
     lastRunMs: null,
     lastRunStatus: null,
@@ -882,7 +1242,11 @@ function addLoopPair(canvasX, canvasY, opts = {}) {
     previewMode: null,
     previewIndex: 0,
     previewZoom: 1,
+    previewPanX: 0,
+    previewPanY: 0,
+    textZoom: 1,
     minimized: false,
+    muted: Boolean(opts.muted),
     collapsedPanels: {},
     lastRunMs: null,
     lastRunStatus: null,
@@ -938,14 +1302,39 @@ function removeSelectedNodes() {
 }
 
 function socketTypeForProp(propDef) {
+  if (propDef.socketType) return propDef.socketType;
   if (propDef.kind === "checkbox") return "boolean";
   if (propDef.kind === "number" || propDef.kind === "range") return "number";
+  if (propDef.kind === "color") return "color";
   return "text";
+}
+
+function inputSocketDefsForDef(def) {
+  return [
+    ...(def?.inputs || []),
+    ...(def?.props || []).map((prop) => ({
+      id: prop.id,
+      label: prop.label,
+      type: socketTypeForProp(prop),
+      multi: false,
+      _isProp: true,
+    })),
+  ];
+}
+
+function canonicalInputSocketId(nodeId, socketId) {
+  const node = graph.nodes[nodeId];
+  if (node?.type === "mix") {
+    if (socketId === "color_a") return "a";
+    if (socketId === "color_b") return "b";
+  }
+  return socketId;
 }
 
 function inputSocketDef(nodeId, socketId) {
   const def = NODE_BY_TYPE[graph.nodes[nodeId]?.type];
   if (!def) return null;
+  socketId = canonicalInputSocketId(nodeId, socketId);
   const direct = (def.inputs || []).find((sock) => sock.id === socketId);
   if (direct) return direct;
   const propDef = (def.props || []).find((prop) => prop.id === socketId);
@@ -1024,6 +1413,7 @@ function removeEdge(edgeId) {
 function addEdge(fromNode, fromSocket, toNode, toSocket) {
   // Prevent self-loops
   if (fromNode === toNode) return;
+  toSocket = canonicalInputSocketId(toNode, toSocket);
   const fromSockDef = outputSocketDef(fromNode, fromSocket);
   const toSockDef = inputSocketDef(toNode, toSocket);
   if (!fromSockDef || !toSockDef || !canConnect(fromSockDef.type, toSockDef.type)) {
@@ -1129,6 +1519,9 @@ function createCompressInstructionsHelper(compressNode) {
     previewMode: null,
     previewIndex: 0,
     previewZoom: 1,
+    previewPanX: 0,
+    previewPanY: 0,
+    textZoom: 1,
     minimized: false,
     collapsedPanels: {},
     lastRunMs: null,
@@ -1386,6 +1779,31 @@ function toggleNodeMinimized(nodeIds) {
   setTimeout(clearHint, 1200);
 }
 
+function toggleNodeMuted(nodeIds) {
+  const ids = (Array.isArray(nodeIds) ? nodeIds : [nodeIds]).filter((id) => graph.nodes[id]);
+  if (ids.length === 0) {
+    setHint("M: select a node first");
+    setTimeout(clearHint, 1400);
+    return;
+  }
+  const nextState = ids.some((id) => !graph.nodes[id].muted);
+  for (const id of ids) {
+    const node = graph.nodes[id];
+    if (!node) continue;
+    node.muted = nextState;
+    if (nextState) {
+      node.lastRunStatus = null;
+      node.lastRunMs = null;
+      node.lastRunCount = 0;
+    }
+  }
+  renderGraph();
+  if (ix.selection.size === 1) renderProps([...ix.selection][0]);
+  scheduleAutosave();
+  setHint(nextState ? `muted ${ids.length} node${ids.length === 1 ? "" : "s"} (M)` : `unmuted ${ids.length} node${ids.length === 1 ? "" : "s"} (M)`);
+  setTimeout(clearHint, 1200);
+}
+
 let _animFrameUntil = 0;
 let _animRunning = false;
 function animateConnectionsFor(durationMs) {
@@ -1463,6 +1881,7 @@ function renderNodes() {
     }
     el.classList.toggle("is-selected", ix.selection.has(id));
     el.classList.toggle("is-preview", PREVIEW_TYPES.has(node.type));
+    el.classList.toggle("is-muted", Boolean(node.muted));
     paintNodeRunChrome(id);
   }
   refreshActiveNodeHighlight();
@@ -1492,10 +1911,14 @@ function nodeSignature(node) {
     tok,
     node.collapsed ? "c" : "e",
     node.minimized ? "m" : "x",
+    node.muted ? "muted" : "active",
     node.foldLocked ? "fold:keep" : "fold:auto",
     node.previewMode || "",
     node.previewIndex ?? "",
     node.previewZoom ?? "",
+    node.previewPanX ?? "",
+    node.previewPanY ?? "",
+    node.textZoom ?? "",
     node.width || "",
     node.height || "",
     node.lastRunMs ?? "",
@@ -1521,6 +1944,24 @@ function sanitizeCommandProps(node) {
   if (!node || !COMMAND_TYPES.has(node.type) || !node.props) return node;
   for (const propId of REMOVED_COMMAND_PROP_IDS) delete node.props[propId];
   return node;
+}
+
+function migrateMixNode(node) {
+  if (!node || node.type !== "mix") return node;
+  node.props ||= {};
+  if (node.props.a == null && node.props.color_a != null) node.props.a = node.props.color_a;
+  if (node.props.b == null && node.props.color_b != null) node.props.b = node.props.color_b;
+  delete node.props.color_a;
+  delete node.props.color_b;
+  return node;
+}
+
+function migrateMixEdge(edge) {
+  const target = graph.nodes[edge?.toNode];
+  if (!target || target.type !== "mix") return edge;
+  if (edge.toSocket === "color_a") edge.toSocket = "a";
+  if (edge.toSocket === "color_b") edge.toSocket = "b";
+  return edge;
 }
 
 function nodeDefaultLabel(node) {
@@ -1614,9 +2055,29 @@ function startNodeTitleEdit(nodeId) {
   input.select();
 }
 
+function nodeMuteButtonMarkup(id, node, extraClass = "") {
+  const active = Boolean(node?.muted);
+  const label = active ? "Unmute node" : "Mute node";
+  const classes = ["ne-node-action", "ne-node-mute", extraClass, active ? "is-active" : ""]
+    .filter(Boolean)
+    .join(" ");
+  return `<button class="${classes}" data-mute="${escAttr(id)}" aria-label="${label}" title="${label} (M)" type="button"><span aria-hidden="true">M</span></button>`;
+}
+
+function bindNodeMuteButton(root, nodeId) {
+  const muteEl = Array.from(root.querySelectorAll("[data-mute]")).find((el) => el.dataset.mute === nodeId);
+  if (!muteEl) return;
+  muteEl.addEventListener("mousedown", (e) => e.stopPropagation());
+  muteEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleNodeMuted(nodeId);
+  });
+}
+
 function estimatedNodeHeight(node) {
   const def = NODE_BY_TYPE[node.type];
   if (!def) return 80;
+  if (node.minimized) return nodeResizeMin(node).h;
   if (node.height) return node.height;
   return Math.max(def.defaultHeight || 0, nodeResizeMin(node).h);
 }
@@ -1628,6 +2089,7 @@ function buildRerouteNodeElement(id, node, def) {
   el.dataset.nodeType = node.type;
   el.dataset.category = def.category;
   el.dataset.signature = nodeSignature(node);
+  el.classList.toggle("is-muted", Boolean(node.muted));
   el.style.width = `${node.width || def.defaultWidth || 88}px`;
   el.style.height = `${node.height || def.defaultHeight || 30}px`;
 
@@ -1636,6 +2098,8 @@ function buildRerouteNodeElement(id, node, def) {
   body.title = "Reroute";
   body.appendChild(buildRerouteSocket(id, false));
   body.appendChild(buildRerouteSocket(id, true));
+  body.insertAdjacentHTML("beforeend", nodeMuteButtonMarkup(id, node, "ne-reroute-mute"));
+  bindNodeMuteButton(body, id);
   body.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
     if (e.target.classList.contains("ne-socket")) return;
@@ -1686,9 +2150,11 @@ function buildNodeElement(id, node) {
   el.dataset.category = def.category;
   el.dataset.signature = nodeSignature(node);
   el.classList.toggle("is-minimized", Boolean(node.minimized));
+  el.classList.toggle("is-muted", Boolean(node.muted));
   el.style.width = `${node.width || 220}px`;
-  if (node.height) {
-    el.style.height = `${node.height}px`;
+  const fixedHeight = !node.minimized ? (node.height || (node.type === "text-input" ? def.defaultHeight : null)) : null;
+  if (fixedHeight) {
+    el.style.height = `${fixedHeight}px`;
     el.classList.add("is-resized");
   }
 
@@ -1704,10 +2170,11 @@ function buildNodeElement(id, node) {
     : "";
   const foldBtn = `<button class="ne-node-action ne-node-fold-lock ${node.foldLocked ? "is-active" : ""}" data-fold-lock="${id}" aria-label="${node.foldLocked ? "Fold with collapsed previews" : "Keep exposed when previews collapse"}" title="${node.foldLocked ? "Fold with collapsed previews" : "Keep exposed when previews collapse"}" type="button"><span aria-hidden="true">${node.foldLocked ? "◈" : "◇"}</span></button>`;
   const hideBtn = `<button class="ne-node-action ne-node-hide ${node.minimized ? "is-active" : ""}" data-hide="${id}" aria-label="${node.minimized ? "Show node body" : "Hide node body"}" title="${node.minimized ? "Show full node (H)" : "Hide node body (H)"}" type="button"><span aria-hidden="true">${node.minimized ? "+" : "−"}</span></button>`;
+  const muteBtn = nodeMuteButtonMarkup(id, node);
   header.innerHTML = `
     <span class="ne-node-type-dot"></span>
     <span class="ne-node-label" title="${escAttr(nodeDefaultLabel(node))} · double-click or F2 to rename">${escHtml(nodeDisplayTitle(node))}</span>
-    <span class="ne-node-actions">${refreshBtn}${collapseBtn}${foldBtn}${hideBtn}</span>`;
+    <span class="ne-node-actions">${refreshBtn}${collapseBtn}${muteBtn}${foldBtn}${hideBtn}</span>`;
   const labelEl = header.querySelector(".ne-node-label");
   if (labelEl) {
     labelEl.addEventListener("dblclick", (e) => {
@@ -1723,6 +2190,7 @@ function buildNodeElement(id, node) {
       toggleNodeMinimized(id);
     });
   }
+  bindNodeMuteButton(header, id);
   const refreshEl = header.querySelector("[data-refresh]");
   if (refreshEl) {
     refreshEl.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -2331,6 +2799,69 @@ function clampPreviewZoom(node) {
   return node.previewZoom;
 }
 
+function clampPreviewPan(node) {
+  if (!node) return { x: 0, y: 0 };
+  const x = Number(node.previewPanX);
+  const y = Number(node.previewPanY);
+  node.previewPanX = Number.isFinite(x) ? Math.round(x * 10) / 10 : 0;
+  node.previewPanY = Number.isFinite(y) ? Math.round(y * 10) / 10 : 0;
+  return { x: node.previewPanX, y: node.previewPanY };
+}
+
+function clampTextZoom(node) {
+  if (!node) return 1;
+  const raw = Number(node.textZoom);
+  const next = clampValue(Number.isFinite(raw) ? raw : 1, TEXT_ZOOM_MIN, TEXT_ZOOM_MAX);
+  node.textZoom = Math.round(next * 100) / 100;
+  return node.textZoom;
+}
+
+function textWheelDelta(e) {
+  const deltaUnit = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : (e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1);
+  const delta = e.deltaY * deltaUnit;
+  return Number.isFinite(delta) ? delta : 0;
+}
+
+function updateTextZoomDom(nodeId) {
+  const node = graph.nodes[nodeId];
+  const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+  if (!node || !el) return;
+  const zoom = clampTextZoom(node);
+  el.querySelectorAll(".ne-string-editor, .ne-markdown-viewer").forEach((surface) => {
+    surface.style.setProperty("--ne-text-zoom", String(zoom));
+  });
+}
+
+function setNodeTextZoom(nodeId, nextZoom) {
+  const node = graph.nodes[nodeId];
+  if (!node) return false;
+  const zoom = Math.round(clampValue(Number(nextZoom) || 1, TEXT_ZOOM_MIN, TEXT_ZOOM_MAX) * 100) / 100;
+  if (Math.abs(clampTextZoom(node) - zoom) < 0.005) return false;
+  node.textZoom = zoom;
+  updateTextZoomDom(nodeId);
+  scheduleAutosave();
+  return true;
+}
+
+function handleNodeTextWheel(e, nodeId) {
+  if (!(e.ctrlKey || e.metaKey)) return false;
+  const delta = textWheelDelta(e);
+  if (!delta) return false;
+  e.preventDefault();
+  e.stopPropagation();
+  const node = graph.nodes[nodeId];
+  const current = clampTextZoom(node);
+  setNodeTextZoom(nodeId, current * Math.exp(-delta * TEXT_ZOOM_WHEEL_SENSITIVITY));
+  return true;
+}
+
+function bindTextWheelZoom(el, nodeId) {
+  el.addEventListener("wheel", (e) => {
+    if (handleNodeTextWheel(e, nodeId)) return;
+    e.stopPropagation();
+  }, { passive: false });
+}
+
 function previewMediaAreaEstimate(node, hasToolbar = true) {
   const def = NODE_BY_TYPE[node?.type];
   const width = Math.max(120, (node?.width || def?.defaultWidth || 320) - 22);
@@ -2409,12 +2940,53 @@ function updatePreviewZoomDom(nodeId) {
   const el = document.querySelector(`[data-node-id="${nodeId}"]`);
   if (!node || !el) return;
   const zoom = clampPreviewZoom(node);
-  el.querySelectorAll(".ne-bundle-stage").forEach((stage) => {
+  if (zoom <= PREVIEW_ZOOM_MIN + 0.005) {
+    node.previewPanX = 0;
+    node.previewPanY = 0;
+  }
+  const pan = clampPreviewPan(node);
+  el.querySelectorAll(".ne-preview-zoom-stage").forEach((stage) => {
     stage.style.setProperty("--preview-zoom", String(zoom));
+    stage.style.setProperty("--preview-pan-x", `${pan.x}px`);
+    stage.style.setProperty("--preview-pan-y", `${pan.y}px`);
+    stage.classList.toggle("is-zoomed", zoom > 1.005);
   });
   el.querySelectorAll("[data-preview-zoom-label]").forEach((label) => {
     label.textContent = `${Math.round(zoom * 100)}%`;
   });
+}
+
+function previewZoomAnchorPoint(nodeId, anchor) {
+  const stage = document.querySelector(`[data-node-id="${nodeId}"] .ne-preview-zoom-stage`);
+  if (!stage) return null;
+  if (anchor && Number.isFinite(anchor.clientX) && Number.isFinite(anchor.clientY)) {
+    return { stage, clientX: anchor.clientX, clientY: anchor.clientY };
+  }
+  const rect = stage.getBoundingClientRect();
+  return { stage, clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
+}
+
+function adjustPreviewPanForZoom(nodeId, oldZoom, nextZoom, anchor = null) {
+  const node = graph.nodes[nodeId];
+  if (!node || Math.abs(oldZoom - nextZoom) < 0.005) return;
+  if (nextZoom <= PREVIEW_ZOOM_MIN + 0.005) {
+    node.previewPanX = 0;
+    node.previewPanY = 0;
+    return;
+  }
+  const point = previewZoomAnchorPoint(nodeId, anchor);
+  const media = point?.stage?.querySelector?.("img, video");
+  if (!point || !media) return;
+  const stageRect = point.stage.getBoundingClientRect();
+  const mediaWidth = media.offsetWidth || media.getBoundingClientRect().width || 1;
+  const mediaHeight = media.offsetHeight || media.getBoundingClientRect().height || 1;
+  const baseLeft = stageRect.left + (stageRect.width - mediaWidth) / 2;
+  const baseTop = stageRect.top + (stageRect.height - mediaHeight) / 2;
+  const pan = clampPreviewPan(node);
+  const localX = (point.clientX - baseLeft - pan.x) / oldZoom;
+  const localY = (point.clientY - baseTop - pan.y) / oldZoom;
+  node.previewPanX = point.clientX - baseLeft - localX * nextZoom;
+  node.previewPanY = point.clientY - baseTop - localY * nextZoom;
 }
 
 function setPreviewZoom(nodeId, nextZoom, opts = {}) {
@@ -2423,6 +2995,7 @@ function setPreviewZoom(nodeId, nextZoom, opts = {}) {
   const current = clampPreviewZoom(node);
   const zoom = Math.round(clampValue(Number(nextZoom) || 1, PREVIEW_ZOOM_MIN, PREVIEW_ZOOM_MAX) * 100) / 100;
   if (Math.abs(current - zoom) < 0.005) return false;
+  adjustPreviewPanForZoom(nodeId, current, zoom, opts.anchor || null);
   node.previewZoom = zoom;
   if (opts.render) {
     const el = document.querySelector(`[data-node-id="${nodeId}"]`);
@@ -2441,7 +3014,7 @@ function stepPreviewZoom(nodeId, direction) {
   if (!node) return false;
   const current = clampPreviewZoom(node);
   const factor = direction > 0 ? PREVIEW_ZOOM_STEP : 1 / PREVIEW_ZOOM_STEP;
-  return setPreviewZoom(nodeId, current * factor);
+  return setPreviewZoom(nodeId, current * factor, { anchor: "center" });
 }
 
 function makePreviewButton(className, label, title) {
@@ -2453,6 +3026,123 @@ function makePreviewButton(className, label, title) {
   button.textContent = label;
   button.addEventListener("mousedown", (e) => e.stopPropagation());
   return button;
+}
+
+function copyIconSvg() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="10" height="12" rx="2"></rect><path d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+}
+
+function searchIconSvg() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>';
+}
+
+function makeTextCopyButton(title, getText) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ne-string-copy-icon";
+  button.dataset.iconButton = "1";
+  button.title = title;
+  button.setAttribute("aria-label", title);
+  button.innerHTML = copyIconSvg();
+  button.addEventListener("mousedown", (e) => { e.preventDefault(); e.stopPropagation(); });
+  button.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    try {
+      await copyTextToClipboard(getText());
+      flashTextButton(button);
+    } catch (_) {
+      flashTextButton(button, "failed");
+    }
+  });
+  return button;
+}
+
+function makeTextSearchControl() {
+  const wrap = document.createElement("label");
+  wrap.className = "ne-string-search-wrap";
+  const icon = document.createElement("span");
+  icon.className = "ne-string-search-icon";
+  icon.innerHTML = searchIconSvg();
+  const input = document.createElement("input");
+  input.type = "search";
+  input.className = "ne-string-search";
+  input.placeholder = "search";
+  input.spellcheck = false;
+  input.setAttribute("aria-label", "Search text");
+  wrap.append(icon, input);
+  wrap.addEventListener("mousedown", (e) => e.stopPropagation());
+  wrap.addEventListener("click", (e) => e.stopPropagation());
+  wrap.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+  return { wrap, input };
+}
+
+function previewMarkdownContextNodeId(nodeId, seen = new Set()) {
+  if (!nodeId || seen.has(nodeId)) return nodeId;
+  seen.add(nodeId);
+  const node = graph.nodes[nodeId];
+  if (!node) return nodeId;
+  if (node.type === "text-input") return nodeId;
+  const incoming = graph.edges.find((edge) => edge.toNode === nodeId && (edge.toSocket === "in" || edge.toSocket === "value" || edge.toSocket === "sections"));
+  if (!incoming) return nodeId;
+  return previewMarkdownContextNodeId(incoming.fromNode, seen) || nodeId;
+}
+
+function buildReadonlyMarkdownViewer(node, value, contextNodeId = null) {
+  const nodeId = node.id;
+  const text = String(value ?? "");
+  const markdownNodeId = contextNodeId || previewMarkdownContextNodeId(nodeId);
+  const wrap = document.createElement("div");
+  wrap.className = "ne-string-editor ne-markdown-viewer";
+  wrap.dataset.propNode = nodeId;
+  wrap.style.setProperty("--ne-text-zoom", String(clampTextZoom(node)));
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "ne-string-toolbar";
+  const copyBtn = makeTextCopyButton("Copy text", () => text);
+  const searchControl = makeTextSearchControl();
+  const search = searchControl.input;
+  const spacer = document.createElement("span");
+  spacer.className = "ne-string-spacer";
+  const meta = document.createElement("span");
+  meta.className = "ne-string-meta";
+  toolbar.append(searchControl.wrap, spacer, meta, copyBtn);
+
+  const preview = document.createElement("div");
+  preview.className = "ne-string-preview ne-preview-markdown";
+  preview.tabIndex = 0;
+  preview.title = "read-only markdown preview";
+
+  const render = () => {
+    const query = search.value || "";
+    preview.innerHTML = renderInlineMarkdown(text, markdownNodeId, { search: query });
+    const words = (text.match(/\S+/g) || []).length;
+    const matches = countTextSearchMatches(text, query);
+    meta.textContent = query.trim() ? `${matches} hit${matches === 1 ? "" : "s"}` : `${text.length}c · ${words}w`;
+    if (query.trim()) requestAnimationFrame(() => scrollFirstSearchHit(preview));
+  };
+
+  [wrap, toolbar, preview].forEach((el) => {
+    el.addEventListener("mousedown", (e) => {
+      e.stopPropagation();
+      if (!ix.selection.has(nodeId)) selectOnly(nodeId);
+    });
+  });
+  search.addEventListener("mousedown", (e) => e.stopPropagation());
+  search.addEventListener("click", (e) => e.stopPropagation());
+  search.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Escape") {
+      search.value = "";
+      render();
+      preview.focus();
+    }
+  });
+  search.addEventListener("input", render);
+  bindTextWheelZoom(preview, nodeId);
+
+  wrap.append(toolbar, preview);
+  render();
+  return wrap;
 }
 
 // Build a scrollable, virtualized image grid for bundles of any size.
@@ -2616,6 +3306,77 @@ function makeBundleVirtualGrid(node, items) {
   return root;
 }
 
+function bindPreviewStagePan(stage, nodeId) {
+  stage.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    const node = graph.nodes[nodeId];
+    if (!node || clampPreviewZoom(node) <= 1.005) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!ix.selection.has(nodeId)) selectOnly(nodeId);
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPan = clampPreviewPan(node);
+    stage.classList.add("is-dragging");
+    const move = (ev) => {
+      node.previewPanX = startPan.x + ev.clientX - startX;
+      node.previewPanY = startPan.y + ev.clientY - startY;
+      updatePreviewZoomDom(nodeId);
+    };
+    const up = () => {
+      stage.classList.remove("is-dragging");
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      scheduleAutosave();
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up, { once: true });
+  });
+  stage.addEventListener("dblclick", (e) => {
+    e.stopPropagation();
+    setPreviewZoom(nodeId, 1, { anchor: e });
+  });
+}
+
+function makePreviewZoomStage(node, media) {
+  const stage = document.createElement("div");
+  stage.className = "ne-bundle-stage ne-preview-zoom-stage";
+  stage.dataset.nodeId = node.id;
+  stage.style.setProperty("--preview-zoom", String(clampPreviewZoom(node)));
+  const pan = clampPreviewPan(node);
+  stage.style.setProperty("--preview-pan-x", `${pan.x}px`);
+  stage.style.setProperty("--preview-pan-y", `${pan.y}px`);
+  stage.classList.toggle("is-zoomed", clampPreviewZoom(node) > 1.005);
+  stage.appendChild(media);
+  bindPreviewStagePan(stage, node.id);
+  return stage;
+}
+
+function makePreviewZoomControls(nodeId) {
+  const controls = document.createElement("div");
+  controls.className = "ne-bundle-controls ne-preview-zoom-controls";
+  const zoomOutBtn = makePreviewButton("ne-bundle-zoom", "−", "Zoom out");
+  const zoomInBtn = makePreviewButton("ne-bundle-zoom", "+", "Zoom in");
+  const zoomResetBtn = makePreviewButton("ne-bundle-zoom ne-bundle-zoom-reset", "1x", "Reset zoom");
+  const zoomLabel = document.createElement("span");
+  zoomLabel.className = "ne-bundle-zoom-label";
+  zoomLabel.dataset.previewZoomLabel = "true";
+  zoomLabel.textContent = `${Math.round(clampPreviewZoom(graph.nodes[nodeId]) * 100)}%`;
+  zoomOutBtn.addEventListener("click", (e) => { e.stopPropagation(); stepPreviewZoom(nodeId, -1); });
+  zoomInBtn.addEventListener("click", (e) => { e.stopPropagation(); stepPreviewZoom(nodeId, 1); });
+  zoomResetBtn.addEventListener("click", (e) => { e.stopPropagation(); setPreviewZoom(nodeId, 1, { anchor: "center" }); });
+  controls.append(zoomOutBtn, zoomLabel, zoomInBtn, zoomResetBtn);
+  return controls;
+}
+
+function makeSingleMediaPreview(node, value, kind) {
+  const wrap = document.createElement("div");
+  wrap.className = "ne-single-preview";
+  wrap.appendChild(makePreviewZoomStage(node, makeBundleMedia(value, kind)));
+  wrap.appendChild(makePreviewZoomControls(node.id));
+  return wrap;
+}
+
 function buildPreviewContent(node) {
   const wrap = document.createElement("div");
   wrap.className = `ne-preview-content`;
@@ -2674,13 +3435,10 @@ function buildPreviewContent(node) {
       const slider = document.createElement("div");
       slider.className = "ne-bundle-slider";
       slider.dataset.nodeId = node.id;
-      const stage = document.createElement("div");
-      stage.className = "ne-bundle-stage";
-      stage.style.setProperty("--preview-zoom", String(clampPreviewZoom(node)));
       const counter = document.createElement("span");
       counter.className = "ne-bundle-counter";
       const index = clampPreviewIndex(node, items.length);
-      stage.appendChild(makeBundleMedia(items[index], inferPreviewMediaKind(node, node.lastResult?.kind, items[index])));
+      const stage = makePreviewZoomStage(node, makeBundleMedia(items[index], inferPreviewMediaKind(node, node.lastResult?.kind, items[index])));
       counter.textContent = `${index + 1} / ${items.length}`;
       slider.appendChild(stage);
       const ctrls = document.createElement("div");
@@ -2689,23 +3447,11 @@ function buildPreviewContent(node) {
       const nextBtn = makePreviewButton("ne-bundle-step", "→", "Next");
       prevBtn.addEventListener("click", (e) => { e.stopPropagation(); stepPreviewIndex(node.id, -1); });
       nextBtn.addEventListener("click", (e) => { e.stopPropagation(); stepPreviewIndex(node.id, 1); });
-      const zoomOutBtn = makePreviewButton("ne-bundle-zoom", "−", "Zoom out");
-      const zoomInBtn = makePreviewButton("ne-bundle-zoom", "+", "Zoom in");
-      const zoomResetBtn = makePreviewButton("ne-bundle-zoom ne-bundle-zoom-reset", "1x", "Reset zoom");
-      const zoomLabel = document.createElement("span");
-      zoomLabel.className = "ne-bundle-zoom-label";
-      zoomLabel.dataset.previewZoomLabel = "true";
-      zoomLabel.textContent = `${Math.round(clampPreviewZoom(node) * 100)}%`;
-      zoomOutBtn.addEventListener("click", (e) => { e.stopPropagation(); stepPreviewZoom(node.id, -1); });
-      zoomInBtn.addEventListener("click", (e) => { e.stopPropagation(); stepPreviewZoom(node.id, 1); });
-      zoomResetBtn.addEventListener("click", (e) => { e.stopPropagation(); setPreviewZoom(node.id, 1); });
       ctrls.appendChild(prevBtn);
       ctrls.appendChild(counter);
       ctrls.appendChild(nextBtn);
-      ctrls.appendChild(zoomOutBtn);
-      ctrls.appendChild(zoomLabel);
-      ctrls.appendChild(zoomInBtn);
-      ctrls.appendChild(zoomResetBtn);
+      const zoomControls = makePreviewZoomControls(node.id);
+      while (zoomControls.firstChild) ctrls.appendChild(zoomControls.firstChild);
       slider.appendChild(ctrls);
       const pips = document.createElement("div");
       pips.className = "ne-bundle-pips";
@@ -2725,17 +3471,18 @@ function buildPreviewContent(node) {
     return wrap;
   }
 
-  const value = String(result.value);
-  const kind = inferPreviewMediaKind(node, result.kind, value);
+  const rawValue = String(result.value);
+  const kind = inferPreviewMediaKind(node, result.kind, rawValue);
+  // Prefer the .png sidecar alias for image rendering when the raw value
+  // is a UV / vector-map .npy. The alias is set by runGraph from the
+  // backend's `image` field (coordinate / vector-op / mapping responses).
+  const value = (kind === "image" && result.image) ? String(result.image) : rawValue;
   if (kind === "image") {
-    wrap.appendChild(makeBundleMedia(value, "image"));
+    wrap.appendChild(makeSingleMediaPreview(node, value, "image"));
   } else if (kind === "video") {
-    wrap.appendChild(makeBundleMedia(value, "video"));
+    wrap.appendChild(makeSingleMediaPreview(node, value, "video"));
   } else {
-    const pre = document.createElement("pre");
-    pre.className = "ne-preview-text";
-    pre.textContent = value.slice(0, 1200);
-    wrap.appendChild(pre);
+    wrap.appendChild(buildReadonlyMarkdownViewer(node, value, previewMarkdownContextNodeId(node.id)));
   }
   return wrap;
 }
@@ -2747,6 +3494,8 @@ function inferPreviewMediaKind(node, resultKind, value) {
   const k = String(resultKind || "").toLowerCase();
   if (k.startsWith("image")) return "image";
   if (k.startsWith("video")) return "video";
+  // UV / vector maps render as their .png sidecar alias — treat as image.
+  if (k === "vector-map" || k === "vector") return "image";
   if (k && k !== "any" && k !== "text") {
     if (k === "number" || k === "filepath") return "text";
   }
@@ -2757,9 +3506,11 @@ function inferPreviewMediaKind(node, resultKind, value) {
     const srcSock = srcDef?.outputs?.find((s) => s.id === incoming.fromSocket);
     const t = baseType(srcSock?.type || "");
     if (t === "image" || t === "video") return t;
+    if (t === "vector-map" || t === "vector") return "image";
   }
   if (/\.(mp4|mov|webm|mkv)$/i.test(value)) return "video";
   if (/\.(png|jpe?g|webp|gif|bmp|tiff?)$/i.test(value)) return "image";
+  if (/\.npy$/i.test(value)) return "image";
   return "text";
 }
 
@@ -2893,7 +3644,7 @@ function buildSocketRow(nodeId, sock, isInput, opts = {}) {
 }
 
 function isPropWired(nodeId, propId) {
-  return graph.edges.some((e) => e.toNode === nodeId && e.toSocket === propId);
+  return activeIncomingEdges(nodeId, propId).length > 0;
 }
 
 function normalizePropValue(propDef, control) {
@@ -2901,10 +3652,12 @@ function normalizePropValue(propDef, control) {
   if (propDef.kind === "number" || propDef.kind === "range") {
     return control.value === "" ? null : Number(control.value);
   }
+  if (propDef.kind === "color") return String(control.value || "#000000");
   return control.value;
 }
 
 function coerceWiredPropValue(propDef, value) {
+  if (propDef.passthroughWired) return value;
   if (propDef.kind === "checkbox") return coerceBooleanInput(value);
   if (propDef.kind === "number" || propDef.kind === "range") {
     if (value === "" || value == null) return null;
@@ -2932,6 +3685,7 @@ function setNodePropValue(nodeId, propDef, value, sourceControl = null) {
   syncPropControls(nodeId, propDef.id, value, sourceControl);
   if (node.type === "text-input" && (propDef.id === "value" || propDef.id === "highlight_pairs")) {
     applyNodeMinimumSizeNow(nodeId);
+    if (propDef.id === "value") preserveActiveStringEditorSignature(nodeId, sourceControl);
     if (propDef.id === "highlight_pairs") refreshStringEditorsForNode(nodeId);
   }
   if (propDef.id === "size") {
@@ -2946,6 +3700,17 @@ function setNodePropValue(nodeId, propDef, value, sourceControl = null) {
   }
   scheduleAutosave();
   schedulePreviewRefresh();
+}
+
+function preserveActiveStringEditorSignature(nodeId, sourceControl = null) {
+  const node = graph.nodes[nodeId];
+  const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+  if (!node || node.type !== "text-input" || !el) return;
+  const active = document.activeElement;
+  const activeTextarea = active && el.contains(active) && active.classList?.contains("ne-string-textarea");
+  const activeSource = sourceControl?.classList?.contains("ne-string-editor") && sourceControl.dataset.mode === "edit";
+  if (!activeTextarea && !activeSource) return;
+  el.dataset.signature = nodeSignature(node);
 }
 
 function refreshStringEditorsForNode(nodeId) {
@@ -2989,6 +3754,9 @@ function buildPropValueControl(nodeId, propDef, currentValue, opts = {}) {
   } else if (propDef.kind === "number") {
     control = document.createElement("input");
     control.type = "number";
+  } else if (propDef.kind === "color") {
+    control = document.createElement("input");
+    control.type = "color";
   } else if (propDef.kind === "range") {
     control = document.createElement("input");
     control.type = "range";
@@ -3045,9 +3813,13 @@ function buildNodeFields(nodeId, node, def) {
   const allProps = def.props || [];
   let inlinePropIds = new Set();
   if (isPrimitive && allProps.length > 0) {
-    const first = allProps[0];
-    inlinePropIds.add(first.id);
-    fields.appendChild(buildInlinePropRow(nodeId, first, node.props[first.id]));
+    // When allInline is set, surface ALL props bare (no collapsible group).
+    // Use this for primitives with multiple tightly-related values like Vector.
+    const propsToInline = def.allInline ? allProps : [allProps[0]];
+    for (const p of propsToInline) {
+      inlinePropIds.add(p.id);
+      fields.appendChild(buildInlinePropRow(nodeId, p, node.props[p.id]));
+    }
   }
   const groups = new Map();
   for (const propDef of allProps) {
@@ -3160,6 +3932,7 @@ function renderConnections() {
 
     const color = SOCKET_TYPES[outputTypeForRenderedEdge(edge)]?.color || "#888";
     const isBundle = outputProducesBundle(edge.fromNode, edge.fromSocket);
+    const muted = isEdgeMuted(edge);
 
     const path = makeBezierPath(fromPos, toPos);
     const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -3168,9 +3941,11 @@ function renderConnections() {
     pathEl.setAttribute("stroke-width", isBundle ? "2.6" : "2.2");
     pathEl.setAttribute("fill", "none");
     pathEl.setAttribute("stroke-linecap", "round");
-    if (isBundle) pathEl.setAttribute("stroke-dasharray", "6 4");
+    if (muted) pathEl.setAttribute("stroke-dasharray", "2 5");
+    else if (isBundle) pathEl.setAttribute("stroke-dasharray", "6 4");
     pathEl.dataset.edgeId = edge.id;
-    pathEl.style.opacity = "0.92";
+    if (muted) pathEl.classList.add("is-muted");
+    pathEl.style.opacity = muted ? "0.2" : "0.92";
     pathEl.style.cursor = "pointer";
     pathEl.style.pointerEvents = "stroke";
     pathEl.addEventListener("click", (e) => {
@@ -3350,7 +4125,7 @@ function pickAutoConnectPair(fromNode, toNode) {
   const toDef = NODE_BY_TYPE[graph.nodes[toNode]?.type];
   if (!fromDef || !toDef) return null;
   for (const out of fromDef.outputs || []) {
-    for (const inp of toDef.inputs || []) {
+    for (const inp of inputSocketDefsForDef(toDef)) {
       if (canConnect(out.type, inp.type)) {
         const exists = graph.edges.some(
           (e) => !inp.multi && e.toNode === toNode && e.toSocket === inp.id
@@ -3586,24 +4361,10 @@ function startNodeResize(e, nodeId, edge = "se") {
   document.body.style.cursor = resizeCursorForEdge(edge);
 }
 
-// Static height recipe (no DOM measurement). Computing the minimum from the
-// rendered DOM caused a feedback loop where each render bumped the node's
-// height by a sub-pixel; using a stable per-shape recipe keeps the floor
-// constant so dragging/moving never inflates `node.height`.
-function estimateStringEditorVisualLines(node, propDef) {
-  const value = String(node?.props?.[propDef.id] ?? propDef.default ?? "").replace(/\r\n?/g, "\n");
-  const width = Math.max(node?.width || NODE_BY_TYPE[node?.type]?.defaultWidth || 280, 220);
-  const editorWidth = Math.max(120, width - 66);
-  const charsPerLine = Math.max(14, Math.floor(editorWidth / 7.1));
-  return value.split("\n").reduce((sum, line) => {
-    const tabExpanded = line.replace(/\t/g, "    ");
-    return sum + Math.max(1, Math.ceil(tabExpanded.length / charsPerLine));
-  }, 0);
-}
-
-function stringEditorMinRowHeight(node, propDef) {
-  const visibleLines = Math.max(3, estimateStringEditorVisualLines(node, propDef));
-  return 56 + visibleLines * 19;
+// Fixed floor for the string primitive's editor surface. Text content should
+// scroll inside the surface instead of forcing the node to grow as it changes.
+function stringEditorMinRowHeight() {
+  return 62;
 }
 
 function nodeResizeMin(node) {
@@ -3624,7 +4385,10 @@ function nodeResizeMin(node) {
   const MINIMIZED_BODY = 18;
   // Buffer requested by user: ~50px under the last socket/group so the node
   // never feels cramped, even when panels are expanded with little content.
-  const BOTTOM_BUFFER = 50;
+  // The string primitive already pads itself via the editor's toolbar and
+  // textarea chrome, so it gets a much smaller buffer to avoid the visibly
+  // huge empty area that shows up once the value grows past a few lines.
+  const BOTTOM_BUFFER = node.type === "text-input" ? 6 : 50;
 
   if (node.minimized) {
     return {
@@ -3811,17 +4575,31 @@ function updateModal(e) {
     const distStart = Math.hypot(m.startMouse.x - m.pivot.x, m.startMouse.y - m.pivot.y) || 1;
     const distNow = Math.hypot(cur.x - m.pivot.x, cur.y - m.pivot.y);
     const factor = distNow / distStart;
+    // Blender-style: with a single node selected, S resizes the node (with
+    // optional X/Y axis lock for width/height only). With multiple nodes
+    // selected, S keeps node sizes intact and just fans positions out/in
+    // around the median pivot — same as Blender's node editor behaviour.
+    const multi = m.snapshots.size > 1;
+    const fx = m.axis === "y" ? 1 : factor;
+    const fy = m.axis === "x" ? 1 : factor;
     for (const [id, snap] of m.snapshots) {
       const node = graph.nodes[id];
       if (!node) continue;
+      // Position scales around pivot on whichever axes are active.
+      node.x = m.pivot.x + (snap.x - m.pivot.x) * fx;
+      node.y = m.pivot.y + (snap.y - m.pivot.y) * fy;
+      if (multi) {
+        // Restore snapshot size so multi-select scaling never resizes nodes.
+        node.width = snap.w;
+        node.height = snap.hadHeight ? snap.h : null;
+        continue;
+      }
       // Pin the floor to the snapshot's pre-scale width so the content-aware
       // min height stays stable through the gesture instead of stepping.
       if (!snap.min) snap.min = nodeResizeMin(node);
       const min = snap.min;
-      node.x = m.pivot.x + (snap.x - m.pivot.x) * factor;
-      node.y = m.pivot.y + (snap.y - m.pivot.y) * factor;
-      node.width = Math.max(min.w, Math.round(snap.w * factor));
-      node.height = Math.max(min.h, Math.round(snap.h * factor));
+      node.width = Math.max(min.w, Math.round(snap.w * fx));
+      node.height = Math.max(min.h, Math.round(snap.h * fy));
     }
   } else if (m.kind === "R") {
     const startA = Math.atan2(m.startMouse.y - m.pivot.y, m.startMouse.x - m.pivot.x);
@@ -3873,7 +4651,7 @@ function cancelModal() {
 
 function setModalHint(kind) {
   const labels = { G: "Grab/move — LMB confirm · RMB/Esc cancel · X/Y constrain · Ctrl snap",
-                   S: "Scale — LMB confirm · RMB/Esc cancel",
+                   S: "Scale — LMB confirm · RMB/Esc cancel · X/Y constrain · multi-select fans positions",
                    R: "Rotate — LMB confirm · RMB/Esc cancel" };
   setHint(labels[kind] || "");
 }
@@ -4150,19 +4928,20 @@ function onMouseup(e) {
   }
 }
 
-function selectedSliderPreviewFromEvent(e) {
+function zoomablePreviewFromEvent(e) {
   const targetEl = e.target instanceof Element ? e.target : null;
-  const nodeEl = targetEl?.closest?.(".ne-node.is-preview");
+  const stage = targetEl?.closest?.(".ne-preview-zoom-stage");
+  if (!stage) return null;
+  const nodeEl = stage.closest(".ne-node.is-preview");
   if (!nodeEl) return null;
   const nodeId = nodeEl.dataset.nodeId;
-  if (!nodeId || !ix.selection.has(nodeId)) return null;
+  if (!nodeId) return null;
   const node = graph.nodes[nodeId];
-  if (!node || previewModeForNode(node) !== "slider" || previewBundleItems(node).length === 0) return null;
-  return node;
+  return node || null;
 }
 
 function handlePreviewWheel(e) {
-  const node = selectedSliderPreviewFromEvent(e);
+  const node = zoomablePreviewFromEvent(e);
   if (!node) return false;
   const deltaUnit = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : (e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1);
   const delta = e.deltaY * deltaUnit;
@@ -4170,7 +4949,7 @@ function handlePreviewWheel(e) {
   e.preventDefault();
   e.stopPropagation();
   const current = clampPreviewZoom(node);
-  setPreviewZoom(node.id, current * Math.exp(-delta * PREVIEW_ZOOM_WHEEL_SENSITIVITY));
+  setPreviewZoom(node.id, current * Math.exp(-delta * PREVIEW_ZOOM_WHEEL_SENSITIVITY), { anchor: e });
   return true;
 }
 
@@ -4263,15 +5042,29 @@ function selectedSliderPreviewNodeId() {
   return ids.length === 1 ? ids[0] : null;
 }
 
+function selectedZoomablePreviewNodeId() {
+  const ids = [...ix.selection].filter((id) => {
+    const node = graph.nodes[id];
+    if (!node || !PREVIEW_TYPES.has(node.type) || node.hidden || !node.lastResult) return false;
+    if (Array.isArray(node.lastResult.value)) return previewModeForNode(node) === "slider" && previewBundleItems(node).length > 0;
+    const value = String(node.lastResult.value ?? "");
+    const kind = inferPreviewMediaKind(node, node.lastResult.kind, value);
+    return kind === "image" || kind === "video";
+  });
+  return ids.length === 1 ? ids[0] : null;
+}
+
 function handlePreviewKeydown(e) {
   if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
   if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return false;
-  const nodeId = selectedSliderPreviewNodeId();
-  if (!nodeId) return false;
-  if (e.key === "ArrowLeft") stepPreviewIndex(nodeId, -1);
-  if (e.key === "ArrowRight") stepPreviewIndex(nodeId, 1);
-  if (e.key === "ArrowUp") stepPreviewZoom(nodeId, 1);
-  if (e.key === "ArrowDown") stepPreviewZoom(nodeId, -1);
+  const sliderNodeId = selectedSliderPreviewNodeId();
+  const zoomNodeId = selectedZoomablePreviewNodeId();
+  if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !sliderNodeId) return false;
+  if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !zoomNodeId) return false;
+  if (e.key === "ArrowLeft") stepPreviewIndex(sliderNodeId, -1);
+  if (e.key === "ArrowRight") stepPreviewIndex(sliderNodeId, 1);
+  if (e.key === "ArrowUp") stepPreviewZoom(zoomNodeId, 1);
+  if (e.key === "ArrowDown") stepPreviewZoom(zoomNodeId, -1);
   e.preventDefault();
   return true;
 }
@@ -4348,6 +5141,23 @@ function onKeydown(e) {
   if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
     e.preventDefault();
     startReroutePlacement();
+    return;
+  }
+
+  // M — mute / unmute selected nodes.
+  if ((e.key === "m" || e.key === "M") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+    e.preventDefault();
+    if (ix.selection.size > 0) {
+      toggleNodeMuted([...ix.selection]);
+      return;
+    }
+    const hovered = document.elementFromPoint(ix.lastMouseScreen.x, ix.lastMouseScreen.y)?.closest?.(".ne-node");
+    if (hovered?.dataset?.nodeId) {
+      toggleNodeMuted(hovered.dataset.nodeId);
+      return;
+    }
+    setHint("M: select a node first");
+    setTimeout(clearHint, 1400);
     return;
   }
 
@@ -4488,10 +5298,14 @@ function duplicateSelection() {
     newNode.height = node.height;
     newNode.collapsedPanels = JSON.parse(JSON.stringify(node.collapsedPanels || {}));
     newNode.minimized = Boolean(node.minimized);
+    newNode.muted = Boolean(node.muted);
     newNode.foldLocked = Boolean(node.foldLocked);
     newNode.previewMode = node.previewMode || null;
     newNode.previewIndex = Number.isFinite(Number(node.previewIndex)) ? Number(node.previewIndex) : 0;
     newNode.previewZoom = Number.isFinite(Number(node.previewZoom)) ? Number(node.previewZoom) : 1;
+    newNode.previewPanX = Number.isFinite(Number(node.previewPanX)) ? Number(node.previewPanX) : 0;
+    newNode.previewPanY = Number.isFinite(Number(node.previewPanY)) ? Number(node.previewPanY) : 0;
+    newNode.textZoom = Number.isFinite(Number(node.textZoom)) ? Number(node.textZoom) : 1;
     newIds.push(newId);
     idMap[id] = newId;
   }
@@ -4596,7 +5410,7 @@ function autoConnectSelected() {
   const bDef = NODE_BY_TYPE[graph.nodes[b].type];
   let connected = 0;
   for (const out of aDef.outputs || []) {
-    for (const inp of bDef.inputs || []) {
+    for (const inp of inputSocketDefsForDef(bDef)) {
       if (canConnect(out.type, inp.type)) {
         const exists = graph.edges.some((e) => e.toNode === b && e.toSocket === inp.id);
         if (!exists) { addEdge(a, out.id, b, inp.id); connected++; break; }
@@ -4736,7 +5550,7 @@ function renderAddMenuList(query) {
           const realType = graph.nodes[newId]?.type || nodeDef.type;
           const def = NODE_BY_TYPE[realType];
           if (w.isOutput) {
-            const compat = def?.inputs?.find((s) => canConnect(w.fromType, s.type));
+            const compat = inputSocketDefsForDef(def).find((s) => canConnect(w.fromType, s.type));
             if (compat) addEdge(w.fromNode, w.fromSocket, newId, compat.id);
           } else {
             const compat = def?.outputs?.find((s) => canConnect(w.fromType, s.type));
@@ -5011,10 +5825,82 @@ function applyConfiguredWordHighlights(html, specs) {
   }).join("");
 }
 
+function applyTextSearchHighlights(html, query) {
+  const q = String(query || "").trim();
+  if (!q) return String(html || "");
+  const escapedQuery = escHtmlSafe(q);
+  const pattern = escapeRegExp(escapedQuery);
+  if (!pattern) return String(html || "");
+  const re = new RegExp(pattern, "gi");
+  return String(html || "").split(/(<[^>]*>)/g).map((part) => {
+    if (!part || part.startsWith("<")) return part;
+    return part.replace(re, '<mark class="ne-search-hit">$&</mark>');
+  }).join("");
+}
+
+function countTextSearchMatches(text, query) {
+  const q = String(query || "").trim();
+  if (!q) return 0;
+  const re = new RegExp(escapeRegExp(q), "gi");
+  return (String(text || "").match(re) || []).length;
+}
+
+function scrollFirstSearchHit(root) {
+  const hit = root?.querySelector?.(".ne-search-hit");
+  if (hit) hit.scrollIntoView({ block: "center", inline: "nearest" });
+}
+
+async function copyTextToClipboard(text) {
+  const value = String(text ?? "");
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return true;
+  }
+  const ta = document.createElement("textarea");
+  ta.value = value;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  ta.setAttribute("readonly", "");
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); }
+  finally { ta.remove(); }
+  return ok;
+}
+
+function flashTextButton(button, label = "copied") {
+  if (!button) return;
+  if (button.dataset.iconButton === "1") {
+    const oldLabel = button.getAttribute("aria-label") || button.title || "Copy text";
+    button.dataset.state = label;
+    button.classList.toggle("is-copied", label === "copied");
+    button.classList.toggle("is-failed", label !== "copied");
+    button.setAttribute("aria-label", label === "copied" ? "Copied" : "Copy failed");
+    button.title = label === "copied" ? "Copied" : "Copy failed";
+    button.disabled = true;
+    setTimeout(() => {
+      button.dataset.state = "";
+      button.classList.remove("is-copied", "is-failed");
+      button.setAttribute("aria-label", oldLabel);
+      button.title = oldLabel;
+      button.disabled = false;
+    }, 900);
+    return;
+  }
+  const old = button.textContent;
+  button.textContent = label;
+  button.disabled = true;
+  setTimeout(() => {
+    button.textContent = old;
+    button.disabled = false;
+  }, 900);
+}
+
 // Tiny, dependency-free markdown renderer. Supports: headings, bold, italic,
 // inline code, fenced code blocks, blockquotes, hr, links, ordered + unordered
 // lists, and paragraphs. Reference chips are layered on top.
-function renderInlineMarkdown(src, nodeId) {
+function renderInlineMarkdown(src, nodeId, opts = {}) {
   const highlightSpecs = parseWordHighlightPairs(graph.nodes[nodeId]?.props?.highlight_pairs || "");
   const decorate = (html) => applyConfiguredWordHighlights(highlightReferences(html, nodeId), highlightSpecs);
   const lines = String(src ?? "").replace(/\r\n?/g, "\n").split("\n");
@@ -5136,7 +6022,7 @@ function renderInlineMarkdown(src, nodeId) {
     i++;
   }
   flushParagraph(para);
-  return out.join("");
+  return applyTextSearchHighlights(out.join(""), opts.search || "");
 }
 
 // Wrap a textarea selection with prefix/suffix, or apply a line transform.
@@ -5230,6 +6116,7 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
   wrap.dataset.propNode = nodeId;
   wrap.dataset.propId = propDef.id;
   wrap.dataset.mode = "preview";
+  wrap.style.setProperty("--ne-text-zoom", String(clampTextZoom(graph.nodes[nodeId])));
 
   // Toolbar
   const toolbar = document.createElement("div");
@@ -5248,6 +6135,7 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
 
   const editBtn = mkTool("edit", "Edit (click)", () => setMode("edit"));
   const previewBtn = mkTool("preview", "Preview (rendered markdown)", () => setMode("preview"));
+  const copyBtn = makeTextCopyButton("Copy text", () => textarea.value || "");
   const sep1 = document.createElement("span");
   sep1.className = "ne-string-spacer";
   sep1.style.flex = "0 0 8px";
@@ -5271,10 +6159,12 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
 
   const spacer = document.createElement("span");
   spacer.className = "ne-string-spacer";
+  const searchControl = makeTextSearchControl();
+  const search = searchControl.input;
   const meta = document.createElement("span");
   meta.className = "ne-string-meta";
 
-  toolbar.append(editBtn, previewBtn, sep1, boldBtn, italBtn, codeBtn, h2Btn, liBtn, quoteBtn, refBtn, spacer, meta);
+  toolbar.append(editBtn, previewBtn, sep1, boldBtn, italBtn, codeBtn, h2Btn, liBtn, quoteBtn, refBtn, spacer, searchControl.wrap, meta, copyBtn);
 
   // Textarea (editor)
   const textarea = document.createElement("textarea");
@@ -5323,7 +6213,13 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
   const updateMeta = () => {
     const v = textarea.value || "";
     const w = (v.match(/\S+/g) || []).length;
-    meta.textContent = `${v.length}c · ${w}w`;
+    const q = search.value || "";
+    if (q.trim()) {
+      const hits = countTextSearchMatches(v, q);
+      meta.textContent = `${hits} hit${hits === 1 ? "" : "s"}`;
+    } else {
+      meta.textContent = `${v.length}c · ${w}w`;
+    }
   };
   const renderPreview = () => {
     const v = textarea.value || "";
@@ -5332,7 +6228,8 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
       preview.textContent = propDef.placeholder || "(empty)";
     } else {
       preview.classList.remove("is-empty");
-      preview.innerHTML = renderInlineMarkdown(v, nodeId);
+      preview.innerHTML = renderInlineMarkdown(v, nodeId, { search: search.value || "" });
+      if ((search.value || "").trim()) requestAnimationFrame(() => scrollFirstSearchHit(preview));
     }
   };
   const setMode = (m) => {
@@ -5381,9 +6278,27 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
     if (!ix.selection.has(nodeId)) selectOnly(nodeId);
   });
   textarea.addEventListener("click", (e) => e.stopPropagation());
-  textarea.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+  bindTextWheelZoom(textarea, nodeId);
   textarea.addEventListener("scroll", () => syncLineScroll(textarea));
   preview.addEventListener("scroll", () => syncLineScroll(preview));
+  bindTextWheelZoom(preview, nodeId);
+
+  search.addEventListener("mousedown", (e) => e.stopPropagation());
+  search.addEventListener("click", (e) => e.stopPropagation());
+  search.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+  search.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Escape") {
+      search.value = "";
+      updateMeta();
+      renderPreview();
+      preview.focus();
+    }
+  });
+  search.addEventListener("input", () => {
+    updateMeta();
+    renderPreview();
+  });
 
   // Keyboard shortcuts
   textarea.addEventListener("keydown", (e) => {
@@ -5666,7 +6581,8 @@ function buildRunTriggerButton(nodeId) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "ne-run-play";
-  btn.title = "Run connected command(s)";
+  btn.title = isNodeMuted(nodeId) ? "Unmute this node before running" : "Run connected command(s)";
+  btn.disabled = isNodeMuted(nodeId);
   btn.setAttribute("aria-label", "Run connected command nodes");
   btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5.14v13.72c0 .79.87 1.27 1.54.84l10.74-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg><span>Run</span>`;
   btn.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -5683,10 +6599,10 @@ function buildRunTriggerButton(nodeId) {
 // command itself plus every node reachable via data edges in either
 // direction (upstream ancestors and downstream descendants).
 function nodesInTriggerSubgraph(triggerId) {
-  const targets = graph.edges
-    .filter((e) => e.fromNode === triggerId && e.fromSocket === "run")
+  if (isNodeMuted(triggerId)) return new Set();
+  const targets = activeOutgoingEdges(triggerId, "run")
     .map((e) => e.toNode)
-    .filter((id) => graph.nodes[id]);
+    .filter((id) => graph.nodes[id] && !isNodeMuted(id));
   const include = new Set();
   for (const seed of targets) {
     if (include.has(seed)) continue;
@@ -5696,8 +6612,10 @@ function nodesInTriggerSubgraph(triggerId) {
     while (stack.length) {
       const cur = stack.pop();
       if (include.has(cur)) continue;
+      if (isNodeMuted(cur)) continue;
       include.add(cur);
       for (const e of graph.edges) {
+        if (isEdgeMuted(e)) continue;
         const sock = NODE_BY_TYPE[graph.nodes[e.fromNode]?.type]?.outputs?.find((s) => s.id === e.fromSocket);
         if (sock?.type === "run") continue;
         if (e.toNode === cur && !include.has(e.fromNode)) stack.push(e.fromNode);
@@ -5708,14 +6626,19 @@ function nodesInTriggerSubgraph(triggerId) {
   return include;
 }
 
-async function runFromTrigger(triggerId) {
-  const subset = nodesInTriggerSubgraph(triggerId);
-  if (subset.size === 0) {
-    setHint("connect this Run node to a command first");
+async function runFromTrigger(triggerId, opts = {}) {
+  if (isNodeMuted(triggerId)) {
+    setHint("unmute this Run node first");
     setTimeout(clearHint, 1800);
     return;
   }
-  await runGraph({ subset });
+  const subset = nodesInTriggerSubgraph(triggerId);
+  if (subset.size === 0) {
+    setHint("connect this Run node to an active command first");
+    setTimeout(clearHint, 1800);
+    return;
+  }
+  await runGraph({ ...opts, subset });
 }
 
 // Returns the set of node ids that live inside *any* loop body, i.e. those
@@ -5727,12 +6650,11 @@ async function runFromTrigger(triggerId) {
 function computeLoopBodyMembers() {
   const inBody = new Set();
   for (const node of Object.values(graph.nodes)) {
+    if (isNodeMuted(node)) continue;
     if (node.type !== "loop-output") continue;
     const loopId = String(node.props.loop_id || "loop1");
     const stack = [];
-    for (const e of graph.edges) {
-      if (e.toNode === node.id && e.toSocket === "item") stack.push(e.fromNode);
-    }
+    for (const e of activeIncomingEdges(node.id, "item")) stack.push(e.fromNode);
     const visited = new Set();
     while (stack.length) {
       const id = stack.pop();
@@ -5740,14 +6662,13 @@ function computeLoopBodyMembers() {
       visited.add(id);
       const n = graph.nodes[id];
       if (!n) continue;
+      if (isNodeMuted(n)) continue;
       inBody.add(id);
       // Stop walking past the matching decompose — its bundle input lives
       // OUTSIDE the loop body and must remain reachable as a normal
       // upstream dependency.
       if (n.type === "loop-decompose" && String(n.props.loop_id || "loop1") === loopId) continue;
-      for (const e of graph.edges) {
-        if (e.toNode === id) stack.push(e.fromNode);
-      }
+      for (const e of activeIncomingEdges(id)) stack.push(e.fromNode);
     }
   }
   return inBody;
@@ -5772,21 +6693,26 @@ async function runGraph(opts = {}) {
     if (subset && !subset.has(id)) return false;
     if (inLoop.has(id)) return false;
     const n = graph.nodes[id];
+    if (isNodeMuted(n)) return false;
     if (COMMAND_TYPES.has(n.type)) return true;
     if (PREVIEW_TYPES.has(n.type)) {
-      return graph.edges.some((e) => e.toNode === id);
+      // Coordinate is a self-contained source (no inputs); it should run
+      // eagerly so its inline UV preview appears.
+      if (n.type === "coordinate") return true;
+      return activeIncomingEdges(id).length > 0;
     }
     return false;
   });
 
   if (terminals.length === 0) {
-    setGraphStatus("no command or preview nodes to run", "is-failed");
+    setGraphStatus("no active command or preview nodes to run", "is-failed");
     return;
   }
 
-  setGraphStatus("running…", "is-running");
-  startRunLog(`graph run · ${terminals.length} node${terminals.length > 1 ? "s" : ""}`);
-  appendRunLog(`▶ Running graph (${terminals.length} terminal node${terminals.length > 1 ? "s" : ""})\n\n`);
+  const dryRun = Boolean(opts.dryRun);
+  setGraphStatus(dryRun ? "planning…" : "running…", "is-running");
+  startRunLog(`graph ${dryRun ? "dry-run" : "run"} · ${terminals.length} node${terminals.length > 1 ? "s" : ""}`);
+  appendRunLog(`▶ ${dryRun ? "Planning" : "Running"} graph (${terminals.length} terminal node${terminals.length > 1 ? "s" : ""})\n\n`);
 
   const cache = {};
   let anyFailed = false;
@@ -5796,7 +6722,7 @@ async function runGraph(opts = {}) {
     for (const nodeId of terminals) {
       try {
         appendRunLog(`▶ Resolving ${nodeId} (${graph.nodes[nodeId].type})…\n`);
-        const res = await resolveNode(nodeId, cache);
+        const res = await resolveNode(nodeId, cache, {}, { dryRun });
         // Stash result for preview rendering
         const node = graph.nodes[nodeId];
         const outSock = (NODE_BY_TYPE[node.type].outputs || [])[0];
@@ -5808,6 +6734,10 @@ async function runGraph(opts = {}) {
           else if (kind === "video") kind = "video-bundle";
         }
         node.lastResult = { kind, value };
+        if (node._uvImage) {
+          node.lastResult.image = node._uvImage;
+          delete node._uvImage;
+        }
         // Bump cache token so preview <img>/<video> reload after a re-run.
         if (Array.isArray(value)) {
           for (const v of value) if (v) artifactURL.bump(String(v));
@@ -5835,6 +6765,7 @@ async function runGraph(opts = {}) {
   setGraphStatus(anyFailed ? "some nodes failed" : "done", anyFailed ? "is-failed" : "is-done");
   if (window.refreshRunsList) window.refreshRunsList();
   scheduleAutosave();
+  schedulePreviewRefresh();
 }
 
 async function resolveNode(nodeId, cache, loopCtx, opts) {
@@ -5849,6 +6780,11 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   const node = graph.nodes[nodeId];
   if (!node) throw new Error(`Node ${nodeId} not found`);
   const def = NODE_BY_TYPE[node.type];
+  if (isNodeMuted(node)) {
+    const outputs = mutedNodeOutputs(def);
+    cache[cacheKey] = outputs;
+    return outputs;
+  }
   const traceNode = shouldTraceNodeResolution(opts);
 
   // Loop-decompose inside its own loop iteration: serve directly from the
@@ -5902,6 +6838,19 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
 
   const inputs = {};
   const skipInputResolution = node.type === "loop-output" ? new Set(["item"]) : new Set();
+  // When an image-typed socket pulls from a vector-map producer, swap the
+  // raw .npy for its .png sidecar alias so commands / previews see a real
+  // image. Vector consumers (vector-op) keep the .npy via their `any` type.
+  const adaptForDest = (rawValue, edge, destType) => {
+    if (rawValue == null || rawValue === "") return rawValue;
+    if (Array.isArray(rawValue)) return rawValue;
+    const dt = String(destType || "");
+    if (dt !== "image" && dt !== "image-bundle") return rawValue;
+    if (typeof rawValue !== "string" || !/\.npy$/i.test(rawValue)) return rawValue;
+    const src = graph.nodes[edge.fromNode];
+    const alias = src?._uvImage || src?.lastResult?.image || "";
+    return alias || rawValue;
+  };
   // Build a lookup: any input socket id whose name matches a prop becomes
   // overridden by an edge if one exists. This is what makes "props as
   // sockets" work — the synthetic input socket overrides the static prop.
@@ -5910,12 +6859,13 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       inputs[sock.id] = node.props[sock.id] ?? "";
       continue;
     }
-    const matchingEdges = graph.edges.filter((e) => e.toNode === nodeId && e.toSocket === sock.id);
+    const matchingEdges = activeIncomingEdges(nodeId, sock.id);
     if (sock.multi) {
       const values = [];
       for (const edge of matchingEdges) {
         const sourceOutputs = await resolveNode(edge.fromNode, cache, loopCtx, opts);
-        const v = sourceOutputs[edge.fromSocket];
+        let v = sourceOutputs[edge.fromSocket];
+        v = adaptForDest(v, edge, sock.type);
         if (v != null && v !== "") {
           if (Array.isArray(v)) values.push(...v); else values.push(v);
         }
@@ -5924,7 +6874,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     } else if (matchingEdges.length > 0) {
       const edge = matchingEdges[0];
       const sourceOutputs = await resolveNode(edge.fromNode, cache, loopCtx, opts);
-      inputs[sock.id] = sourceOutputs[edge.fromSocket];
+      inputs[sock.id] = adaptForDest(sourceOutputs[edge.fromSocket], edge, sock.type);
     } else {
       inputs[sock.id] = node.props[sock.id] ?? "";
     }
@@ -5933,7 +6883,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   // static prop value for this resolution.
   for (const propDef of def.props || []) {
     if ((def.inputs || []).some((s) => s.id === propDef.id)) continue;
-    const matching = graph.edges.filter((e) => e.toNode === nodeId && e.toSocket === propDef.id);
+    const matching = activeIncomingEdges(nodeId, propDef.id);
     if (matching.length > 0) {
       const edge = matching[0];
       const sourceOutputs = await resolveNode(edge.fromNode, cache, loopCtx, opts);
@@ -5947,8 +6897,34 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   try {
   switch (node.type) {
     case "text-input":     outputs.out = String(node.props.value || ""); break;
+    case "tool-flag": {
+      outputs.out = {
+        tool_name: String(node.props.tool_name || ""),
+        enabled: node.props.enabled !== false,
+        description: String(node.props.description || ""),
+        category: String(node.props.category || ""),
+        destructive: node.props.destructive ?? "",
+      };
+      break;
+    }
+    case "brain": {
+      const sections = Array.isArray(inputs.sections)
+        ? inputs.sections
+        : (inputs.sections != null && inputs.sections !== "" ? [inputs.sections] : []);
+      outputs.out = sections
+        .map((value) => String(value == null ? "" : value).trim())
+        .filter(Boolean)
+        .join("\n\n")
+        .trim();
+      break;
+    }
     case "number-input":   outputs.out = Number(node.props.value ?? 1); break;
     case "boolean-input":  outputs.out = Boolean(node.props.value); break;
+    case "vector-input":   outputs.out = [
+      Number(node.props.x ?? 0),
+      Number(node.props.y ?? 0),
+      Number(node.props.z ?? 0),
+    ]; break;
     case "image-input":
     case "video-input":
     case "filepath-input":
@@ -5972,6 +6948,8 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const params = { path: folderPath, kind, recursive };
       const fps = Number(pick("fps"));
       if (Number.isFinite(fps) && fps > 0) params.fps = String(fps);
+      const modulo = Number(pick("modulo"));
+      if (Number.isFinite(modulo) && modulo > 1) params.modulo = String(Math.round(modulo));
       const start = Number(pick("start"));
       if (Number.isFinite(start) && start > 0) params.start = String(Math.round(start));
       const end = Number(pick("end"));
@@ -6051,7 +7029,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         /\.[A-Za-z0-9]{1,6}$/.test(str) &&
         !str.includes("\n") &&
         str.length < 512;
-      const inEdge = graph.edges.find((e) => e.toNode === nodeId && e.toSocket === "in");
+      const inEdge = activeIncomingEdges(nodeId, "in")[0];
       const inSockType = inEdge ? baseType(outputSocketDef(inEdge.fromNode, inEdge.fromSocket)?.type || "any") : "any";
       const isText = inSockType === "text" || (!looksLikePath && inSockType === "any");
       if (isText) {
@@ -6063,7 +7041,6 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
             prompt: str,
             instructions,
             images: [],
-            model_name: "grok-3-mini-fast",
             model_api_key: "",
           }),
         });
@@ -6089,6 +7066,35 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       outputs.out = result.path;
       break;
     }
+    case "blur-image": {
+      // Gaussian blur via PIL on the server. Accepts a single image path or
+      // a bundle (array of paths). Empty input → empty output (no-op).
+      const radius = Math.max(0, Number(node.props.radius ?? 4));
+      const blurOne = async (path) => {
+        const p = String(path || "").trim();
+        if (!p) return "";
+        appendRunLog(`  ↳ Blurring ${p} (r=${radius})…\n`);
+        const result = await fetchJSON("/api/blur-image", {
+          method: "POST",
+          body: JSON.stringify({ path: p, radius }),
+        });
+        if (result.error) throw new Error(`blur: ${result.error}`);
+        appendRunLog(`  ↳ → ${result.path}\n`);
+        return result.path;
+      };
+      const v = inputs.in;
+      if (Array.isArray(v)) {
+        const out = [];
+        for (const item of v) {
+          const blurred = await blurOne(item);
+          if (blurred) out.push(blurred);
+        }
+        outputs.out = out;
+        break;
+      }
+      outputs.out = await blurOne(v);
+      break;
+    }
     case "prompt-filter": {
       const imageInputs = Array.isArray(inputs.input)
         ? inputs.input.filter((v) => v).map((v) => String(v))
@@ -6096,16 +7102,41 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const imageNote = imageInputs.length
         ? ` + ${imageInputs.length} image${imageInputs.length === 1 ? "" : "s"}`
         : "";
-      appendRunLog(`  ↳ Filtering prompt via ${node.props.model_name || "model"}${imageNote}…\n`);
+      // Edges into prop-sockets override the static prop value.
+      const pf_pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : node.props[key];
+      const pf_str = (key) => {
+        const v = pf_pick(key);
+        return (v == null) ? "" : String(v).trim();
+      };
+      const pf_num = (key) => {
+        const v = pf_pick(key);
+        if (v === "" || v == null) return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      };
+      const modelOverride = pf_str("model");
+      const reasoningEffort = pf_str("reasoning_effort");
+      const payload = {
+        prompt: inputs.prompt || "",
+        instructions: inputs.instructions || "",
+        images: imageInputs,
+        model: modelOverride,
+        model_api_key: pf_str("model_api_key"),
+        reasoning_effort: (reasoningEffort && reasoningEffort !== "default") ? reasoningEffort : "",
+        temperature: pf_num("temperature"),
+        top_p: pf_num("top_p"),
+        max_tokens: pf_num("max_tokens"),
+        seed: pf_num("seed"),
+        frequency_penalty: pf_num("frequency_penalty"),
+        presence_penalty: pf_num("presence_penalty"),
+        stop: pf_str("stop"),
+      };
+      const modelLabel = modelOverride || "MODEL_NAME";
+      const effortNote = payload.reasoning_effort ? ` (reasoning=${payload.reasoning_effort})` : "";
+      appendRunLog(`  ↳ Filtering prompt via ${modelLabel}${effortNote}${imageNote}…\n`);
       const result = await fetchJSON("/api/filter-prompt", {
         method: "POST",
-        body: JSON.stringify({
-          prompt: inputs.prompt || "",
-          instructions: inputs.instructions || "",
-          images: imageInputs,
-          model_name: node.props.model_name || "grok-3-mini-fast",
-          model_api_key: node.props.model_api_key || "",
-        }),
+        body: JSON.stringify(payload),
       });
       if (result.error) throw new Error(`filter-prompt: ${result.error}`);
       outputs.out = result.filtered_prompt || inputs.prompt || "";
@@ -6125,11 +7156,149 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
     case "reroute":
       outputs.out = inputs.in;
+      // Carry the .png alias forward so downstream previews can render
+      // UV / vector-map sources without staring at a .npy.
+      {
+        const inc = activeIncomingEdges(nodeId, "in")[0];
+        const src = inc ? graph.nodes[inc.fromNode] : null;
+        const alias = src?._uvImage || src?.lastResult?.image || "";
+        if (alias) node._uvImage = alias;
+      }
       break;
     case "preview":
       outputs.out = inputs.in;
       outputs.in = inputs.in;
+      {
+        const inc = activeIncomingEdges(nodeId, "in")[0];
+        const src = inc ? graph.nodes[inc.fromNode] : null;
+        const alias = src?._uvImage || src?.lastResult?.image || "";
+        if (alias) node._uvImage = alias;
+      }
       break;
+    case "coordinate": {
+      const w = Math.max(1, Math.round(Number(node.props.width ?? 1024)));
+      const h = Math.max(1, Math.round(Number(node.props.height ?? 1024)));
+      const dpi = Math.max(1, Math.round(Number(node.props.dpi ?? 72)));
+      const space = String(node.props.space || "uv");
+      appendRunLog(`  ↳ Coord ${w}×${h}${space === "screen" ? " (screen)" : ""}\n`);
+      const result = await fetchJSON("/api/uv/coordinate", {
+        method: "POST",
+        body: JSON.stringify({ width: w, height: h, dpi, space }),
+      });
+      if (result.error) throw new Error(`coordinate: ${result.error}`);
+      outputs.uv = result.path;
+      // Stash the .png alias so inline image previews (and any downstream
+      // consumer that prefers an image) can render without loading a .npy.
+      node._uvImage = result.image || result.preview || "";
+      break;
+    }
+    case "vector-op": {
+      const op = String(node.props.op || "add");
+      const payload = {
+        op,
+        a: _coerceVectorInput(inputs.a),
+        b: _coerceVectorInput(inputs.b),
+      };
+      appendRunLog(`  ↳ Vector ${op}\n`);
+      const result = await fetchJSON("/api/uv/vector", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (result.error) throw new Error(`vector: ${result.error}`);
+      outputs.out = result.path;
+      node._uvImage = result.image || result.preview || "";
+      break;
+    }
+    case "mapping": {
+      const uv = inputs.uv;
+      if (!uv) throw new Error("mapping: UV input required");
+      const payload = {
+        uv: { path: String(uv) },
+        location_x: Number(node.props.location_x ?? 0),
+        location_y: Number(node.props.location_y ?? 0),
+        rotation: Number(node.props.rotation ?? 0),
+        scale_x: Number(node.props.scale_x ?? 1),
+        scale_y: Number(node.props.scale_y ?? 1),
+        pivot_x: Number(node.props.pivot_x ?? 0.5),
+        pivot_y: Number(node.props.pivot_y ?? 0.5),
+      };
+      appendRunLog(`  ↳ Mapping rot=${payload.rotation}° scale=(${payload.scale_x},${payload.scale_y})\n`);
+      const result = await fetchJSON("/api/uv/mapping", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (result.error) throw new Error(`mapping: ${result.error}`);
+      outputs.out = result.path;
+      node._uvImage = result.image || result.preview || "";
+      break;
+    }
+    case "mix": {
+      const mode = String(node.props.mode || "mix");
+      const clamp = node.props.clamp !== false;
+      const factorRaw = inputs.factor !== undefined && inputs.factor !== "" && inputs.factor !== null
+        ? inputs.factor
+        : Number(node.props.factor ?? 0.5);
+      const aRaw = inputs.a !== undefined && inputs.a !== "" && inputs.a !== null
+        ? inputs.a
+        : (node.props.a ?? node.props.color_a ?? "#000000");
+      const bRaw = inputs.b !== undefined && inputs.b !== "" && inputs.b !== null
+        ? inputs.b
+        : (node.props.b ?? node.props.color_b ?? "#ffffff");
+
+      const factor = _coerceMixInput(factorRaw, { isFactor: true });
+      const a = _coerceMixInput(aRaw, {});
+      const b = _coerceMixInput(bRaw, {});
+
+      // Fast path: pure scalar/color → blend in JS, no server hit.
+      if (!factor.isPath && !a.isPath && !b.isPath) {
+        const f = clamp ? Math.max(0, Math.min(1, Number(factor.scalar ?? factor.color?.[0] ?? 0))) : Number(factor.scalar ?? factor.color?.[0] ?? 0);
+        const colA = a.color || [Number(a.scalar) || 0, Number(a.scalar) || 0, Number(a.scalar) || 0, 1];
+        const colB = b.color || [Number(b.scalar) || 0, Number(b.scalar) || 0, Number(b.scalar) || 0, 1];
+        const blended = _jsBlend(colA, colB, mode);
+        const out = colA.map((v, i) => (1 - f) * v + f * (blended[i] ?? v));
+        outputs.out = _rgbaToHex(out);
+        appendRunLog(`  ↳ Mix(${mode}) → ${outputs.out} (scalar)\n`);
+        break;
+      }
+
+      const payload = {
+        mode,
+        clamp,
+        factor: factor.payload,
+        a: a.payload,
+        b: b.payload,
+      };
+      appendRunLog(`  ↳ Mix ${mode}\n`);
+      const result = await fetchJSON("/api/uv/mix", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (result.error) throw new Error(`mix: ${result.error}`);
+      if (result.path) outputs.out = result.path;
+      else if (result.color) outputs.out = _rgbaToHex(result.color);
+      else outputs.out = "";
+      break;
+    }
+    case "uv-render": {
+      const pixel = inputs.pixel;
+      const uv = inputs.uv;
+      if (!pixel) throw new Error("uv-render: pixel input required");
+      if (!uv) throw new Error("uv-render: UV input required");
+      const payload = {
+        pixel: String(pixel),
+        uv: { path: String(uv) },
+        interp: String(node.props.interp || "bilinear"),
+        extension: String(node.props.extension || "clamp"),
+      };
+      appendRunLog(`  ↳ UV Render (${payload.interp}, ${payload.extension})\n`);
+      const result = await fetchJSON("/api/uv/render", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (result.error) throw new Error(`uv-render: ${result.error}`);
+      outputs.out = result.path;
+      break;
+    }
     case "math-op": {
       const a = Number(inputs.a ?? 0);
       const b = Number(inputs.b ?? 0);
@@ -6195,9 +7364,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       if (!decomposeNodeId) throw new Error(`loop-output: no matching loop-decompose with loop_id="${loopId}"`);
       // Resolve the bundle feeding into the decompose ONCE, in the outer
       // cache, so n2 / upstream commands don't re-execute per iteration.
-      const decomposeBundleEdges = graph.edges.filter(
-        (e) => e.toNode === decomposeNodeId && e.toSocket === "bundle"
-      );
+      const decomposeBundleEdges = activeIncomingEdges(decomposeNodeId, "bundle");
       let bundleValue = [];
       if (decomposeBundleEdges.length > 0) {
         const edge = decomposeBundleEdges[0];
@@ -6208,7 +7375,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       // Resolve the item input N times with a fresh sub-cache per iteration.
       // The item list is carried in loopCtx so the decompose node can serve
       // it without re-walking its bundle input.
-      const itemEdges = graph.edges.filter((e) => e.toNode === nodeId && e.toSocket === "item");
+      const itemEdges = activeIncomingEdges(nodeId, "item");
       const collected = [];
       for (let i = 0; i < bundleValue.length; i++) {
         const subCtx = { ...loopCtx, [loopId]: { i, total: bundleValue.length, items: bundleValue } };
@@ -6252,7 +7419,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
     default: {
       if (COMMAND_TYPES.has(node.type)) {
-        const result = await executeCommandNode(node, inputs);
+        const result = await executeCommandNode(node, inputs, opts);
         // Iterations > 1 produces a bundle; otherwise a single artifact.
         if (Array.isArray(result.artifacts) && result.artifacts.length > 1) {
           outputs.out = result.artifacts;
@@ -6272,12 +7439,14 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   }
 
   cache[cacheKey] = outputs;
-  if (!opts.lite && !opts.liteCommands) stashNodeResult(nodeId, outputs);
+  if ((!opts.lite && !opts.liteCommands) || LIVE_UPDATE_TYPES.has(node.type)) {
+    stashNodeResult(nodeId, outputs);
+  }
   finishNodeWork(work, "done");
   return outputs;
 }
 
-async function executeCommandNode(node, inputs) {
+async function executeCommandNode(node, inputs, opts = {}) {
   const cmdMap = {
     "cmd-image": "image", "cmd-video": "video", "cmd-edit": "edit",
     "cmd-merge": "merge", "cmd-extend": "extend",
@@ -6323,7 +7492,7 @@ async function executeCommandNode(node, inputs) {
   const usesVideoModel = command === "video" || command === "extend" || command === "edit";
   const payload = {
     command,
-    dryRun: false,
+    dryRun: Boolean(opts.dryRun),
     subject: inputs.subject || "",
     motion: inputs.motion || "",
     style: str("style", ""),
@@ -6844,6 +8013,7 @@ function persistTabs() {
         savedGraphId: t.savedGraphId || null,
         dirty: !!t.dirty,
         snapshot: t.snapshot || null,
+        kind: t.kind || "workflow",
       })),
     };
     localStorage.setItem(TABS_KEY, JSON.stringify(payload));
@@ -6894,11 +8064,22 @@ function activateTab(id, opts = {}) {
   if (!tab) return;
   tabsState.activeId = id;
   applyTabToCanvas(tab);
+  applyShellKind(tab);
   renderGraphTabs();
+  renderPalette();
   persistTabs();
-  try {
-    localStorage.setItem(GRAPH_STORAGE_KEY, JSON.stringify(tab.snapshot || serializeGraph()));
-  } catch (_) {}
+  // Don't pollute the workflow autosave with brain-tab contents.
+  if ((tab.kind || "workflow") === "workflow") {
+    try {
+      localStorage.setItem(GRAPH_STORAGE_KEY, JSON.stringify(tab.snapshot || serializeGraph()));
+    } catch (_) {}
+  }
+}
+
+function applyShellKind(tab) {
+  const shell = document.querySelector(".ne-shell") || document.body;
+  const isBrain = !!(tab && tab.kind === "brain");
+  shell.classList.toggle("is-brain-tab", isBrain);
 }
 
 function newTab(opts = {}) {
@@ -6909,11 +8090,14 @@ function newTab(opts = {}) {
     savedGraphId: opts.savedGraphId || null,
     dirty: !!opts.dirty,
     snapshot: opts.snapshot || null,
+    kind: opts.kind || "workflow",
   };
   tabsState.tabs.push(tab);
   tabsState.activeId = tab.id;
   applyTabToCanvas(tab);
+  applyShellKind(tab);
   renderGraphTabs();
+  renderPalette();
   persistTabs();
   return tab;
 }
@@ -7004,6 +8188,7 @@ function renderGraphTabs() {
     const el = document.createElement("div");
     el.className = "ne-graph-tab" + (tab.id === tabsState.activeId ? " is-active" : "");
     el.dataset.tabId = tab.id;
+    el.dataset.tabKind = tab.kind || "workflow";
     el.title = tab.name + (tab.dirty ? " (unsaved)" : "");
     const name = document.createElement("span");
     name.className = "ne-graph-tab-name";
@@ -7034,6 +8219,10 @@ function renderGraphTabs() {
 // Returns true on success, false if cancelled.
 function saveCurrentGraph(opts = {}) {
   const tab = getActiveTab();
+  // Brain tabs save to the server, not localStorage.
+  if (tab && tab.kind === "brain") {
+    return saveBrainGraphTab(tab, opts);
+  }
   const data = serializeGraph();
   const list = getSavedGraphs();
   const now = Date.now();
@@ -7091,6 +8280,76 @@ function saveCurrentGraph(opts = {}) {
     setTimeout(clearHint, 1500);
   }
   return true;
+}
+
+// ─── Agent brain tab ─────────────────────────────────────────────────────
+// Brain tabs persist to the server (.rundeer/agent/brain.json) instead of
+// localStorage, and recompile the runtime config on every save so the next
+// agent turn picks up the changes.
+
+const BRAIN_TAB_NAME = "Agent Brain";
+
+async function openBrainTab() {
+  // Focus existing brain tab if open.
+  const existing = tabsState.tabs.find((t) => t.kind === "brain");
+  if (existing) { activateTab(existing.id); return existing; }
+  let payload = null;
+  try {
+    const res = await fetch("/api/agent/brain-graph");
+    if (res.ok) payload = await res.json();
+  } catch (_) {}
+  const snapshot = (payload && payload.graph) || { version: 1, nodes: {}, edges: [], _nextId: 1 };
+  const tab = newTab({
+    name: BRAIN_TAB_NAME,
+    snapshot,
+    kind: "brain",
+    dirty: false,
+  });
+  return tab;
+}
+
+function saveBrainGraphTab(tab, opts = {}) {
+  const data = serializeGraph();
+  fetch("/api/agent/brain-graph", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ graph: data }),
+  }).then(async (res) => {
+    if (!res.ok) {
+      const err = await res.text().catch(() => "");
+      setHint(`brain save failed: ${err.slice(0, 120)}`);
+      setTimeout(clearHint, 3000);
+      return;
+    }
+    if (!opts.silent) {
+      setHint("agent brain saved");
+      setTimeout(clearHint, 1500);
+    }
+  }).catch((exc) => {
+    setHint(`brain save failed: ${exc.message || exc}`);
+    setTimeout(clearHint, 3000);
+  });
+  tab.snapshot = data;
+  tab.dirty = false;
+  renderGraphTabs();
+  persistTabs();
+  // Also notify the live agent WS so the running Conversation refreshes
+  // its in-memory snapshot + runtime. The HTTP POST above already
+  // persisted + recompiled on disk, so skip a second write here.
+  try {
+    if (window.AgentChat && typeof window.AgentChat.sendBrainSnapshot === "function") {
+      window.AgentChat.sendBrainSnapshot(data, { persist: false });
+    }
+  } catch (_) {}
+  return true;
+}
+
+function applyBrainPatchOp(op) {
+  // Brain patches use the same op shape as workflow patches; just dispatch
+  // through the existing helper so add_node/remove_node/set_props/edge ops
+  // mutate the live brain canvas. Only safe to call while the brain tab is
+  // active.
+  applyAgentPatchOp(op);
 }
 
 function deleteSavedGraph(id) {
@@ -7207,6 +8466,7 @@ function initTabsSystem() {
       savedGraphId: t.savedGraphId || null,
       dirty: !!t.dirty,
       snapshot: t.snapshot || null,
+      kind: t.kind || "workflow",
     }));
     tabsState.activeId = restored.activeId && tabsState.tabs.find((t) => t.id === restored.activeId)
       ? restored.activeId
@@ -7234,7 +8494,9 @@ function initTabsSystem() {
   } finally {
     tabsState._suspendDirty = false;
   }
+  applyShellKind(active);
   renderGraphTabs();
+  renderPalette();
   // Auto-fit once the canvas is laid out.
   requestAnimationFrame(() => requestAnimationFrame(() => frameAll()));
 }
@@ -7246,9 +8508,9 @@ function scheduleAutosave() {
 }
 
 // ─── Preview auto-refresh ────────────────────────────────────────────────────
-// Re-resolves every preview node in `lite` mode after any cheap upstream
-// change (text-input edits, edge add/remove, etc.). Lite mode never invokes
-// command nodes or other server endpoints — those reuse their lastResult.
+// Re-resolves preview nodes and live-update nodes in `lite` mode after any
+// cheap upstream change (text-input edits, edge add/remove, etc.). Lite mode
+// never invokes command nodes — those reuse their lastResult.
 
 let _previewRefreshTimer = null;
 let _previewRefreshRunning = false;
@@ -7264,10 +8526,18 @@ async function refreshAllPreviews(opts = {}) {
   _previewRefreshRunning = true;
   try {
     const previews = Object.values(graph.nodes).filter((n) => PREVIEW_TYPES.has(n.type));
-    if (previews.length === 0) return;
+    const liveNodes = Object.values(graph.nodes).filter((n) => LIVE_UPDATE_TYPES.has(n.type) && !isNodeMuted(n));
+    if (previews.length === 0 && liveNodes.length === 0) return;
     const cache = {};
     const resolveOpts = { lite: !opts.force };
     let changedAny = false;
+    for (const node of liveNodes) {
+      try {
+        const before = JSON.stringify(node.lastResult || null);
+        await resolveNode(node.id, cache, {}, resolveOpts);
+        if (JSON.stringify(node.lastResult || null) !== before) changedAny = true;
+      } catch (_) { /* ignore: leaves prior lastResult untouched */ }
+    }
     for (const node of previews) {
       // `file` is a preview-style source: its value comes straight from the
       // `path` prop (or a wired prop-socket) — no upstream `in` to walk.
@@ -7305,10 +8575,18 @@ async function refreshAllPreviews(opts = {}) {
         }
         continue;
       }
-      if (!graph.edges.some((e) => e.toNode === node.id && e.toSocket === "in")) continue;
+      // Most previews use an "in" socket. UV Render and any future preview
+      // with bespoke inputs still need to refresh — accept any incoming edge.
+      // Coordinate has no inputs but is self-driving from its props.
+      if (node.type !== "coordinate" && !graph.edges.some((e) => e.toNode === node.id)) continue;
       try {
         const res = await resolveNode(node.id, cache, {}, resolveOpts);
-        const value = res.in !== undefined ? res.in : res.out;
+        const def = NODE_BY_TYPE[node.type];
+        const primaryOut = (def?.outputs || [])[0]?.id;
+        let value;
+        if (res.in !== undefined) value = res.in;
+        else if (res.out !== undefined) value = res.out;
+        else if (primaryOut && res[primaryOut] !== undefined) value = res[primaryOut];
         let kind = "any";
         if (Array.isArray(value)) {
           const first = value.find((v) => v != null && v !== "");
@@ -7319,6 +8597,10 @@ async function refreshAllPreviews(opts = {}) {
         }
         const before = JSON.stringify(node.lastResult || null);
         node.lastResult = { kind, value: value === undefined ? "" : value };
+        if (node._uvImage) {
+          node.lastResult.image = node._uvImage;
+          delete node._uvImage;
+        }
         if (opts.force) {
           if (Array.isArray(value)) {
             for (const v of value) if (v) artifactURL.bump(String(v));
@@ -7372,9 +8654,13 @@ function serializeGraph() {
       previewMode: n.previewMode || null,
       previewIndex: Number.isFinite(Number(n.previewIndex)) ? Number(n.previewIndex) : null,
       previewZoom: Number.isFinite(Number(n.previewZoom)) ? Number(n.previewZoom) : null,
+      previewPanX: Number.isFinite(Number(n.previewPanX)) ? Number(n.previewPanX) : 0,
+      previewPanY: Number.isFinite(Number(n.previewPanY)) ? Number(n.previewPanY) : 0,
+      textZoom: Number.isFinite(Number(n.textZoom)) ? Number(n.textZoom) : null,
       collapsed: Boolean(n.collapsed),
       foldLocked: Boolean(n.foldLocked),
       minimized: Boolean(n.minimized),
+      muted: Boolean(n.muted),
       collapsedPanels: n.collapsedPanels || {},
       lastResult: n.lastResult || null,
       lastRunMs: typeof n.lastRunMs === "number" ? n.lastRunMs : null,
@@ -7399,10 +8685,14 @@ function loadGraphData(data) {
       ...migrated,
       title: typeof migrated.title === "string" ? migrated.title : "",
       minimized: Boolean(migrated.minimized),
+      muted: Boolean(migrated.muted),
       foldLocked: Boolean(migrated.foldLocked),
       previewMode: migrated.previewMode === "slider" ? "slider" : (migrated.previewMode === "grid" ? "grid" : null),
       previewIndex: Number.isFinite(Number(migrated.previewIndex)) ? Number(migrated.previewIndex) : 0,
       previewZoom: Math.round(clampValue(Number(migrated.previewZoom) || 1, PREVIEW_ZOOM_MIN, PREVIEW_ZOOM_MAX) * 100) / 100,
+      previewPanX: Number.isFinite(Number(migrated.previewPanX)) ? Number(migrated.previewPanX) : 0,
+      previewPanY: Number.isFinite(Number(migrated.previewPanY)) ? Number(migrated.previewPanY) : 0,
+      textZoom: Math.round(clampValue(Number(migrated.textZoom) || 1, TEXT_ZOOM_MIN, TEXT_ZOOM_MAX) * 100) / 100,
       collapsedPanels: migrated.collapsedPanels || {},
       lastRunMs: typeof migrated.lastRunMs === "number" ? migrated.lastRunMs : null,
       lastRunStatus: migrated.lastRunStatus || null,
@@ -7413,9 +8703,10 @@ function loadGraphData(data) {
       foldIndex: null,
       foldCount: null,
     };
+    migrateMixNode(graph.nodes[id]);
     sanitizeCommandProps(graph.nodes[id]);
   }
-  graph.edges = (data.edges || []).map((e) => ({ ...e, id: e.id || genEdgeId() }));
+  graph.edges = (data.edges || []).map((e) => migrateMixEdge({ ...e, id: e.id || genEdgeId() }));
   graph._nextId = data._nextId || (Math.max(0, ...Object.keys(graph.nodes).map((k) => Number(k.slice(1)) || 0)) + 1);
   const removedEdges = pruneInvalidEdges();
   ix.selection.clear();
@@ -7577,7 +8868,9 @@ async function loadState() {
     const projectEl = document.getElementById("projectRoot");
     if (projectEl) projectEl.textContent = data.projectRoot || "?";
     const env = data.env || {};
-    const keysOk = Boolean(env.VISION_API_KEY && env.MODEL_API_KEY);
+    const keysOk = data.agent && typeof data.agent.api_key_present === "boolean"
+      ? Boolean(data.agent.api_key_present)
+      : Boolean(env.VISION_API_KEY || env.MODEL_API_KEY);
     const keyEl = document.getElementById("keyStatus");
     if (keyEl) {
       keyEl.textContent = keysOk ? "ok" : "missing";
@@ -7595,15 +8888,55 @@ async function loadState() {
         wsUrl,
         model: data.agent.model || "agent",
         apiKeyPresent: Boolean(data.agent.api_key_present),
-        getGraphSnapshot: () => ({
-          nodes: graph && graph.nodes ? graph.nodes : {},
-          edges: graph && Array.isArray(graph.edges) ? graph.edges : [],
-          selection: ix && ix.selection ? [...ix.selection] : [],
-        }),
+        getGraphSnapshot: () => {
+          // When the user is on the brain tab, the live `graph` holds the
+          // brain graph — which must not be sent to the agent as the
+          // workflow snapshot, or the conversation will see a huge spurious
+          // diff every turn and try to operate on brain nodes with
+          // workflow tools. Fall back to the most recent workflow tab's
+          // saved snapshot instead.
+          const active = getActiveTab();
+          const isBrain = !!(active && active.kind === "brain");
+          if (!isBrain) {
+            return {
+              nodes: graph && graph.nodes ? graph.nodes : {},
+              edges: graph && Array.isArray(graph.edges) ? graph.edges : [],
+              selection: ix && ix.selection ? [...ix.selection] : [],
+            };
+          }
+          const wf = (tabsState.tabs || []).find((t) => (t.kind || "workflow") === "workflow");
+          const snap = (wf && wf.snapshot) || null;
+          return {
+            nodes: (snap && snap.nodes) || {},
+            edges: snap && Array.isArray(snap.edges) ? snap.edges : [],
+            selection: [],
+          };
+        },
         applyGraphPatch: (ops) => {
           if (!Array.isArray(ops)) return;
           for (const op of ops) applyAgentPatchOp(op);
           window.dispatchEvent(new CustomEvent("agent:patch-applied"));
+        },
+        openBrainTab: () => openBrainTab(),
+        applyBrainPatch: (ops) => {
+          if (!Array.isArray(ops)) return;
+          // Ensure the brain tab is active so patches mutate the correct
+          // graph; await it so add_node positions are well-defined.
+          Promise.resolve(openBrainTab()).then(() => {
+            for (const op of ops) applyAgentPatchOp(op);
+            // Mark brain tab dirty + autosave-on-snapshot via WS.
+            const active = getActiveTab();
+            if (active && active.kind === "brain") {
+              active.dirty = true;
+              renderGraphTabs();
+            }
+            window.dispatchEvent(new CustomEvent("agent:brain-patch-applied"));
+          });
+        },
+        getBrainSnapshot: () => {
+          const active = getActiveTab();
+          if (active && active.kind === "brain") return serializeGraph();
+          return null;
         },
       });
     }
@@ -7620,7 +8953,7 @@ function applyAgentPatchOp(op) {
     switch (op.op) {
       case "add_node": {
         if (typeof addNode === "function") {
-          const actualId = addNode(op.type, Number(op.x) || 0, Number(op.y) || 0, { id: op.id, props: op.props || {} });
+          const actualId = addNode(op.type, Number(op.x) || 0, Number(op.y) || 0, { id: op.id, props: op.props || {}, muted: Boolean(op.muted) });
           if (actualId && op.id && actualId !== op.id) {
             // Track remapping so subsequent ops can resolve aliases if needed.
             window.AgentChat._idAliases = window.AgentChat._idAliases || {};
@@ -7639,7 +8972,13 @@ function applyAgentPatchOp(op) {
         if (!id || !graph.nodes[id]) break;
         const node = graph.nodes[id];
         const def = (window.NODE_REGISTRY || {})[node.type];
-        for (const [k, v] of Object.entries(op.props || {})) {
+        for (const [rawKey, v] of Object.entries(op.props || {})) {
+          const k = node.type === "mix" && rawKey === "color_a" ? "a"
+            : (node.type === "mix" && rawKey === "color_b" ? "b" : rawKey);
+          if (k === "muted") {
+            node.muted = Boolean(v);
+            continue;
+          }
           if (def && typeof setNodePropValue === "function") {
             const propDef = (def.props || []).find((p) => p.id === k);
             if (propDef) {
@@ -7676,6 +9015,18 @@ function applyAgentPatchOp(op) {
       }
       case "clear_graph": {
         if (typeof clearGraph === "function") clearGraph();
+        break;
+      }
+      case "run_graph": {
+        const ids = Array.isArray(op.subset) ? op.subset.map(_resolveAgentId).filter(Boolean) : [];
+        const opts = { dryRun: Boolean(op.dryRun) };
+        if (ids.length) opts.subset = new Set(ids);
+        if (typeof runGraph === "function") void runGraph(opts);
+        break;
+      }
+      case "run_trigger": {
+        const id = _resolveAgentId(op.id || op.triggerNode || op.trigger_node);
+        if (id && typeof runFromTrigger === "function") void runFromTrigger(id, { dryRun: Boolean(op.dryRun) });
         break;
       }
       case "select": {

@@ -30,6 +30,7 @@ Run `rundeer <command> --help` for command-specific options.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -632,20 +633,43 @@ Options:
 """
 
 
+def _argv_has_option(argv: List[str], name: str) -> bool:
+    return any(item == name or item.startswith(f"{name}=") for item in argv)
+
+
+def _env_int(name: str) -> Optional[int]:
+    raw = os.environ.get(name)
+    if raw in (None, ""):
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
 def cmd_web(argv: List[str]) -> int:
     args = docopt(WEB_USAGE, argv=argv)
     from rundeer.web.server import serve
+
+    project_root = Path.cwd()
+    load_project_env(project_root)
+
+    port = int(args.get("--port") or 8787)
+    if not _argv_has_option(argv, "--port"):
+        port = _env_int("PORT") or port
 
     agent_port_raw = args.get("--agent-port")
     try:
         agent_port = int(agent_port_raw) if agent_port_raw not in (None, "", "0") else None
     except (TypeError, ValueError):
         agent_port = None
+    if agent_port is None and not _argv_has_option(argv, "--agent-port"):
+        agent_port = _env_int("AGENT_PORT")
 
     return serve(
         host=args.get("--host") or "127.0.0.1",
-        port=int(args.get("--port") or 8787),
-        project_root=Path.cwd(),
+        port=port,
+        project_root=project_root,
         open_browser=bool(args.get("--open")),
         enable_agent=not bool(args.get("--no-agent")),
         agent_port=agent_port,

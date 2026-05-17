@@ -43,6 +43,9 @@
       apiKeyPresent: true,
       getGraphSnapshot: () => ({ nodes: {}, edges: [], selection: [] }),
       applyGraphPatch: () => {},
+      openBrainTab: () => {},
+      applyBrainPatch: () => {},
+      getBrainSnapshot: () => null,
     }, options || {});
 
     agentRootEl = document.getElementById("agentRoot");
@@ -62,6 +65,7 @@
     fileInputEl = document.getElementById("agentFileInput");
     newBtnEl = document.getElementById("agentNewBtn");
     historyBtnEl = document.getElementById("agentHistoryBtn");
+    const brainBtnEl = document.getElementById("agentBrainBtn");
     historyEl = document.getElementById("agentHistory");
     historyListEl = document.getElementById("agentHistoryList");
     attachmentsEl = document.getElementById("agentAttachments");
@@ -76,6 +80,11 @@
     cancelBtnEl.addEventListener("click", () => sendWS({ type: "cancel" }));
     newBtnEl.addEventListener("click", () => sendWS({ type: "new_conversation" }));
     historyBtnEl.addEventListener("click", toggleHistory);
+    if (brainBtnEl) {
+      brainBtnEl.addEventListener("click", () => {
+        if (typeof cfg.openBrainTab === "function") cfg.openBrainTab();
+      });
+    }
     attachBtnEl.addEventListener("click", () => fileInputEl.click());
     fileInputEl.addEventListener("change", onFilesPicked);
     streamEl.addEventListener("dragover", (e) => { e.preventDefault(); streamEl.classList.add("is-dropping"); });
@@ -177,6 +186,15 @@
           autoscroll();
         }
         break;
+      case "reasoning":
+        if (!streamingMsg) {
+          hideEmptyPlaceholder();
+          streamingMsg = createMsg("assistant");
+          streamEl.appendChild(streamingMsg.el);
+          setStatus("streaming");
+        }
+        appendReasoningDelta(streamingMsg, ev.delta || "");
+        break;
       case "message_end":
         streamingMsg = null;
         break;
@@ -190,6 +208,19 @@
         appendPatchSummary(ev);
         try { cfg.applyGraphPatch(ev.ops || []); } catch (err) { console.warn(err); }
         pushSnapshot(true);
+        break;
+      case "brain_graph_patch":
+        appendPatchSummary(ev, { brain: true });
+        try {
+          if (typeof cfg.applyBrainPatch === "function") cfg.applyBrainPatch(ev.ops || []);
+        } catch (err) { console.warn(err); }
+        pushBrainSnapshot(true);
+        break;
+      case "brain_compiled":
+        appendBrainCompiled(ev.summary || {});
+        break;
+      case "brain_error":
+        appendError("brain: " + (ev.message || "save failed"));
         break;
       case "confirm_request":
         renderConfirm(ev);
@@ -216,7 +247,7 @@
         renderUserMsg(ev.text || "", ev.images || []);
         break;
       case "replay_assistant":
-        if (ev.text) renderAssistantMsg(ev.text);
+        if (ev.text || ev.reasoning) renderAssistantMsg(ev.text || "", ev.reasoning || "");
         for (const tc of (ev.tool_calls || [])) {
           const fn = tc.function || {};
           renderToolCall({ id: tc.id, name: fn.name, arguments: safeParse(fn.arguments), category: "?" });
@@ -264,7 +295,28 @@
     body.className = "ne-agent-msg-body";
     el.appendChild(head);
     el.appendChild(body);
-    return { el, body, raw: "" };
+    return { el, body, raw: "", reasoningRaw: "", reasoningEl: null, reasoningBody: null };
+  }
+
+  function appendReasoningDelta(msg, delta) {
+    if (!msg || !delta) return;
+    if (!msg.reasoningEl) {
+      const wrap = document.createElement("details");
+      wrap.className = "ne-agent-thinking";
+      wrap.open = true;
+      const summary = document.createElement("summary");
+      summary.textContent = "thinking";
+      const pre = document.createElement("pre");
+      pre.className = "ne-agent-thinking-body";
+      wrap.appendChild(summary);
+      wrap.appendChild(pre);
+      msg.el.insertBefore(wrap, msg.body);
+      msg.reasoningEl = wrap;
+      msg.reasoningBody = pre;
+    }
+    msg.reasoningRaw = (msg.reasoningRaw || "") + String(delta || "");
+    msg.reasoningBody.textContent = msg.reasoningRaw;
+    autoscroll();
   }
 
   function renderUserMsg(text, images) {
@@ -286,8 +338,9 @@
     autoscroll(true);
   }
 
-  function renderAssistantMsg(text) {
+  function renderAssistantMsg(text, reasoning) {
     const m = createMsg("assistant");
+    appendReasoningDelta(m, reasoning || "");
     renderMarkdownInto(m.body, text);
     streamEl.appendChild(m.el);
     autoscroll();
@@ -444,10 +497,23 @@
     autoscroll();
   }
 
-  function appendPatchSummary(ev) {
+  function appendPatchSummary(ev, opts) {
+    const isBrain = !!(opts && opts.brain);
     const el = document.createElement("div");
-    el.className = "ne-agent-patch";
-    el.textContent = `↳ ${ev.summary || "graph updated"} (${(ev.ops || []).length} op${(ev.ops || []).length === 1 ? "" : "s"})`;
+    el.className = "ne-agent-patch" + (isBrain ? " is-brain" : "");
+    const prefix = isBrain ? "🧠 brain · " : "↳ ";
+    el.textContent = `${prefix}${ev.summary || (isBrain ? "brain updated" : "graph updated")} (${(ev.ops || []).length} op${(ev.ops || []).length === 1 ? "" : "s"})`;
+    streamEl.appendChild(el);
+    autoscroll();
+  }
+
+  function appendBrainCompiled(summary) {
+    const el = document.createElement("div");
+    el.className = "ne-agent-brain-compiled";
+    const bits = [];
+    if (summary.prompt_chars != null) bits.push(`prompt ${summary.prompt_chars} chars`);
+    if (summary.tools_enabled != null) bits.push(`${summary.tools_enabled} tools`);
+    el.textContent = "✓ brain recompiled — " + (bits.join(" · ") || "no changes");
     streamEl.appendChild(el);
     autoscroll();
   }
@@ -500,20 +566,32 @@
   }
 
   function renderConfirm(ev) {
+    const isSelfModify = (ev.category || "") === "self_modify";
     const card = document.createElement("div");
-    card.className = "ne-agent-confirm";
+    card.className = "ne-agent-confirm" + (isSelfModify ? " is-self-modify" : "");
     const title = document.createElement("div");
     title.className = "ne-agent-confirm-title";
-    title.textContent = "confirm — destructive action";
+    title.textContent = isSelfModify
+      ? "⚠ confirm — agent wants to modify itself"
+      : "confirm — destructive action";
     const summary = document.createElement("div");
     summary.className = "ne-agent-confirm-summary";
     summary.textContent = `${ev.tool || "tool"}: ${ev.summary || ""}`;
     const actions = document.createElement("div");
     actions.className = "ne-agent-confirm-actions";
+    let warn = null;
+    if (isSelfModify) {
+      warn = document.createElement("div");
+      warn.className = "ne-agent-confirm-warning";
+      warn.textContent =
+        "The agent is asking to change its own brain (system prompt, tool list, " +
+        "or settings). Approve only if you intended this. The change applies to " +
+        "the next turn.";
+    }
     const approve = document.createElement("button");
     approve.type = "button";
-    approve.className = "btn btn-primary btn-tiny";
-    approve.textContent = "approve";
+    approve.className = "btn btn-tiny " + (isSelfModify ? "btn-danger" : "btn-primary");
+    approve.textContent = isSelfModify ? "approve self-modify" : "approve";
     const deny = document.createElement("button");
     deny.type = "button";
     deny.className = "btn btn-ghost btn-tiny";
@@ -529,6 +607,7 @@
     actions.appendChild(approve);
     actions.appendChild(deny);
     card.appendChild(title);
+    if (warn) card.appendChild(warn);
     card.appendChild(summary);
     card.appendChild(actions);
     streamEl.appendChild(card);
@@ -719,6 +798,29 @@
     lastSentSnapshot = key;
     sendWS({ type: "graph_snapshot", graph: snap });
   }
+
+  let lastSentBrainSnapshot = null;
+  function pushBrainSnapshot(force) {
+    if (!connected) return;
+    let snap = null;
+    if (typeof cfg.getBrainSnapshot === "function") snap = cfg.getBrainSnapshot();
+    if (!snap) return;
+    const key = JSON.stringify(snap);
+    if (!force && key === lastSentBrainSnapshot) return;
+    lastSentBrainSnapshot = key;
+    sendWS({ type: "brain_graph_snapshot", graph: snap, persist: true });
+  }
+
+  // Public bridge so node-editor.js can push a freshly-edited brain graph
+  // straight to the agent process (which persists + recompiles it).
+  // Pass persist=false when the caller has already persisted via HTTP so
+  // the agent only updates its in-memory snapshot/runtime.
+  AgentChat.sendBrainSnapshot = function (snap, opts) {
+    if (!snap || !connected) return;
+    lastSentBrainSnapshot = JSON.stringify(snap);
+    const persist = !(opts && opts.persist === false);
+    sendWS({ type: "brain_graph_snapshot", graph: snap, persist });
+  };
 
   // ── History ────────────────────────────────────────────────────────────
   function toggleHistory() {

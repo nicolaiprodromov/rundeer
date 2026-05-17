@@ -21,6 +21,7 @@ NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = {
     "file": {"inputs": {}, "outputs": {"out": "any"}},
     "text-join": {"inputs": {"a": "any", "b": "any"}, "outputs": {"out": "text"}},
     "compress-image": {"inputs": {"in": "any", "instructions": "text"}, "outputs": {"out": "any"}},
+    "blur-image": {"inputs": {"in": "image"}, "outputs": {"out": "image"}},
     "math-op": {"inputs": {"a": "number", "b": "number"}, "outputs": {"out": "number"}},
     "text-op": {"inputs": {"a": "any", "b": "any"}, "outputs": {"out": "text"}},
     "reroute": {"inputs": {"in": "any"}, "outputs": {"out": "any"}},
@@ -31,7 +32,7 @@ NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = {
     "cmd-edit": {"inputs": {"trigger": "run", "input": "image", "subject": "text", "motion": "text"}, "outputs": {"out": "any"}},
     "cmd-merge": {"inputs": {"trigger": "run", "input": "image", "subject": "text"}, "outputs": {"out": "image"}},
     "cmd-extend": {"inputs": {"trigger": "run", "source": "video", "subject": "text", "motion": "text"}, "outputs": {"out": "video"}},
-    "folder-bundle": {"inputs": {}, "outputs": {"out": "any"}},
+    "folder-bundle": {"inputs": {"path": "text", "kind": "text", "recursive": "boolean", "fps": "number", "modulo": "number", "start": "number", "end": "number", "format": "text"}, "outputs": {"out": "any"}},
     "create-bundle": {"inputs": {"items": "any"}, "outputs": {"out": "any"}},
     "sample-bundle": {"inputs": {"bundle": "any"}, "outputs": {"out": "any", "count": "number"}},
     "loop-decompose": {"inputs": {"bundle": "any"}, "outputs": {"item": "any", "index": "number", "count": "number"}},
@@ -52,6 +53,7 @@ NODE_SOCKET_ALIASES: Dict[Tuple[str, str], Dict[str, str]] = {
     ("number-input", "outputs"): {"value": "out", "number": "out", "output": "out"},
     ("boolean-input", "outputs"): {"value": "out", "boolean": "out", "output": "out"},
     ("create-bundle", "inputs"): {"item": "items", "input": "items"},
+    ("folder-bundle", "inputs"): {"folder": "path", "file": "path", "clip": "path", "video": "path", "framespersec": "fps", "framerate": "fps", "every": "modulo", "everynth": "modulo", "framemodulo": "modulo"},
     ("run-trigger", "outputs"): {"out": "run", "output": "run", "trigger": "run"},
 }
 

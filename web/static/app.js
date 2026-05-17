@@ -305,7 +305,12 @@ function hydrateMasthead(data) {
   $("versionTag").textContent = data.version || "?";
   $("projectRoot").textContent = data.projectRoot || "?";
   const env = data.env || {};
-  const keysOk = Boolean(env.VISION_API_KEY && env.MODEL_API_KEY);
+  // Prefer the agent's authoritative check (covers AGENT_API_KEY / MODEL_API_KEY /
+  // XAI_API_KEY / VISION_API_KEY) and fall back to the env summary when the
+  // agent block is absent.
+  const keysOk = data.agent && typeof data.agent.api_key_present === "boolean"
+    ? Boolean(data.agent.api_key_present)
+    : Boolean(env.VISION_API_KEY || env.MODEL_API_KEY);
   setStat("keyStatus", keysOk ? "ok" : "missing", keysOk ? "is-positive" : "is-quiet");
   setStat("stylesStat", String((data.styles || []).length), null);
   const cfgErr = data.config && data.config.error;

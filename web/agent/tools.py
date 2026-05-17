@@ -23,6 +23,7 @@ from .tools_impl import (
     graph_mutate as ti_mutate,
     vision as ti_vision,
     web_search as ti_web,
+    brain_mutate as ti_brain,
 )
 
 
@@ -271,7 +272,7 @@ ADD_NODE = ToolSpec(
         "definition, prompt-filter, cmd-image, cmd-video, cmd-edit, cmd-merge, "
         "cmd-extend, run-trigger, preview, reroute, folder-bundle, create-bundle, "
         "sample-bundle, loop-decompose, loop-output, text-join, compress-image, "
-        "math-op, text-op."
+        "blur-image, math-op, text-op."
     ),
     parameters=_obj({
         "type": {"type": "string"},
@@ -387,9 +388,13 @@ CLEAR_GRAPH = ToolSpec(
 # ── Execution ─────────────────────────────────────────────────────────────
 PLAN_GRAPH = ToolSpec(
     name="plan_graph",
-    description="Dry-run the user's graph: resolve to a CLI plan without spending API quota.",
+    description=(
+        "Dry-run the user's current browser graph without spending API quota. "
+        "Uses the same graph runner as the Run Graph button; pass trigger_node to dry-run a connected run-trigger subgraph."
+    ),
     parameters=_obj({
         "subset": {"type": "array", "items": {"type": "string"}, "description": "Optional node ids to plan."},
+        "trigger_node": {"type": "string", "description": "Optional run-trigger node id to dry-run exactly like pressing its Run button."},
     }),
     category="execute",
     impl=ti_exec.plan_graph_tool,
@@ -399,10 +404,15 @@ PLAN_GRAPH = ToolSpec(
 
 RUN_GRAPH = ToolSpec(
     name="run_graph",
-    description="Execute the user's graph (will spend API quota — confirms in UI).",
+    description=(
+        "Execute the user's current browser graph using the same runner as the Run Graph button. "
+        "Pass trigger_node to run exactly like pressing a connected run-trigger node's Run button. "
+        "This may spend API quota and confirms in UI."
+    ),
     parameters=_obj({
         "subset": {"type": "array", "items": {"type": "string"}},
         "dry_run": {"type": "boolean"},
+        "trigger_node": {"type": "string", "description": "Optional run-trigger node id to run exactly like pressing its Run button."},
     }),
     category="execute",
     impl=ti_exec.run_graph_tool,
@@ -442,6 +452,110 @@ WEB_SEARCH = ToolSpec(
 )
 
 
+# ── Self-modify (brain graph) ─────────────────────────────────────────────
+# These tools let the agent edit its own system prompt, tool list, settings,
+# and brain markdown by emitting patches against the brain graph. The host
+# routes brain patches to the brain canvas and persists them via the WS
+# snapshot pipeline. Every self-modify tool is destructive so the user must
+# click the (red) confirm card before it applies.
+
+READ_BRAIN_GRAPH = ToolSpec(
+    name="read_brain_graph",
+    description=(
+        "Read the current agent brain graph: system-prompt sections, tool "
+        "enable flags, agent settings, active brain, and brain-md overrides. "
+        "Call this BEFORE any self-modify tool so you know the section IDs."
+    ),
+    parameters=_obj({}),
+    category="self_modify",
+    impl=ti_brain.read_brain_graph,
+    needs_root=True,
+)
+
+SET_SYSTEM_PROMPT_SECTION = ToolSpec(
+    name="set_system_prompt_section",
+    description=(
+        "Rewrite the body of an existing brain section (a text-input node "
+        "wired into the brain) in the agent brain graph. Affects the "
+        "agent's next turn."
+    ),
+    parameters=_obj({
+        "section_id": {"type": "string", "description": "Node id from read_brain_graph."},
+        "body": {"type": "string", "description": "New markdown body for the section."},
+    }, required=["section_id", "body"]),
+    category="self_modify",
+    impl=ti_brain.set_system_prompt_section,
+    destructive=True,
+    needs_root=True,
+    needs_snapshot_after=True,
+)
+
+ADD_SYSTEM_PROMPT_SECTION = ToolSpec(
+    name="add_system_prompt_section",
+    description="Append a brand-new section (a text-input node) to the agent brain.",
+    parameters=_obj({
+        "body": {"type": "string"},
+    }, required=["body"]),
+    category="self_modify",
+    impl=ti_brain.add_system_prompt_section,
+    destructive=True,
+    needs_root=True,
+    needs_snapshot_after=True,
+)
+
+REMOVE_SYSTEM_PROMPT_SECTION = ToolSpec(
+    name="remove_system_prompt_section",
+    description="Remove a section from the agent system prompt.",
+    parameters=_obj({
+        "section_id": {"type": "string"},
+    }, required=["section_id"]),
+    category="self_modify",
+    impl=ti_brain.remove_system_prompt_section,
+    destructive=True,
+    needs_root=True,
+    needs_snapshot_after=True,
+)
+
+SET_TOOL_FLAG = ToolSpec(
+    name="set_tool_flag",
+    description=(
+        "Enable or disable a tool, or override its description/category/"
+        "destructive flag, on the agent brain graph. Disabling a tool hides "
+        "it from the model's tool list on the next turn."
+    ),
+    parameters=_obj({
+        "tool_name": {"type": "string"},
+        "enabled": {"type": "boolean"},
+        "description": {"type": "string"},
+        "category": {"type": "string"},
+        "destructive": {"type": "boolean"},
+    }, required=["tool_name"]),
+    category="self_modify",
+    impl=ti_brain.set_tool_flag,
+    destructive=True,
+    needs_root=True,
+    needs_snapshot_after=True,
+)
+
+SET_AGENT_SETTING = ToolSpec(
+    name="set_agent_setting",
+    description=(
+        "Set an agent setting in the brain graph (model, temperature, "
+        "max_tool_iterations, max_web_search_per_turn, max_file_bytes, "
+        "max_list_entries, vision_enabled)."
+    ),
+    parameters=_obj({
+        "key": {"type": "string"},
+        "value": {"description": "Setting value (string, number, or bool)."},
+    }, required=["key", "value"]),
+    category="self_modify",
+    impl=ti_brain.set_agent_setting,
+    destructive=True,
+    needs_root=True,
+    needs_snapshot_after=True,
+)
+
+
 ALL_TOOLS: List[ToolSpec] = [
     READ_FILE, LIST_DIR, SEARCH_FILES, GREP,
     LIST_DOCS, READ_DOC, LIST_BRAINS, GET_BRAIN_MD, LIST_REFERENCES,
@@ -451,13 +565,84 @@ ALL_TOOLS: List[ToolSpec] = [
     MOVE_NODE, LAYOUT_AUTO, SELECT_NODES, CLEAR_GRAPH,
     PLAN_GRAPH, RUN_GRAPH,
     VIEW_IMAGE, WEB_SEARCH,
+    # Self-modify: agent edits its own brain graph. All destructive + gated.
+    READ_BRAIN_GRAPH, SET_SYSTEM_PROMPT_SECTION, ADD_SYSTEM_PROMPT_SECTION,
+    REMOVE_SYSTEM_PROMPT_SECTION, SET_TOOL_FLAG, SET_AGENT_SETTING,
 ]
 
 TOOLS_BY_NAME: Dict[str, ToolSpec] = {t.name: t for t in ALL_TOOLS}
 
 
-def build_litellm_tools() -> List[Dict[str, Any]]:
-    return [t.schema() for t in ALL_TOOLS]
+def _resolve_overrides(overrides: Any) -> Dict[str, Any]:
+    """Coerce a tool_overrides mapping (typed or raw dict) to plain dicts."""
+    out: Dict[str, Any] = {}
+    if not overrides:
+        return out
+    items = overrides.items() if hasattr(overrides, "items") else []
+    for name, ov in items:
+        if ov is None:
+            continue
+        if hasattr(ov, "enabled"):
+            out[name] = {
+                "enabled": bool(getattr(ov, "enabled", True)),
+                "description": getattr(ov, "description", None),
+                "category": getattr(ov, "category", None),
+                "destructive": getattr(ov, "destructive", None),
+            }
+        elif isinstance(ov, dict):
+            out[name] = ov
+    return out
+
+
+def effective_specs(overrides: Any = None) -> List[ToolSpec]:
+    """Return tool specs with overrides applied; disabled tools dropped."""
+    ovs = _resolve_overrides(overrides)
+    out: List[ToolSpec] = []
+    for spec in ALL_TOOLS:
+        ov = ovs.get(spec.name)
+        if ov is None:
+            out.append(spec)
+            continue
+        if ov.get("enabled") is False:
+            continue
+        desc = ov.get("description") or None
+        cat = ov.get("category") or None
+        destr = ov.get("destructive")
+        if not desc and not cat and destr is None:
+            out.append(spec)
+            continue
+        out.append(ToolSpec(
+            name=spec.name,
+            description=desc or spec.description,
+            parameters=spec.parameters,
+            category=cat or spec.category,
+            impl=spec.impl,
+            destructive=bool(destr) if destr is not None else spec.destructive,
+            needs_root=spec.needs_root,
+            needs_graph=spec.needs_graph,
+            needs_server=spec.needs_server,
+            needs_snapshot_after=spec.needs_snapshot_after,
+        ))
+    return out
+
+
+def build_litellm_tools(overrides: Any = None) -> List[Dict[str, Any]]:
+    return [t.schema() for t in effective_specs(overrides)]
+
+
+def enabled_tool_names(overrides: Any = None) -> List[str]:
+    return [t.name for t in effective_specs(overrides)]
+
+
+def is_tool_enabled(name: str, overrides: Any = None) -> bool:
+    return any(t.name == name for t in effective_specs(overrides))
+
+
+def effective_spec(name: str, overrides: Any = None) -> Optional[ToolSpec]:
+    for t in effective_specs(overrides):
+        if t.name == name:
+            return t
+    return None
 
 
 def invoke_tool(

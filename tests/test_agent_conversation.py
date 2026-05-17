@@ -25,9 +25,9 @@ import pytest
 
 
 # ── Helpers to build fake LiteLLM stream chunks ─────────────────────────
-def _chunk(*, content=None, tool_calls=None, finish_reason=None):
+def _chunk(*, content=None, reasoning_content=None, tool_calls=None, finish_reason=None):
     """Build a chunk shaped like litellm's streaming response."""
-    delta = SimpleNamespace(content=content, tool_calls=tool_calls)
+    delta = SimpleNamespace(content=content, reasoning_content=reasoning_content, tool_calls=tool_calls)
     choice = SimpleNamespace(delta=delta, finish_reason=finish_reason)
     return SimpleNamespace(choices=[choice])
 
@@ -72,7 +72,6 @@ def settings(project: Path):
         enabled=True,
         model="xai/fake-model",
         api_key="fake",
-        fallback_models=[],
         max_tool_iterations=4,
     )
 
@@ -125,6 +124,32 @@ def test_simple_text_turn(monkeypatch, settings, project, fake_server):
     # Persisted assistant msg
     assert conv.messages[-1]["role"] == "assistant"
     assert "Hello there!" in (conv.messages[-1]["content"] or "")
+
+
+def test_reasoning_content_streams_and_replays(monkeypatch, settings, project, fake_server):
+    """Provider reasoning deltas should stream to the UI without being sent back to the LLM."""
+    import rundeer.web.agent.conversation as conv_mod
+    from rundeer.web.agent.ws_server import _replay_events
+
+    fake = FakeAcompletion([[
+        _chunk(reasoning_content="Checking "),
+        _chunk(reasoning_content="the graph."),
+        _chunk(content="Done.", finish_reason="stop"),
+    ]])
+    monkeypatch.setattr(conv_mod.litellm, "acompletion", fake)
+
+    conv = _new_conv(settings, project, fake_server)
+    events = asyncio.run(_drain(conv, "hi"))
+
+    reasoning = [e for e in events if e["type"] == "reasoning"]
+    assert "".join(e["delta"] for e in reasoning) == "Checking the graph."
+    assert conv.messages[-1]["_reasoning"] == "Checking the graph."
+    assert "_reasoning" not in conv._messages_for_llm()[-1]
+
+    replay = _replay_events({"messages": conv.messages})
+    assistant = next(e for e in replay if e["type"] == "replay_assistant")
+    assert assistant["reasoning"] == "Checking the graph."
+    assert assistant["text"] == "Done."
 
 
 def test_tool_call_read_file(monkeypatch, settings, project, fake_server):

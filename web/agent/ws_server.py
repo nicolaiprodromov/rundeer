@@ -205,6 +205,20 @@ class AgentWSServer:
                 # Don't mark as seen — only mark seen when actually injected.
                 continue
 
+            if kind == "brain_graph_snapshot":
+                if conv is None:
+                    continue
+                graph = msg.get("graph") or {}
+                conv.update_brain_snapshot(graph)
+                # Persist + recompile so the next turn sees the changes.
+                if msg.get("persist", True):
+                    try:
+                        from .brain_graph import save_brain_graph
+                        save_brain_graph(root, graph)
+                    except Exception as exc:  # noqa: BLE001
+                        await send(evt("brain_error", message=str(exc)))
+                continue
+
             if kind == "confirm_response":
                 if conv is None:
                     continue
@@ -286,7 +300,12 @@ def _replay_events(rec: Dict[str, Any]) -> list:
             else:
                 out.append(evt("replay_user", text=content or "", images=[]))
         elif role == "assistant":
-            out.append(evt("replay_assistant", text=m.get("content") or "", tool_calls=m.get("tool_calls") or []))
+            out.append(evt(
+                "replay_assistant",
+                text=m.get("content") or "",
+                reasoning=m.get("_reasoning") or "",
+                tool_calls=m.get("tool_calls") or [],
+            ))
         elif role == "tool":
             try:
                 result = json.loads(m.get("content") or "{}")
@@ -296,10 +315,10 @@ def _replay_events(rec: Dict[str, Any]) -> list:
     return out
 
 
-def start_agent_ws_server(server: Any, *, web_port: int) -> Optional[AgentWSServer]:
+def start_agent_ws_server(server: Any, *, web_port: int, settings: Optional[AgentSettings] = None) -> Optional[AgentWSServer]:
     """Resolve settings, start the WS server, return the handle (or None if disabled)."""
     from .config import get_agent_settings
-    settings = get_agent_settings(server.project_root)
+    settings = settings or get_agent_settings(server.project_root)
     if not settings.enabled:
         return None
     port = resolve_ws_port(settings, web_port)

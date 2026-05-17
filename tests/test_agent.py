@@ -13,15 +13,13 @@ import pytest
 def test_agent_settings_defaults(tmp_path: Path, monkeypatch):
     from rundeer.web.agent.config import get_agent_settings, resolve_ws_port
 
-    monkeypatch.delenv("AGENT_API_KEY", raising=False)
     monkeypatch.delenv("MODEL_API_KEY", raising=False)
-    monkeypatch.delenv("XAI_API_KEY", raising=False)
-    monkeypatch.delenv("VISION_API_KEY", raising=False)
-    monkeypatch.delenv("AGENT_MODEL", raising=False)
+    monkeypatch.delenv("MODEL_NAME", raising=False)
+    monkeypatch.delenv("BASE_URL", raising=False)
 
     s = get_agent_settings(tmp_path)
     assert s.enabled
-    assert s.model.startswith("xai/")
+    assert s.model == ""  # no MODEL_NAME in env -> empty, no silent fallback
     assert s.api_key is None
     assert resolve_ws_port(s, 8787) == 8788
 
@@ -30,10 +28,10 @@ def test_agent_settings_env_overrides(tmp_path: Path, monkeypatch):
     from rundeer.web.agent.config import get_agent_settings
 
     monkeypatch.setenv("MODEL_API_KEY", "test-key")
-    monkeypatch.setenv("AGENT_MODEL", "openai/gpt-4o-mini")
+    monkeypatch.setenv("MODEL_NAME", "grok-4.3")
     s = get_agent_settings(tmp_path)
     assert s.api_key == "test-key"
-    assert s.model == "openai/gpt-4o-mini"
+    assert s.model == "grok-4.3"
 
 
 # ─── sandbox ─────────────────────────────────────────────────────────────
@@ -72,6 +70,28 @@ def test_tools_registry_complete():
         assert s["type"] == "function"
         assert s["function"]["name"] in TOOLS_BY_NAME
         assert "parameters" in s["function"]
+
+
+def test_agent_can_wire_bundle_modulo_socket():
+    from rundeer.web.agent.tools_impl.graph_mutate import connect_nodes_tool
+
+    graph = {
+        "nodes": {
+            "n1": {"type": "number-input", "props": {}},
+            "n2": {"type": "folder-bundle", "props": {}},
+        },
+        "edges": [],
+    }
+
+    result = connect_nodes_tool(
+        from_node="n1",
+        from_socket="out",
+        to_node="n2",
+        to_socket="modulo",
+        graph=graph,
+    )
+
+    assert result["patch"][0]["toSocket"] == "modulo"
 
 
 def test_tools_read_file(tmp_path: Path):
