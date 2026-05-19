@@ -44,6 +44,15 @@ from .persistence import (
     load_conversation,
     new_conversation,
 )
+from .profiles import (
+    create_agent_profile,
+    delete_agent_profile,
+    get_active_agent_profile,
+    list_agent_profiles,
+    normalize_agent_id,
+    rename_agent_profile,
+    set_active_agent,
+)
 
 
 log = logging.getLogger("rundeer.agent.ws")
@@ -144,6 +153,11 @@ class AgentWSServer:
         root: Path = self.server.project_root
         conv: Optional[Conversation] = None
         turn_task: Optional[asyncio.Task] = None
+        active_agent = get_active_agent_profile(root, model=self.settings.model)
+        current_agent_id = str(active_agent.get("id") or "default")
+
+        def agent_model() -> str:
+            return str(active_agent.get("model") or self.settings.model)
 
         async def send(payload: Dict[str, Any]) -> None:
             try:
@@ -155,6 +169,8 @@ class AgentWSServer:
         await send(evt(
             "ready",
             settings=self.settings.to_safe_dict(),
+            agent=active_agent,
+            agents=list_agent_profiles(root, model=self.settings.model),
             ws_port=self.ws_port,
             project=str(root),
         ))
@@ -174,12 +190,80 @@ class AgentWSServer:
                 continue
 
             if kind == "list_conversations":
-                await send(evt("conversation_list", items=list_conversations(root)))
+                await send(evt("conversation_list", items=list_conversations(root, agent_id=current_agent_id)))
+                continue
+
+            if kind == "list_agents":
+                await send(evt(
+                    "agent_list",
+                    items=list_agent_profiles(root, model=self.settings.model),
+                    active_id=current_agent_id,
+                ))
+                continue
+
+            if kind == "select_agent":
+                if turn_task is not None and not turn_task.done():
+                    await send(evt("error", message="cancel the current turn before switching agents"))
+                    continue
+                try:
+                    active_agent = set_active_agent(root, msg.get("id"), model=self.settings.model)
+                except (KeyError, ValueError) as exc:
+                    await send(evt("error", message=f"agent select failed: {exc}"))
+                    continue
+                current_agent_id = str(active_agent.get("id") or "default")
+                conv = None
+                await send(evt("agent_selected", agent=active_agent))
+                await send(evt("agent_list", items=list_agent_profiles(root, model=self.settings.model), active_id=current_agent_id))
+                await send(evt("conversation_list", items=list_conversations(root, agent_id=current_agent_id)))
+                continue
+
+            if kind == "create_agent":
+                if turn_task is not None and not turn_task.done():
+                    await send(evt("error", message="cancel the current turn before creating an agent"))
+                    continue
+                try:
+                    active_agent = create_agent_profile(root, name=msg.get("name") or "New agent", model=self.settings.model)
+                except (KeyError, ValueError) as exc:
+                    await send(evt("error", message=f"agent create failed: {exc}"))
+                    continue
+                current_agent_id = str(active_agent.get("id") or "default")
+                conv = None
+                await send(evt("agent_selected", agent=active_agent))
+                await send(evt("agent_list", items=list_agent_profiles(root, model=self.settings.model), active_id=current_agent_id))
+                await send(evt("conversation_list", items=[]))
+                continue
+
+            if kind == "rename_agent":
+                try:
+                    profile = rename_agent_profile(root, msg.get("id") or current_agent_id, name=msg.get("name") or "", model=self.settings.model)
+                except (KeyError, ValueError) as exc:
+                    await send(evt("error", message=f"agent rename failed: {exc}"))
+                    continue
+                if profile.get("id") == current_agent_id:
+                    active_agent = profile
+                    await send(evt("agent_selected", agent=active_agent))
+                await send(evt("agent_list", items=list_agent_profiles(root, model=self.settings.model), active_id=current_agent_id))
+                continue
+
+            if kind == "delete_agent":
+                if turn_task is not None and not turn_task.done():
+                    await send(evt("error", message="cancel the current turn before deleting an agent"))
+                    continue
+                try:
+                    active_agent = delete_agent_profile(root, msg.get("id"), model=self.settings.model)
+                except (KeyError, ValueError) as exc:
+                    await send(evt("error", message=f"agent delete failed: {exc}"))
+                    continue
+                current_agent_id = str(active_agent.get("id") or "default")
+                conv = None
+                await send(evt("agent_selected", agent=active_agent))
+                await send(evt("agent_list", items=list_agent_profiles(root, model=self.settings.model), active_id=current_agent_id))
+                await send(evt("conversation_list", items=list_conversations(root, agent_id=current_agent_id)))
                 continue
 
             if kind == "new_conversation":
-                rec = new_conversation(root, model=self.settings.model, title=msg.get("title") or "New conversation")
-                conv = Conversation.from_record(self.settings, root, self.server, rec)
+                rec = new_conversation(root, model=agent_model(), title=msg.get("title") or "New conversation", agent_id=current_agent_id)
+                conv = Conversation.from_record(self.settings, root, self.server, rec, agent_id=current_agent_id)
                 await send(evt("conversation_loaded", conversation=_conv_summary(rec), events_replay=[]))
                 continue
 
@@ -189,13 +273,19 @@ class AgentWSServer:
                 if rec is None:
                     await send(evt("error", message=f"no such conversation: {cid}"))
                     continue
-                conv = Conversation.from_record(self.settings, root, self.server, rec)
+                try:
+                    current_agent_id = normalize_agent_id(rec.get("agent_id") or current_agent_id)
+                    active_agent = set_active_agent(root, current_agent_id, model=self.settings.model)
+                except (KeyError, ValueError):
+                    current_agent_id = str(active_agent.get("id") or "default")
+                    rec["agent_id"] = current_agent_id
+                conv = Conversation.from_record(self.settings, root, self.server, rec, agent_id=current_agent_id)
                 await send(evt("conversation_loaded", conversation=_conv_summary(rec), events_replay=_replay_events(rec)))
                 continue
 
             if kind == "delete_conversation":
                 delete_conversation(root, msg.get("id") or "")
-                await send(evt("conversation_list", items=list_conversations(root)))
+                await send(evt("conversation_list", items=list_conversations(root, agent_id=current_agent_id)))
                 continue
 
             if kind == "graph_snapshot":
@@ -214,7 +304,7 @@ class AgentWSServer:
                 if msg.get("persist", True):
                     try:
                         from .brain_graph import save_brain_graph
-                        save_brain_graph(root, graph)
+                        save_brain_graph(root, graph, agent_id=current_agent_id)
                     except Exception as exc:  # noqa: BLE001
                         await send(evt("brain_error", message=str(exc)))
                 continue
@@ -248,8 +338,8 @@ class AgentWSServer:
                         await send(evt("error", message="a turn is already running; cancel first"))
                         continue
                 if conv is None:
-                    rec = new_conversation(root, model=self.settings.model)
-                    conv = Conversation.from_record(self.settings, root, self.server, rec)
+                    rec = new_conversation(root, model=agent_model(), agent_id=current_agent_id)
+                    conv = Conversation.from_record(self.settings, root, self.server, rec, agent_id=current_agent_id)
                     await send(evt("conversation_loaded", conversation=_conv_summary(rec), events_replay=[]))
                 if isinstance(msg.get("graph"), dict):
                     conv.update_snapshot(msg["graph"])
@@ -278,6 +368,7 @@ class AgentWSServer:
 def _conv_summary(rec: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "id": rec.get("id"),
+        "agent_id": rec.get("agent_id") or "default",
         "title": rec.get("title"),
         "model": rec.get("model"),
         "created_at": rec.get("created_at"),

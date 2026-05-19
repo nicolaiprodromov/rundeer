@@ -269,10 +269,11 @@ ADD_NODE = ToolSpec(
     description=(
         "Create a node in the user's graph. Returns a graph patch the client "
         "applies live. Valid types include: text-input, number-input, file, "
-        "definition, prompt-filter, cmd-image, cmd-video, cmd-edit, cmd-merge, "
+        "definition, prompt, prompt-filter, cmd-image, cmd-video, cmd-edit, cmd-merge, "
         "cmd-extend, run-trigger, preview, reroute, folder-bundle, create-bundle, "
         "sample-bundle, loop-decompose, loop-output, text-join, compress-image, "
-        "blur-image, math-op, text-op."
+        "blur-image, crop-media, resize-media, canvas, coordinate, mapping, vector-op, "
+        "mix, uv-render, math-op, text-op, random."
     ),
     parameters=_obj({
         "type": {"type": "string"},
@@ -652,6 +653,7 @@ def invoke_tool(
     root: Path,
     server: Any,
     graph: Any,
+    agent_id: str = "default",
 ) -> Dict[str, Any]:
     spec = TOOLS_BY_NAME.get(name)
     if spec is None:
@@ -664,6 +666,8 @@ def invoke_tool(
         call_args["server"] = server
     if spec.needs_graph:
         call_args["graph"] = graph
+    if spec.category == "self_modify":
+        call_args["agent_id"] = agent_id
     call_args.update(kwargs)
     try:
         return spec.impl(**call_args)

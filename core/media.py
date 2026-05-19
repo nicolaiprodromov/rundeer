@@ -10,7 +10,7 @@ import hashlib
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from rundeer.core.config import parse_aspect_ratio
 
@@ -134,6 +134,166 @@ def make_image_grid(
 
 def has_ffmpeg() -> bool:
     return shutil.which("ffmpeg") is not None
+
+
+IMAGE_TRANSFORM_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".tif"}
+VIDEO_TRANSFORM_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
+
+
+def _cache_path(root: Path, subdir: str, stem: str, suffix: str, *key_parts: object) -> Path:
+    cache_dir = root / ".rundeer" / "cache" / subdir
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    h = hashlib.sha1()
+    for part in key_parts:
+        h.update(str(part).encode("utf-8"))
+        h.update(b"\x00")
+    safe_stem = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in stem).strip("._") or "media"
+    return cache_dir / f"{safe_stem}_{h.hexdigest()[:12]}{suffix}"
+
+
+def _source_key(src: Path) -> str:
+    stat = src.stat()
+    return f"{src.resolve()}|{stat.st_mtime_ns}|{stat.st_size}"
+
+
+def _save_rgba_png(image: Image.Image, dest: Path) -> Path:
+    image.save(dest, format="PNG", optimize=True)
+    return dest
+
+
+def crop_media(root: Path, src: Path, size: Tuple[int, int], position: Tuple[int, int]) -> Path:
+    """Crop image/video media using a bottom-left pixel origin."""
+    width, height = max(1, int(size[0])), max(1, int(size[1]))
+    x, y = int(round(position[0])), int(round(position[1]))
+    ext = src.suffix.lower()
+    if ext in IMAGE_TRANSFORM_EXTS:
+        dest = _cache_path(root, "media", src.stem, ".png", "crop", _source_key(src), width, height, x, y)
+        with Image.open(src) as im:
+            im.load()
+            source = im.convert("RGBA")
+            top = source.height - y - height
+            canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+            left_src = max(0, x)
+            top_src = max(0, top)
+            right_src = min(source.width, x + width)
+            bottom_src = min(source.height, top + height)
+            if right_src > left_src and bottom_src > top_src:
+                cropped = source.crop((left_src, top_src, right_src, bottom_src))
+                canvas.alpha_composite(cropped, (left_src - x, top_src - top))
+            return _save_rgba_png(canvas, dest)
+    if ext in VIDEO_TRANSFORM_EXTS:
+        if not has_ffmpeg():
+            raise RuntimeError("ffmpeg not found on PATH; install ffmpeg to crop videos")
+        dest = _cache_path(root, "media", src.stem, ".mp4", "crop", _source_key(src), width, height, x, y)
+        y_expr = f"ih-{y}-{height}"
+        vf = f"crop={width}:{height}:{x}:{y_expr},setsar=1"
+        cmd = [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-i", str(src),
+            "-vf", vf,
+            "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
+            "-c:a", "copy",
+            "-movflags", "+faststart",
+            str(dest),
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if proc.returncode != 0:
+            raise RuntimeError(f"ffmpeg failed: {(proc.stderr or '').strip()[:400]}")
+        return dest
+    raise ValueError(f"unsupported media extension: {ext or '(none)'}")
+
+
+def _resize_image(source: Image.Image, size: Tuple[int, int], mode: str) -> Image.Image:
+    width, height = max(1, int(size[0])), max(1, int(size[1]))
+    source = source.convert("RGBA")
+    mode = (mode or "contain").lower()
+    if mode == "stretch":
+        return source.resize((width, height), Image.LANCZOS)
+    if mode == "fill":
+        return ImageOps.fit(source, (width, height), method=Image.LANCZOS, centering=(0.5, 0.5))
+    if mode == "none":
+        fitted = source.copy()
+        fitted.thumbnail((width, height), Image.LANCZOS)
+        return fitted
+    canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    fitted = source.copy()
+    fitted.thumbnail((width, height), Image.LANCZOS)
+    x = (width - fitted.width) // 2
+    y = (height - fitted.height) // 2
+    canvas.alpha_composite(fitted, (x, y))
+    return canvas
+
+
+def resize_media(root: Path, src: Path, size: Tuple[int, int], mode: str = "contain") -> Path:
+    """Resize image/video media.
+
+    Modes: ``stretch`` exact size, ``contain`` exact canvas with padding,
+    ``fill`` exact canvas with center crop, ``none`` aspect-fit with no padding.
+    """
+    width, height = max(1, int(size[0])), max(1, int(size[1]))
+    mode = (mode or "contain").lower()
+    if mode not in {"none", "fill", "stretch", "contain"}:
+        raise ValueError(f"unknown resize mode: {mode}")
+    ext = src.suffix.lower()
+    if ext in IMAGE_TRANSFORM_EXTS:
+        dest = _cache_path(root, "media", src.stem, ".png", "resize", _source_key(src), width, height, mode)
+        with Image.open(src) as im:
+            im.load()
+            return _save_rgba_png(_resize_image(im, (width, height), mode), dest)
+    if ext in VIDEO_TRANSFORM_EXTS:
+        if not has_ffmpeg():
+            raise RuntimeError("ffmpeg not found on PATH; install ffmpeg to resize videos")
+        dest = _cache_path(root, "media", src.stem, ".mp4", "resize", _source_key(src), width, height, mode)
+        if mode == "stretch":
+            vf = f"scale={width}:{height},setsar=1"
+        elif mode == "fill":
+            vf = f"scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height},setsar=1"
+        elif mode == "none":
+            vf = f"scale={width}:{height}:force_original_aspect_ratio=decrease,setsar=1"
+        else:
+            vf = f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1"
+        cmd = [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-i", str(src),
+            "-vf", vf,
+            "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
+            "-c:a", "copy",
+            "-movflags", "+faststart",
+            str(dest),
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if proc.returncode != 0:
+            raise RuntimeError(f"ffmpeg failed: {(proc.stderr or '').strip()[:400]}")
+        return dest
+    raise ValueError(f"unsupported media extension: {ext or '(none)'}")
+
+
+def canvas_images(root: Path, image_paths: List[Path], positions: List[Tuple[int, int]], size: Tuple[int, int]) -> Path:
+    """Composite images on a transparent canvas using bottom-left positions."""
+    width, height = max(1, int(size[0])), max(1, int(size[1]))
+    key_parts: List[object] = ["canvas", width, height]
+    for path, pos in zip(image_paths, positions):
+        key_parts.extend([_source_key(path), int(pos[0]), int(pos[1])])
+    dest = _cache_path(root, "media", "canvas", ".png", *key_parts)
+    canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    for idx, path in enumerate(image_paths):
+        if path.suffix.lower() not in IMAGE_TRANSFORM_EXTS:
+            raise ValueError(f"unsupported canvas image extension: {path.suffix.lower() or '(none)'}")
+        x, y = positions[idx] if idx < len(positions) else (0, 0)
+        with Image.open(path) as im:
+            im.load()
+            layer = im.convert("RGBA")
+        left = int(round(x))
+        top = height - int(round(y)) - layer.height
+        src_left = max(0, -left)
+        src_top = max(0, -top)
+        src_right = min(layer.width, width - left)
+        src_bottom = min(layer.height, height - top)
+        if src_right <= src_left or src_bottom <= src_top:
+            continue
+        cropped = layer.crop((src_left, src_top, src_right, src_bottom))
+        canvas.alpha_composite(cropped, (max(0, left), max(0, top)))
+    return _save_rgba_png(canvas, dest)
 
 
 def make_video_grid(

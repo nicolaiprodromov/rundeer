@@ -22,10 +22,11 @@ from typing import Any, Dict, List, Optional
 from ..brain_graph import build_default_graph, load_brain_graph
 
 
-def _load(root: Path) -> Dict[str, Any]:
-    graph = load_brain_graph(root)
+def _load(root: Path, agent_id: str = "default") -> Dict[str, Any]:
+    graph = load_brain_graph(root, agent_id=agent_id)
     if graph is None:
         graph = build_default_graph(root)
+        graph["agent_id"] = agent_id
     return graph
 
 
@@ -76,8 +77,8 @@ def _brain_section_targets(graph: Dict[str, Any]) -> Dict[str, Any]:
 
 # ── Read ──────────────────────────────────────────────────────────────────
 
-def read_brain_graph(*, root: Path) -> Dict[str, Any]:
-    g = _load(root)
+def read_brain_graph(*, root: Path, agent_id: str = "default") -> Dict[str, Any]:
+    g = _load(root, agent_id=agent_id)
     nodes = g.get("nodes") or {}
     sections: List[Dict[str, Any]] = []
     tools: List[Dict[str, Any]] = []
@@ -107,8 +108,8 @@ def read_brain_graph(*, root: Path) -> Dict[str, Any]:
 
 # ── System prompt sections (generic text-input nodes wired into brain) ────
 
-def set_system_prompt_section(*, root: Path, section_id: str, body: str) -> Dict[str, Any]:
-    g = _load(root)
+def set_system_prompt_section(*, root: Path, section_id: str, body: str, agent_id: str = "default") -> Dict[str, Any]:
+    g = _load(root, agent_id=agent_id)
     node = (g.get("nodes") or {}).get(section_id)
     if not node or node.get("type") != "text-input":
         return {"error": f"no text-input section node with id '{section_id}'"}
@@ -120,8 +121,8 @@ def set_system_prompt_section(*, root: Path, section_id: str, body: str) -> Dict
     )
 
 
-def add_system_prompt_section(*, root: Path, body: str) -> Dict[str, Any]:
-    g = _load(root)
+def add_system_prompt_section(*, root: Path, body: str, agent_id: str = "default") -> Dict[str, Any]:
+    g = _load(root, agent_id=agent_id)
     tgt = _brain_section_targets(g)
     brain = tgt["brain"]
     if brain is None:
@@ -153,8 +154,8 @@ def add_system_prompt_section(*, root: Path, body: str) -> Dict[str, Any]:
     )
 
 
-def remove_system_prompt_section(*, root: Path, section_id: str) -> Dict[str, Any]:
-    g = _load(root)
+def remove_system_prompt_section(*, root: Path, section_id: str, agent_id: str = "default") -> Dict[str, Any]:
+    g = _load(root, agent_id=agent_id)
     node = (g.get("nodes") or {}).get(section_id)
     if not node or node.get("type") != "text-input":
         return {"error": f"no text-input section node with id '{section_id}'"}
@@ -173,8 +174,9 @@ def set_tool_flag(
     description: Optional[str] = None,
     category: Optional[str] = None,
     destructive: Optional[bool] = None,
+    agent_id: str = "default",
 ) -> Dict[str, Any]:
-    g = _load(root)
+    g = _load(root, agent_id=agent_id)
     target: Optional[Dict[str, Any]] = None
     for n in (g.get("nodes") or {}).values():
         if n.get("type") == "tool-flag" and (n.get("props") or {}).get("tool_name") == tool_name:
@@ -205,10 +207,10 @@ ALLOWED_SETTINGS_KEYS = {
 }
 
 
-def set_agent_setting(*, root: Path, key: str, value: Any) -> Dict[str, Any]:
+def set_agent_setting(*, root: Path, key: str, value: Any, agent_id: str = "default") -> Dict[str, Any]:
     if key not in ALLOWED_SETTINGS_KEYS:
         return {"error": f"setting '{key}' is not editable (allowed: {sorted(ALLOWED_SETTINGS_KEYS)})"}
-    g = _load(root)
+    g = _load(root, agent_id=agent_id)
     node = _find_node(g, type_="agent")
     if node is None:
         return {"error": "no agent node in brain graph"}

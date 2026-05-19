@@ -5,6 +5,8 @@ import ast
 import json
 import mimetypes
 import os
+import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -76,7 +78,7 @@ def serve(
     ensure_rundeer_dir(root)
     httpd = RundeerWebServer((host, port), RundeerWebHandler, project_root=root)
     actual_port = httpd.server_address[1]
-    shown_host = "localhost" if host in {"127.0.0.1", "0.0.0.0"} else host
+    shown_host = "localhost" if host == "0.0.0.0" else host
     url = f"http://{shown_host}:{actual_port}"
 
     server_thread = threading.Thread(target=httpd.serve_forever, name="rundeer-web", daemon=True)
@@ -130,8 +132,10 @@ class RundeerWebServer(ThreadingHTTPServer):
     def __init__(self, server_address: Tuple[str, int], handler, *, project_root: Path):
         super().__init__(server_address, handler)
         self.project_root = project_root.resolve()
-        self.runs: Dict[str, Dict[str, Any]] = {}
+        ensure_web_storage_dirs(self.project_root)
+        self.runs: Dict[str, Dict[str, Any]] = load_run_records(self.project_root)
         self.runs_lock = threading.Lock()
+        self.run_processes: Dict[str, subprocess.Popen[str]] = {}
         self.request_count = 0
         self.last_request: Optional[str] = None
         self.started_at = time.time()
@@ -169,7 +173,7 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         query = parse_qs(parsed.query)
         self.server.record_request("GET", path)
         try:
-            if path in {"/", "/index.html", "/nodes", "/explore", "/runs", "/graphs"}:
+            if path in {"/", "/index.html", "/nodes", "/explore", "/runs", "/graphs", "/settings"}:
                 self._send_static(STATIC_DIR / "node-editor.html")
             elif path == "/classic":
                 # Legacy form-based UI kept under /classic for fallback.
@@ -206,6 +210,10 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(get_run(self.server, path.rsplit("/", 1)[-1]))
             elif path == "/api/runs":
                 self._send_json({"runs": list_runs(self.server)})
+            elif path == "/api/graphs":
+                self._send_json({"graphs": list_graphs(self.server.project_root)})
+            elif path == "/api/web-state":
+                self._send_json(load_web_state(self.server.project_root))
             elif path == "/api/file":
                 rel = (query.get("path") or [""])[0]
                 self._send_project_file(rel)
@@ -221,9 +229,12 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             elif path == "/api/logo":
                 self._send_json({"frames": load_logo_frames()})
             elif path == "/api/agent/brain-graph":
-                self._send_json(_brain_graph_payload(self.server.project_root))
+                agent_id = (query.get("agent_id") or [None])[0]
+                self._send_json(_brain_graph_payload(self.server.project_root, agent_id=agent_id))
             elif path == "/api/agent/tools-catalog":
                 self._send_json({"tools": _tools_catalog()})
+            elif path == "/api/agent/agents":
+                self._send_json(_agent_profiles_state(self.server.project_root, getattr(self.server, "agent_settings", None)))
             elif path == "/api/agent/brain-list":
                 self._send_json({"brains": _brain_list(self.server.project_root)})
             else:
@@ -244,14 +255,32 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(run_plan(self.server.project_root, payload))
             elif parsed.path == "/api/run":
                 self._send_json(start_run(self.server, payload))
+            elif parsed.path.startswith("/api/runs/") and parsed.path.endswith("/cancel"):
+                run_id = parsed.path.removeprefix("/api/runs/").removesuffix("/cancel").strip("/")
+                self._send_json(cancel_run(self.server, run_id))
+            elif parsed.path.startswith("/api/runs/") and parsed.path.endswith("/display-log"):
+                run_id = parsed.path.removeprefix("/api/runs/").removesuffix("/display-log").strip("/")
+                self._send_json(save_run_display_log(self.server, run_id, payload))
             elif parsed.path == "/api/settings":
                 self._send_json(save_settings(self.server.project_root, payload))
+            elif parsed.path == "/api/graphs":
+                self._send_json({"graph": save_graph(self.server.project_root, payload)})
+            elif parsed.path == "/api/graphs/delete":
+                self._send_json(delete_graph(self.server.project_root, payload))
+            elif parsed.path == "/api/web-state":
+                self._send_json(save_web_state(self.server.project_root, payload))
             elif parsed.path == "/api/filter-prompt":
                 self._send_json(filter_prompt(self.server.project_root, payload))
             elif parsed.path == "/api/compress-image":
                 self._send_json(compress_image(self.server.project_root, payload))
             elif parsed.path == "/api/blur-image":
                 self._send_json(blur_image(self.server.project_root, payload))
+            elif parsed.path == "/api/media/crop":
+                self._send_json(crop_media_node(self.server.project_root, payload))
+            elif parsed.path == "/api/media/resize":
+                self._send_json(resize_media_node(self.server.project_root, payload))
+            elif parsed.path == "/api/media/canvas":
+                self._send_json(canvas_media_node(self.server.project_root, payload))
             elif parsed.path == "/api/compress":
                 self._send_json(compress_dispatch(self.server.project_root, payload))
             elif parsed.path == "/api/uv/coordinate":
@@ -271,10 +300,14 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(_uv_render(self.server.project_root, payload))
             elif parsed.path == "/api/agent/brain-graph":
                 self._send_json(_save_brain_graph_payload(self.server.project_root, payload))
+            elif parsed.path == "/api/agent/agents":
+                self._send_json(_agent_profiles_action(self.server.project_root, payload, getattr(self.server, "agent_settings", None)))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not found")
         except ValueError as exc:
             self._send_error(HTTPStatus.BAD_REQUEST, str(exc))
+        except FileNotFoundError as exc:
+            self._send_error(HTTPStatus.NOT_FOUND, str(exc))
         except Exception as exc:  # noqa: BLE001
             self._send_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
@@ -282,7 +315,7 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         size = int(self.headers.get("Content-Length", "0") or "0")
         if size <= 0:
             return {}
-        return json.loads(self.rfile.read(min(size, 2_000_000)).decode("utf-8"))
+        return json.loads(self.rfile.read(min(size, 20_000_000)).decode("utf-8"))
 
     def _send_json(self, data: Dict[str, Any], status: int = 200) -> None:
         raw = json.dumps(data, indent=2, default=str).encode("utf-8")
@@ -347,11 +380,225 @@ def relpath(root: Path, path: Path) -> str:
         return str(path)
 
 
+# ── Web persistence (.rundeer/graphs, .rundeer/runs, .rundeer/web-state.json) ──
+
+def graphs_dir(root: Path) -> Path:
+    return root / ".rundeer" / "graphs"
+
+
+def runs_dir(root: Path) -> Path:
+    return root / ".rundeer" / "runs"
+
+
+def web_state_path(root: Path) -> Path:
+    return root / ".rundeer" / "web-state.json"
+
+
+def ensure_web_storage_dirs(root: Path) -> None:
+    (root / ".rundeer").mkdir(parents=True, exist_ok=True)
+    graphs_dir(root).mkdir(parents=True, exist_ok=True)
+    runs_dir(root).mkdir(parents=True, exist_ok=True)
+
+
+def _read_json_file(path: Path) -> Dict[str, Any]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(f"{path.name} is not a JSON object")
+    return raw
+
+
+def _write_json_file(path: Path, data: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.tmp")
+    tmp.write_text(json.dumps(data, indent=2, default=str) + "\n", encoding="utf-8")
+    tmp.replace(path)
+
+
+def load_web_state(root: Path) -> Dict[str, Any]:
+    path = web_state_path(root)
+    if not path.is_file():
+        return {"state": {}}
+    state = _read_json_file(path)
+    return {"state": state}
+
+
+def save_web_state(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    state = payload.get("state", payload)
+    if not isinstance(state, dict):
+        raise ValueError("missing or invalid web state")
+    _write_json_file(web_state_path(root), state)
+    return {"state": state}
+
+
+def _slugify_graph_name(name: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", str(name or "").strip()).strip("-._")
+    return (slug[:90] or "graph")
+
+
+def _graph_path_for_id(root: Path, graph_id: str) -> Path:
+    raw = str(graph_id or "").strip()
+    if not raw or "/" in raw or "\\" in raw:
+        raise ValueError("invalid graph id")
+    name = raw if raw.endswith(".json") else f"{raw}.json"
+    if name.startswith("."):
+        raise ValueError("invalid graph id")
+    path = (graphs_dir(root) / name).resolve()
+    graph_root = graphs_dir(root).resolve()
+    if path.parent != graph_root:
+        raise ValueError("invalid graph id")
+    return path
+
+
+def _unique_graph_path(root: Path, name: str, *, avoid: Optional[Path] = None) -> Path:
+    base = _slugify_graph_name(name)
+    candidate = graphs_dir(root) / f"{base}.json"
+    if avoid is not None and candidate.resolve() == avoid.resolve():
+        return candidate
+    if not candidate.exists():
+        return candidate
+    for idx in range(2, 1000):
+        candidate = graphs_dir(root) / f"{base}-{idx}.json"
+        if avoid is not None and candidate.resolve() == avoid.resolve():
+            return candidate
+        if not candidate.exists():
+            return candidate
+    stamp = time.strftime("%Y-%m-%dT%H-%M-%S")
+    return graphs_dir(root) / f"{base}-{stamp}.json"
+
+
+def _graph_data_from_file(path: Path) -> Dict[str, Any]:
+    raw = _read_json_file(path)
+    graph = raw.get("graph") if isinstance(raw.get("graph"), dict) else raw
+    if not isinstance(graph, dict) or not isinstance(graph.get("nodes"), dict):
+        raise ValueError(f"{path.name} is not a graph file")
+    if "edges" in graph and not isinstance(graph.get("edges"), list):
+        raise ValueError(f"{path.name} has invalid graph edges")
+    return graph
+
+
+def _graph_record(root: Path, path: Path, *, include_data: bool = True) -> Dict[str, Any]:
+    stat = path.stat()
+    data = _graph_data_from_file(path)
+    node_count = len(data.get("nodes") or {})
+    edge_count = len(data.get("edges") or [])
+    record: Dict[str, Any] = {
+        "id": path.name,
+        "name": path.stem,
+        "path": relpath(root, path),
+        "createdAt": stat.st_ctime,
+        "updatedAt": stat.st_mtime,
+        "nodeCount": node_count,
+        "edgeCount": edge_count,
+    }
+    if include_data:
+        record["data"] = data
+    return record
+
+
+def list_graphs(root: Path) -> List[Dict[str, Any]]:
+    ensure_web_storage_dirs(root)
+    records: List[Dict[str, Any]] = []
+    for path in sorted(graphs_dir(root).glob("*.json")):
+        if path.name.startswith("."):
+            continue
+        try:
+            records.append(_graph_record(root, path))
+        except Exception as exc:  # noqa: BLE001
+            records.append({
+                "id": path.name,
+                "name": path.stem,
+                "path": relpath(root, path),
+                "updatedAt": path.stat().st_mtime,
+                "nodeCount": 0,
+                "edgeCount": 0,
+                "error": str(exc),
+            })
+    records.sort(key=lambda item: item.get("updatedAt") or 0, reverse=True)
+    return records
+
+
+def save_graph(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    ensure_web_storage_dirs(root)
+    graph_id = str(payload.get("id") or "").strip()
+    current_path: Optional[Path] = _graph_path_for_id(root, graph_id) if graph_id else None
+    data = payload.get("data")
+    if data is None and current_path is not None and current_path.is_file():
+        data = _graph_data_from_file(current_path)
+    if not isinstance(data, dict) or not isinstance(data.get("nodes"), dict):
+        raise ValueError("missing or invalid graph data")
+    if "edges" in data and not isinstance(data.get("edges"), list):
+        raise ValueError("invalid graph edges")
+
+    current_name = current_path.stem if current_path is not None else "graph"
+    name = str(payload.get("name") or current_name).strip() or current_name
+    if current_path is not None and current_path.is_file():
+        target_path = current_path
+        if "name" in payload and _slugify_graph_name(name) != current_path.stem:
+            target_path = _unique_graph_path(root, name, avoid=current_path)
+    else:
+        target_path = _unique_graph_path(root, name)
+
+    _write_json_file(target_path, data)
+    if current_path is not None and current_path.exists() and current_path.resolve() != target_path.resolve():
+        current_path.unlink()
+    return _graph_record(root, target_path)
+
+
+def delete_graph(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    path = _graph_path_for_id(root, str(payload.get("id") or ""))
+    if not path.is_file():
+        raise FileNotFoundError(path.name)
+    path.unlink()
+    return {"ok": True, "id": path.name}
+
+
+def run_record_path(root: Path, run_id: str) -> Path:
+    raw = str(run_id or "").strip()
+    if not raw or "/" in raw or "\\" in raw:
+        raise ValueError("invalid run id")
+    return runs_dir(root) / raw / "run.json"
+
+
+def write_run_record(root: Path, record: Dict[str, Any]) -> None:
+    run_id = str(record.get("id") or "")
+    if not run_id:
+        return
+    _write_json_file(run_record_path(root, run_id), record)
+
+
+def load_run_record(root: Path, run_id: str) -> Dict[str, Any]:
+    record = _read_json_file(run_record_path(root, run_id))
+    if str(record.get("id") or "") != str(run_id):
+        raise ValueError("run id mismatch")
+    return record
+
+
+def load_run_records(root: Path) -> Dict[str, Dict[str, Any]]:
+    ensure_web_storage_dirs(root)
+    records: Dict[str, Dict[str, Any]] = {}
+    for path in sorted(runs_dir(root).glob("*/run.json")):
+        try:
+            record = _read_json_file(path)
+            run_id = str(record.get("id") or path.parent.name)
+            record["id"] = run_id
+            if record.get("status") in {"queued", "running"}:
+                record["status"] = "failed"
+                record["endedAt"] = record.get("endedAt") or time.time()
+                output = record.get("output") or ""
+                if "server stopped before this run completed" not in output:
+                    record["output"] = f"{output}\n[server stopped before this run completed]\n"
+                write_run_record(root, record)
+            records[run_id] = record
+        except Exception:  # noqa: BLE001
+            continue
+    return records
+
+
 # ── Agent brain graph endpoints ───────────────────────────────────────────
 
-def _brain_graph_payload(root: Path) -> Dict[str, Any]:
+def _brain_graph_payload(root: Path, agent_id: Optional[str] = None) -> Dict[str, Any]:
     from .agent.brain_graph import compile_brain_graph, load_or_seed_brain_graph
-    graph = load_or_seed_brain_graph(root)
+    graph = load_or_seed_brain_graph(root, agent_id=agent_id)
     compiled = compile_brain_graph(graph)
     return {"graph": graph, "compiled": compiled.to_dict()}
 
@@ -361,8 +608,44 @@ def _save_brain_graph_payload(root: Path, payload: Dict[str, Any]) -> Dict[str, 
     graph = (payload or {}).get("graph")
     if not isinstance(graph, dict):
         raise ValueError("missing or invalid 'graph' payload")
-    compiled = save_brain_graph(root, graph)
+    compiled = save_brain_graph(root, graph, agent_id=(payload or {}).get("agent_id"))
     return {"ok": True, "compiled": compiled.to_dict()}
+
+
+def _agent_model(settings: Any) -> str:
+    return str(getattr(settings, "model", "") or "")
+
+
+def _agent_profiles_state(root: Path, settings: Any = None) -> Dict[str, Any]:
+    from .agent.profiles import active_agent_id, list_agent_profiles
+    model = _agent_model(settings)
+    return {
+        "agents": list_agent_profiles(root, model=model),
+        "active_id": active_agent_id(root, model=model),
+    }
+
+
+def _agent_profiles_action(root: Path, payload: Dict[str, Any], settings: Any = None) -> Dict[str, Any]:
+    from .agent.profiles import (
+        create_agent_profile,
+        delete_agent_profile,
+        list_agent_profiles,
+        rename_agent_profile,
+        set_active_agent,
+    )
+    model = _agent_model(settings)
+    action = str((payload or {}).get("action") or "").strip().lower()
+    if action == "create":
+        profile = create_agent_profile(root, name=(payload or {}).get("name") or "New agent", model=model)
+    elif action == "rename":
+        profile = rename_agent_profile(root, (payload or {}).get("id"), name=(payload or {}).get("name") or "", model=model)
+    elif action == "delete":
+        profile = delete_agent_profile(root, (payload or {}).get("id"), model=model)
+    elif action == "select":
+        profile = set_active_agent(root, (payload or {}).get("id"), model=model)
+    else:
+        raise ValueError("unknown agent action")
+    return {"ok": True, "agent": profile, "agents": list_agent_profiles(root, model=model)}
 
 
 def _tools_catalog() -> List[Dict[str, Any]]:
@@ -577,13 +860,13 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
     model_override = str(payload.get("model") or "").strip()
     model_name = model_override or (os.environ.get("MODEL_NAME") or "").strip()
-    api_key = str(payload.get("model_api_key") or "") or os.environ.get("MODEL_API_KEY", "")
+    api_key = os.environ.get("MODEL_API_KEY", "")
     base_url = os.environ.get("BASE_URL", "https://api.x.ai/v1")
 
     if not model_name:
         return {"error": "MODEL_NAME not set (provide via .env or model prop)", "filtered_prompt": prompt_text}
     if not api_key:
-        return {"error": "MODEL_API_KEY not set (provide via .env or model_api_key prop)", "filtered_prompt": prompt_text}
+        return {"error": "MODEL_API_KEY not set in project .env", "filtered_prompt": prompt_text}
 
     try:
         image_urls = filter_prompt_image_urls(root, payload.get("images") or payload.get("image_urls") or payload.get("input"))
@@ -799,6 +1082,120 @@ def blur_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         "bytes": dest.stat().st_size,
         "radius": radius,
     }
+
+
+def _coerce_vector2(value: Any, default: Tuple[float, float]) -> Tuple[int, int]:
+    if value is None or value == "":
+        return int(round(default[0])), int(round(default[1]))
+    if isinstance(value, dict):
+        if "x" in value or "y" in value:
+            return _coerce_vector2([value.get("x", default[0]), value.get("y", default[1])], default)
+        if "color" in value:
+            return _coerce_vector2(value.get("color"), default)
+        if "value" in value:
+            return _coerce_vector2(value.get("value"), default)
+    if isinstance(value, (int, float)):
+        n = float(value)
+        return int(round(n)), int(round(n))
+    if isinstance(value, (list, tuple)):
+        nums: List[float] = []
+        for item in value:
+            try:
+                nums.append(float(item))
+            except (TypeError, ValueError):
+                continue
+        if len(nums) >= 2:
+            return int(round(nums[0])), int(round(nums[1]))
+        if len(nums) == 1:
+            return int(round(nums[0])), int(round(nums[0]))
+        return int(round(default[0])), int(round(default[1]))
+    text = str(value).strip().strip("[]()")
+    text = text.replace("×", "x").replace("X", "x").replace("x", ",")
+    parts = [part for part in re.split(r"[\s,]+", text) if part]
+    return _coerce_vector2(parts, default)
+
+
+def _coerce_vector2_list(value: Any, count: int) -> List[Tuple[int, int]]:
+    if value is None or value == "":
+        return [(0, 0) for _ in range(count)]
+    if isinstance(value, list):
+        if not value:
+            return [(0, 0) for _ in range(count)]
+        if all(not isinstance(item, (list, tuple, dict)) for item in value):
+            return [_coerce_vector2(value, (0, 0))]
+        return [_coerce_vector2(item, (0, 0)) for item in value]
+    return [_coerce_vector2(value, (0, 0))]
+
+
+def _payload_paths(value: Any) -> List[str]:
+    if value is None or value == "":
+        return []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return [str(value).strip()]
+
+
+def _media_result(root: Path, path: Path, *, width: Optional[int] = None, height: Optional[int] = None) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"path": relpath(root, path), "bytes": path.stat().st_size}
+    if width is not None:
+        out["width"] = int(width)
+    if height is not None:
+        out["height"] = int(height)
+    if path.suffix.lower() in IMAGE_COMPRESS_EXTS:
+        try:
+            from PIL import Image
+            with Image.open(path) as im:
+                out["width"], out["height"] = im.size
+        except Exception:
+            pass
+    return out
+
+
+def crop_media_node(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    rel = str(payload.get("path") or payload.get("input") or "").strip()
+    if not rel:
+        raise ValueError("path is required")
+    size = _coerce_vector2(payload.get("size"), (512, 512))
+    position = _coerce_vector2(payload.get("position"), (0, 0))
+    src = safe_project_path(root, rel)
+    if not src.is_file():
+        raise FileNotFoundError(rel)
+    from rundeer.core.media import crop_media
+    dest = crop_media(root, src, (max(1, size[0]), max(1, size[1])), position)
+    return _media_result(root, dest, width=max(1, size[0]), height=max(1, size[1]))
+
+
+def resize_media_node(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    rel = str(payload.get("path") or payload.get("input") or "").strip()
+    if not rel:
+        raise ValueError("path is required")
+    size = _coerce_vector2(payload.get("size"), (512, 512))
+    mode = str(payload.get("mode") or "contain").strip().lower()
+    src = safe_project_path(root, rel)
+    if not src.is_file():
+        raise FileNotFoundError(rel)
+    from rundeer.core.media import resize_media
+    dest = resize_media(root, src, (max(1, size[0]), max(1, size[1])), mode=mode)
+    return _media_result(root, dest, width=max(1, size[0]), height=max(1, size[1]))
+
+
+def canvas_media_node(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    rels = _payload_paths(payload.get("images") or payload.get("paths") or payload.get("input"))
+    if not rels:
+        raise ValueError("images is required")
+    size = _coerce_vector2(payload.get("size"), (1024, 1024))
+    positions = _coerce_vector2_list(payload.get("positions"), len(rels))
+    while len(positions) < len(rels):
+        positions.append((0, 0))
+    paths = []
+    for rel in rels:
+        path = safe_project_path(root, rel)
+        if not path.is_file():
+            raise FileNotFoundError(rel)
+        paths.append(path)
+    from rundeer.core.media import canvas_images
+    dest = canvas_images(root, paths, positions, (max(1, size[0]), max(1, size[1])))
+    return _media_result(root, dest, width=max(1, size[0]), height=max(1, size[1]))
 
 
 def compress_dispatch(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -1327,7 +1724,7 @@ def skip_dir(path: Path, root: Path) -> bool:
         rel_parts = path.resolve().relative_to(root.resolve()).parts
     except ValueError:
         return False
-    blocked = ((".rundeer", "cache"), (".rundeer", "web", "runs"))
+    blocked = ((".rundeer", "cache"), (".rundeer", "runs"), (".rundeer", "web", "runs"))
     return any(rel_parts[: len(prefix)] == prefix for prefix in blocked)
 
 
@@ -1670,14 +2067,22 @@ def option_data() -> Dict[str, Any]:
 def run_plan(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     run_id = new_run_id()
     command, config_path = build_cli_command(root, payload, run_id, dry_run=True)
+    started_at = time.time()
     proc = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=120)
-    return {
+    output = (proc.stdout or "") + (proc.stderr or "")
+    record = {
         "id": run_id,
         "command": command,
         "configPath": relpath(root, config_path) if config_path else None,
+        "status": "done" if proc.returncode == 0 else "failed",
         "returncode": proc.returncode,
-        "output": (proc.stdout or "") + (proc.stderr or ""),
+        "output": output,
+        "startedAt": started_at,
+        "endedAt": time.time(),
+        "dryRun": True,
     }
+    write_run_record(root, record)
+    return record
 
 
 def start_run(server: RundeerWebServer, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -1696,49 +2101,133 @@ def start_run(server: RundeerWebServer, payload: Dict[str, Any]) -> Dict[str, An
     }
     with server.runs_lock:
         server.runs[run_id] = record
+    write_run_record(root, record)
     cmd_str = " ".join(command[2:] if command[:2] == [sys.executable, "-c"] else command)
     log_line(f"run {run_id} · queued · {cmd_str}")
     threading.Thread(target=run_process, args=(server, run_id), daemon=True).start()
     return {"id": run_id, "status": "queued", "command": command, "configPath": record["configPath"]}
 
 
+def _terminate_process(proc: subprocess.Popen[Any]) -> None:
+    if proc.poll() is not None:
+        return
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except Exception:  # noqa: BLE001
+        try:
+            proc.terminate()
+        except Exception:  # noqa: BLE001
+            return
+
+
+def cancel_run(server: RundeerWebServer, run_id: str) -> Dict[str, Any]:
+    if not run_id:
+        raise ValueError("missing run id")
+    proc: Optional[subprocess.Popen[Any]] = None
+    with server.runs_lock:
+        record = server.runs.get(run_id)
+        if record is None:
+            record = load_run_record(server.project_root, run_id)
+            server.runs[run_id] = record
+        status = str(record.get("status") or "")
+        if status in {"done", "failed", "cancelled"} or status.startswith("failed"):
+            return dict(record)
+        record["status"] = "cancelling"
+        proc = getattr(server, "run_processes", {}).get(run_id)
+        write_run_record(server.project_root, record)
+    if proc is not None:
+        _terminate_process(proc)
+    with server.runs_lock:
+        return dict(server.runs.get(run_id, record))
+
+
 def run_process(server: RundeerWebServer, run_id: str) -> None:
     with server.runs_lock:
         record = server.runs[run_id]
+        if record.get("status") in {"cancelling", "cancelled"}:
+            record["status"] = "cancelled"
+            record["returncode"] = None
+            record["endedAt"] = time.time()
+            record["output"] = (record.get("output") or "") + "\n[cancelled before start]\n"
+            write_run_record(server.project_root, record)
+            log_line(f"run {run_id} · cancelled")
+            return
         command = list(record["command"])
         record["status"] = "running"
-    proc = subprocess.Popen(command, cwd=server.project_root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+        write_run_record(server.project_root, record)
+    proc = subprocess.Popen(command, cwd=server.project_root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, start_new_session=True)
     with server.runs_lock:
+        server.run_processes[run_id] = proc
+        if record.get("status") == "cancelling":
+            _terminate_process(proc)
         record["pid"] = proc.pid
+        write_run_record(server.project_root, record)
     output_parts: List[str] = []
+    last_write = 0.0
     assert proc.stdout is not None
     for line in proc.stdout:
         output_parts.append(line)
-        if len(output_parts) > 2000:
-            output_parts = output_parts[-2000:]
         with server.runs_lock:
             record["output"] = "".join(output_parts)
+            now = time.time()
+            if now - last_write >= 0.5:
+                write_run_record(server.project_root, record)
+                last_write = now
     returncode = proc.wait()
     with server.runs_lock:
+        server.run_processes.pop(run_id, None)
+        was_cancelled = record.get("status") in {"cancelling", "cancelled"}
         record["returncode"] = returncode
-        record["status"] = "done" if returncode == 0 else "failed"
+        record["status"] = "cancelled" if was_cancelled else ("done" if returncode == 0 else "failed")
         record["endedAt"] = time.time()
         record["output"] = "".join(output_parts)
-    status = "done" if returncode == 0 else f"failed (rc={returncode})"
+        if was_cancelled:
+            record["output"] += "\n[cancelled]\n"
+        write_run_record(server.project_root, record)
+    status = "cancelled" if was_cancelled else ("done" if returncode == 0 else f"failed (rc={returncode})")
     log_line(f"run {run_id} · {status}")
 
 
 def get_run(server: RundeerWebServer, run_id: str) -> Dict[str, Any]:
     with server.runs_lock:
         record = server.runs.get(run_id)
+        if record is not None:
+            return dict(record)
+    record = load_run_record(server.project_root, run_id)
+    with server.runs_lock:
+        server.runs[run_id] = record
+    return dict(record)
+
+
+def save_run_display_log(server: RundeerWebServer, run_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    if not run_id:
+        raise ValueError("missing run id")
+    display_output = payload.get("displayOutput", payload.get("output"))
+    if not isinstance(display_output, str):
+        raise ValueError("missing or invalid displayOutput")
+    with server.runs_lock:
+        record = server.runs.get(run_id)
         if record is None:
-            raise FileNotFoundError(run_id)
+            record = load_run_record(server.project_root, run_id)
+        record["displayOutput"] = display_output
+        if isinstance(payload.get("displayTitle"), str):
+            record["displayTitle"] = payload["displayTitle"]
+        if isinstance(payload.get("displayMeta"), str):
+            record["displayMeta"] = payload["displayMeta"]
+        if isinstance(payload.get("displayStatus"), str):
+            record["displayStatus"] = payload["displayStatus"]
+        record["displayUpdatedAt"] = time.time()
+        server.runs[run_id] = record
+        write_run_record(server.project_root, record)
         return dict(record)
 
 
 def list_runs(server: RundeerWebServer) -> List[Dict[str, Any]]:
     """Return summaries of recent runs (newest first)."""
+    disk_runs = load_run_records(server.project_root)
     with server.runs_lock:
+        for run_id, record in disk_runs.items():
+            server.runs.setdefault(run_id, record)
         runs = list(server.runs.values())
     runs.sort(key=lambda r: r.get("startedAt") or 0, reverse=True)
     summaries: List[Dict[str, Any]] = []
@@ -1756,7 +2245,7 @@ def list_runs(server: RundeerWebServer) -> List[Dict[str, Any]]:
             "startedAt": r.get("startedAt"),
             "endedAt": r.get("endedAt"),
             "returncode": r.get("returncode"),
-            "outputTail": (r.get("output") or "")[-400:],
+            "outputTail": (r.get("displayOutput") or r.get("output") or "")[-400:],
         })
     return summaries
 
@@ -1791,7 +2280,7 @@ def build_cli_command(root: Path, payload: Dict[str, Any], run_id: str, *, dry_r
     if command_name not in COMMANDS:
         raise ValueError(f"unknown command: {command_name}")
     inputs_block = _section(payload, "inputs")
-    run_dir = root / ".rundeer" / "web" / "runs" / run_id
+    run_dir = root / ".rundeer" / "runs" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     config_path: Optional[Path] = None
     command = rundeer_invoker() + [command_name]

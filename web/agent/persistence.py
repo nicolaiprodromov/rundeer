@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 
 
 SCHEMA_VERSION = 1
+DEFAULT_AGENT_ID = "default"
 
 
 def agent_dir(root: Path) -> Path:
@@ -29,6 +30,11 @@ def _safe_id() -> str:
     return time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
 
 
+def _agent_id(value: Any) -> str:
+    raw = str(value or DEFAULT_AGENT_ID).strip() or DEFAULT_AGENT_ID
+    return raw if raw else DEFAULT_AGENT_ID
+
+
 def _atomic_write(path: Path, data: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=".conv-", suffix=".json", dir=str(path.parent))
@@ -44,12 +50,13 @@ def _atomic_write(path: Path, data: str) -> None:
         raise
 
 
-def new_conversation(root: Path, *, model: str, title: str = "New conversation") -> Dict[str, Any]:
+def new_conversation(root: Path, *, model: str, title: str = "New conversation", agent_id: str = DEFAULT_AGENT_ID) -> Dict[str, Any]:
     conv_id = _safe_id()
     now = time.time()
     record = {
         "schema": SCHEMA_VERSION,
         "id": conv_id,
+        "agent_id": _agent_id(agent_id),
         "title": title,
         "model": model,
         "created_at": now,
@@ -72,6 +79,7 @@ def load_conversation(root: Path, conv_id: str) -> Optional[Dict[str, Any]]:
 
 
 def save_conversation(root: Path, conv: Dict[str, Any]) -> None:
+    conv["agent_id"] = _agent_id(conv.get("agent_id"))
     conv["updated_at"] = time.time()
     path = _conv_path(root, conv["id"])
     _atomic_write(path, json.dumps(conv, ensure_ascii=False, indent=2, default=str))
@@ -112,6 +120,7 @@ def _update_index(root: Path, conv: Dict[str, Any]) -> None:
     out = [c for c in idx if c.get("id") != conv["id"]]
     out.insert(0, {
         "id": conv["id"],
+        "agent_id": _agent_id(conv.get("agent_id")),
         "title": conv.get("title") or "Untitled",
         "model": conv.get("model"),
         "created_at": conv.get("created_at"),
@@ -121,7 +130,10 @@ def _update_index(root: Path, conv: Dict[str, Any]) -> None:
     _write_index(root, out[:200])
 
 
-def list_conversations(root: Path, *, limit: int = 50) -> List[Dict[str, Any]]:
+def list_conversations(root: Path, *, limit: int = 50, agent_id: Optional[str] = None) -> List[Dict[str, Any]]:
     idx = _read_index(root)
+    if agent_id is not None:
+        wanted = _agent_id(agent_id)
+        idx = [c for c in idx if _agent_id(c.get("agent_id")) == wanted]
     idx.sort(key=lambda c: c.get("updated_at") or 0, reverse=True)
     return idx[:max(1, int(limit))]

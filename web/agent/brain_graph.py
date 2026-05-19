@@ -35,6 +35,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from .profiles import DEFAULT_AGENT_ID, normalize_agent_id
+
 
 SCHEMA_VERSION = 1
 BRAIN_GRAPH_FILENAME = "brain.graph.json"
@@ -546,16 +548,23 @@ def brain_dir(root: Path) -> Path:
     return (root / ".rundeer" / "agent").resolve()
 
 
-def brain_graph_path(root: Path) -> Path:
-    return brain_dir(root) / BRAIN_GRAPH_FILENAME
+def _agent_brain_dir(root: Path, agent_id: Optional[str] = None) -> Path:
+    resolved = normalize_agent_id(agent_id)
+    if resolved == DEFAULT_AGENT_ID:
+        return brain_dir(root)
+    return brain_dir(root) / "agents" / resolved
 
 
-def runtime_path(root: Path) -> Path:
-    return brain_dir(root) / RUNTIME_FILENAME
+def brain_graph_path(root: Path, agent_id: Optional[str] = None) -> Path:
+    return _agent_brain_dir(root, agent_id) / BRAIN_GRAPH_FILENAME
 
 
-def audit_log_path(root: Path) -> Path:
-    return brain_dir(root) / AUDIT_LOG_FILENAME
+def runtime_path(root: Path, agent_id: Optional[str] = None) -> Path:
+    return _agent_brain_dir(root, agent_id) / RUNTIME_FILENAME
+
+
+def audit_log_path(root: Path, agent_id: Optional[str] = None) -> Path:
+    return _agent_brain_dir(root, agent_id) / AUDIT_LOG_FILENAME
 
 
 def _atomic_write(path: Path, data: str) -> None:
@@ -582,9 +591,9 @@ def _read_json(path: Path) -> Optional[Any]:
         return None
 
 
-def load_brain_graph(root: Path) -> Optional[Dict[str, Any]]:
+def load_brain_graph(root: Path, agent_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """Load the saved brain graph for this project, or None if not saved yet."""
-    data = _read_json(brain_graph_path(root))
+    data = _read_json(brain_graph_path(root, agent_id))
     if isinstance(data, dict) and isinstance(data.get("nodes"), dict):
         return data
     return None
@@ -598,7 +607,7 @@ def _requires_reseed(graph: Dict[str, Any]) -> bool:
     return not {"agent", "brain"}.issubset(types)
 
 
-def save_brain_graph(root: Path, graph: Dict[str, Any]) -> AgentRuntimeConfig:
+def save_brain_graph(root: Path, graph: Dict[str, Any], agent_id: Optional[str] = None) -> AgentRuntimeConfig:
     """Persist the brain graph and its compiled runtime config.
 
     Returns the compiled `AgentRuntimeConfig` so callers can hand it back
@@ -606,16 +615,18 @@ def save_brain_graph(root: Path, graph: Dict[str, Any]) -> AgentRuntimeConfig:
     """
     if not isinstance(graph, dict):
         raise ValueError("brain graph must be an object")
+    resolved_agent_id = normalize_agent_id(agent_id)
     graph = dict(graph)
     graph["kind"] = "brain"
     graph["schema"] = SCHEMA_VERSION
+    graph["agent_id"] = resolved_agent_id
 
-    _atomic_write(brain_graph_path(root), json.dumps(graph, ensure_ascii=False, indent=2, default=str))
+    _atomic_write(brain_graph_path(root, resolved_agent_id), json.dumps(graph, ensure_ascii=False, indent=2, default=str))
     compiled = compile_brain_graph(graph)
-    _atomic_write(runtime_path(root), json.dumps(compiled.to_dict(), ensure_ascii=False, indent=2, default=str))
+    _atomic_write(runtime_path(root, resolved_agent_id), json.dumps(compiled.to_dict(), ensure_ascii=False, indent=2, default=str))
 
     try:
-        with audit_log_path(root).open("a", encoding="utf-8") as fh:
+        with audit_log_path(root, resolved_agent_id).open("a", encoding="utf-8") as fh:
             ts = time.strftime("%Y-%m-%dT%H:%M:%S")
             fh.write(f"{ts}\tsaved\tprompt_chars={len(compiled.system_prompt)}\ttools={len(compiled.tool_overrides)}\n")
     except OSError:
@@ -623,13 +634,13 @@ def save_brain_graph(root: Path, graph: Dict[str, Any]) -> AgentRuntimeConfig:
     return compiled
 
 
-def load_runtime_config(root: Path) -> AgentRuntimeConfig:
+def load_runtime_config(root: Path, agent_id: Optional[str] = None) -> AgentRuntimeConfig:
     """Read the compiled runtime config, recompiling on the fly if missing."""
-    data = _read_json(runtime_path(root))
+    data = _read_json(runtime_path(root, agent_id))
     if isinstance(data, dict):
         return _runtime_from_dict(data)
     # Fallback: try compiling from the saved graph.
-    graph = load_brain_graph(root)
+    graph = load_brain_graph(root, agent_id)
     if graph is not None:
         return compile_brain_graph(graph)
     return AgentRuntimeConfig()
@@ -666,8 +677,10 @@ def build_default_graph(root: Path) -> Dict[str, Any]:
     )
 
 
-def load_or_seed_brain_graph(root: Path) -> Dict[str, Any]:
-    existing = load_brain_graph(root)
+def load_or_seed_brain_graph(root: Path, agent_id: Optional[str] = None) -> Dict[str, Any]:
+    existing = load_brain_graph(root, agent_id)
     if existing is not None and not _requires_reseed(existing):
         return existing
-    return build_default_graph(root)
+    graph = build_default_graph(root)
+    graph["agent_id"] = normalize_agent_id(agent_id)
+    return graph

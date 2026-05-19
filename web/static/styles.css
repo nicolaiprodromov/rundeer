@@ -708,12 +708,13 @@ select {
   background: var(--surface);
   color: var(--muted);
 }
-.status-pill[data-state="running"], .status-pill[data-state="queued"] {
+.status-pill[data-state="running"], .status-pill[data-state="queued"], .status-pill[data-state="cancelling"] {
   color: var(--violet);
   border-color: color-mix(in oklch, var(--violet) 50%, var(--line));
   animation: pulse 1.4s ease-in-out infinite;
 }
 .status-pill[data-state="done"] { color: var(--gold); border-color: color-mix(in oklch, var(--gold) 50%, var(--line)); }
+.status-pill[data-state="cancelled"] { color: var(--muted); border-color: color-mix(in oklch, var(--muted) 50%, var(--line)); }
 .status-pill[data-state="failed"], .status-pill[data-state="plan-failed"], .status-pill[data-state="run-failed"], .status-pill[data-state="error"] {
   color: oklch(72% 0.15 25);
   border-color: color-mix(in oklch, oklch(72% 0.15 25) 50%, var(--line));

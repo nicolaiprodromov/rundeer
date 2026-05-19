@@ -11,12 +11,12 @@ def test_coordinate_uv_shape_and_range():
     arr = uv_ops.coordinate(64, 32, dpi=72, space="uv")
     assert arr.shape == (32, 64, 2)
     assert arr.dtype == np.float32
-    # u increases along axis=1, v along axis=0
+    # u increases left-to-right, v uses a bottom-left origin.
     assert 0.0 < arr[..., 0].min() < arr[..., 0].max() < 1.0
     assert 0.0 < arr[..., 1].min() < arr[..., 1].max() < 1.0
     # First column → low u, last column → high u
     assert arr[0, 0, 0] < arr[0, -1, 0]
-    assert arr[0, 0, 1] < arr[-1, 0, 1]
+    assert arr[0, 0, 1] > arr[-1, 0, 1]
 
 
 def test_coordinate_screen_space():
@@ -24,6 +24,8 @@ def test_coordinate_screen_space():
     assert arr.shape == (3, 4, 2)
     assert arr[..., 0].max() == 3.0
     assert arr[..., 1].max() == 2.0
+    assert arr[0, 0, 1] == 2.0
+    assert arr[-1, 0, 1] == 0.0
 
 
 def test_vector_op_add_scale_normalize():
@@ -95,6 +97,18 @@ def test_sample_identity():
     # Center should approximate center pixel of source.
     cy, cx = uv.shape[0] // 2, uv.shape[1] // 2
     assert np.allclose(out[cy, cx], img[cy, cx], atol=0.2)
+
+
+def test_sample_uses_bottom_left_uv_origin():
+    img = np.zeros((2, 2, 4), dtype=np.float32)
+    img[0, 0] = [1.0, 0.0, 0.0, 1.0]  # top-left
+    img[1, 0] = [0.0, 1.0, 0.0, 1.0]  # bottom-left
+    uv = np.array([[[0.0, 0.0], [0.0, 1.0]]], dtype=np.float32)
+
+    out = uv_ops.sample(img, uv, interp="nearest", extension="clamp")
+
+    assert np.allclose(out[0, 0], img[1, 0])
+    assert np.allclose(out[0, 1], img[0, 0])
 
 
 def test_sample_extension_modes():

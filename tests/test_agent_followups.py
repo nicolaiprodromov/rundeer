@@ -254,6 +254,26 @@ def test_node_editor_agent_patch_can_run_graph_and_trigger():
     assert 'dryRun: Boolean(opts.dryRun)' in source
 
 
+def test_node_editor_has_stop_pause_controls_and_pause_node():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "web" / "static" / "node-editor.js").read_text(encoding="utf-8")
+    html = (root / "web" / "static" / "node-editor.html").read_text(encoding="utf-8")
+    css = (root / "web" / "static" / "node-editor.css").read_text(encoding="utf-8")
+
+    assert 'id="graphRunControl"' in html
+    assert 'id="stopGraphBtn"' in html
+    assert 'id="pauseGraphBtn"' in html
+    assert 'type: "pause", label: "Pause"' in source
+    assert 'function stopGraphRun()' in source
+    assert 'function pauseGraphRun(' in source
+    assert 'function resumeGraphRun(' in source
+    assert 'await pauseGraphAtNode(nodeId, outputs, opts);' in source
+    assert '/api/runs/${encodeURIComponent(runId)}/cancel' in source
+    assert 'runState.activeRunIds.add(result.id)' in source
+    assert '.ne-run-control[data-state="running"]' in css
+    assert '.ne-node[data-node-type="pause"]' in css
+
+
 def test_agent_client_pushes_snapshot_immediately_after_patch():
     source = (Path(__file__).resolve().parents[1] / "web" / "static" / "agent.js").read_text(encoding="utf-8")
     patch_case = source[source.index('case "graph_patch":'):source.index('case "confirm_request":')]

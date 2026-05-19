@@ -30,10 +30,12 @@
   let lastSentSnapshot = null;
   let history = [];
   let currentConv = null;
+  let agents = [];
+  let currentAgent = null;
   let stickToBottom = true;
-  let dotEl, modelEl, streamEl, inputEl, attachBtnEl, fileInputEl;
+  let modelEl, streamEl, inputEl, attachBtnEl, fileInputEl;
   let composerEl, sendBtnEl, cancelBtnEl, newBtnEl, historyBtnEl, historyEl, historyListEl;
-  let attachmentsEl, mentionPopEl, agentRootEl, agentDisabledEl;
+  let attachmentsEl, mentionPopEl, agentRootEl, agentDisabledEl, agentListEl, agentCreateBtnEl;
 
   // ── Boot ───────────────────────────────────────────────────────────────
   AgentChat.init = function (options) {
@@ -54,7 +56,6 @@
     agentRootEl.hidden = false;
     if (agentDisabledEl) agentDisabledEl.hidden = true;
 
-    dotEl = document.getElementById("agentDot");
     modelEl = document.getElementById("agentModel");
     streamEl = document.getElementById("agentStream");
     composerEl = document.getElementById("agentComposer");
@@ -68,6 +69,8 @@
     const brainBtnEl = document.getElementById("agentBrainBtn");
     historyEl = document.getElementById("agentHistory");
     historyListEl = document.getElementById("agentHistoryList");
+    agentListEl = document.getElementById("agentList");
+    agentCreateBtnEl = document.getElementById("agentCreateBtn");
     attachmentsEl = document.getElementById("agentAttachments");
     mentionPopEl = createMentionPop();
 
@@ -80,9 +83,10 @@
     cancelBtnEl.addEventListener("click", () => sendWS({ type: "cancel" }));
     newBtnEl.addEventListener("click", () => sendWS({ type: "new_conversation" }));
     historyBtnEl.addEventListener("click", toggleHistory);
+    if (agentCreateBtnEl) agentCreateBtnEl.addEventListener("click", onCreateAgent);
     if (brainBtnEl) {
       brainBtnEl.addEventListener("click", () => {
-        if (typeof cfg.openBrainTab === "function") cfg.openBrainTab();
+        if (typeof cfg.openBrainTab === "function") cfg.openBrainTab(currentAgent && currentAgent.id);
       });
     }
     attachBtnEl.addEventListener("click", () => fileInputEl.click());
@@ -116,6 +120,7 @@
       setStatus("ready");
       pushSnapshot(true);
       sendWS({ type: "list_conversations" });
+      sendWS({ type: "list_agents" });
     };
     ws.onmessage = (ev) => {
       let msg;
@@ -146,6 +151,31 @@
     switch (ev.type) {
       case "ready":
         if (modelEl && ev.settings && ev.settings.model) modelEl.textContent = ev.settings.model;
+        if (Array.isArray(ev.agents)) agents = ev.agents;
+        if (ev.agent) currentAgent = ev.agent;
+        updateAgentSelector();
+        renderAgents();
+        emitAgentSelected();
+        break;
+      case "agent_list":
+        agents = ev.items || [];
+        if (ev.active_id) {
+          const found = agents.find((a) => a.id === ev.active_id);
+          if (found) currentAgent = found;
+        }
+        updateAgentSelector();
+        renderAgents();
+        break;
+      case "agent_selected":
+        currentAgent = ev.agent || currentAgent;
+        currentConv = null;
+        history = [];
+        clearStream();
+        updateAgentSelector();
+        renderAgents();
+        emitAgentSelected();
+        if (window.RundeerPalette && typeof window.RundeerPalette.showPane === "function") window.RundeerPalette.showPane("chat");
+        sendWS({ type: "list_conversations" });
         break;
       case "conversation_list":
         history = ev.items || [];
@@ -261,13 +291,21 @@
 
   // ── Rendering helpers ──────────────────────────────────────────────────
   function setStatus(state) {
-    if (dotEl) dotEl.dataset.state = state;
+    void state;
   }
   function clearStream() {
     streamEl.innerHTML = "";
     toolCardById = {};
     confirmCardById = {};
     stickToBottom = true;
+    showEmptyPlaceholder();
+  }
+  function showEmptyPlaceholder() {
+    if (!streamEl || streamEl.querySelector(".ne-agent-empty")) return;
+    const empty = document.createElement("div");
+    empty.className = "ne-agent-empty";
+    empty.innerHTML = "Ask the agent to build, connect, debug, or run a graph.<br><span class=\"ne-agent-empty-hint\">Type @ to mention files. Drag images here to attach.</span>";
+    streamEl.appendChild(empty);
   }
   function hideEmptyPlaceholder() {
     const empty = streamEl.querySelector(".ne-agent-empty");
@@ -652,6 +690,7 @@
     lastSentSnapshot = JSON.stringify(graph);
     inputEl.value = "";
     autosizeInput();
+    if (window.RundeerPalette && typeof window.RundeerPalette.updateInputLines === "function") window.RundeerPalette.updateInputLines();
     attachments = [];
     renderAttachments();
     cancelBtnEl.hidden = false;
@@ -676,6 +715,7 @@
 
   function onInputChange() {
     autosizeInput();
+    if (window.RundeerPalette && typeof window.RundeerPalette.updateInputLines === "function") window.RundeerPalette.updateInputLines();
     const cursor = inputEl.selectionStart || inputEl.value.length;
     const before = inputEl.value.slice(0, cursor);
     const m = before.match(/(^|\s)@([\w./-]*)$/);
@@ -824,8 +864,11 @@
 
   // ── History ────────────────────────────────────────────────────────────
   function toggleHistory() {
-    const open = historyEl.hidden;
-    historyEl.hidden = !open;
+    const palette = window.RundeerPalette;
+    const wasOpen = palette && typeof palette.isPaneOpen === "function" ? palette.isPaneOpen("history") : !historyEl.hidden;
+    if (palette && typeof palette.togglePane === "function") palette.togglePane("history");
+    else historyEl.hidden = wasOpen;
+    const open = palette && typeof palette.isPaneOpen === "function" ? palette.isPaneOpen("history") : !historyEl.hidden;
     historyBtnEl.setAttribute("aria-expanded", String(open));
     if (open) sendWS({ type: "list_conversations" });
   }
@@ -838,7 +881,10 @@
       const title = document.createElement("span");
       title.className = "ne-agent-history-title";
       title.textContent = c.title || c.id;
-      title.addEventListener("click", () => sendWS({ type: "load_conversation", id: c.id }));
+      title.addEventListener("click", () => {
+        sendWS({ type: "load_conversation", id: c.id });
+        if (window.RundeerPalette && typeof window.RundeerPalette.showPane === "function") window.RundeerPalette.showPane("chat");
+      });
       const rm = document.createElement("button");
       rm.type = "button";
       rm.className = "ne-agent-history-delete";
@@ -849,6 +895,108 @@
       historyListEl.appendChild(li);
     });
   }
+
+  function updateAgentSelector() {
+    if (!currentAgent && agents.length) currentAgent = agents[0];
+    if (modelEl) modelEl.textContent = (currentAgent && currentAgent.name) || cfg.model || "agent";
+  }
+
+  function emitAgentSelected() {
+    try {
+      window.dispatchEvent(new CustomEvent("agent:selected", { detail: { agent: currentAgent || null } }));
+    } catch (_) {}
+  }
+
+  async function askAgentName(defaultName, title) {
+    if (typeof window.openAppDialog === "function") {
+      const result = await window.openAppDialog({
+        title: title || "Agent name",
+        message: "Saved under .rundeer/agent.",
+        inputLabel: "Agent name",
+        defaultValue: defaultName || "New agent",
+        confirmText: "Save",
+        cancelText: "Cancel",
+      });
+      return result.action === "confirm" ? String(result.value || "").trim() : "";
+    }
+    return String(window.prompt(title || "Agent name", defaultName || "New agent") || "").trim();
+  }
+
+  async function onCreateAgent(e) {
+    if (e) e.preventDefault();
+    const name = await askAgentName("New agent", "New agent");
+    if (!name) return;
+    sendWS({ type: "create_agent", name });
+  }
+
+  function renderAgents() {
+    if (!agentListEl) return;
+    agentListEl.innerHTML = "";
+    if (!agents.length) {
+      const empty = document.createElement("div");
+      empty.className = "ne-agent-empty";
+      empty.textContent = "no agents yet";
+      agentListEl.appendChild(empty);
+      return;
+    }
+    for (const agent of agents) {
+      const row = document.createElement("div");
+      row.className = "ne-agent-row" + (currentAgent && agent.id === currentAgent.id ? " is-active" : "");
+      row.setAttribute("role", "option");
+      row.setAttribute("aria-selected", String(Boolean(currentAgent && agent.id === currentAgent.id)));
+      row.dataset.agentId = agent.id;
+
+      const name = document.createElement("span");
+      name.className = "ne-agent-row-name";
+      name.textContent = agent.name || agent.id;
+      row.appendChild(name);
+
+      const rename = document.createElement("button");
+      rename.type = "button";
+      rename.className = "ne-agent-row-action";
+      rename.textContent = "✎";
+      rename.title = "Rename agent";
+      rename.setAttribute("aria-label", "Rename agent");
+      rename.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
+        const next = await askAgentName(agent.name || agent.id, "Rename agent");
+        if (next && next !== agent.name) sendWS({ type: "rename_agent", id: agent.id, name: next });
+      });
+      row.appendChild(rename);
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "ne-agent-row-action";
+      del.textContent = "×";
+      del.title = agent.id === "default" ? "Default agent cannot be deleted" : "Delete agent";
+      del.setAttribute("aria-label", "Delete agent");
+      del.disabled = agent.id === "default";
+      del.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        if (agent.id === "default") return;
+        if (!window.confirm || window.confirm(`Delete agent "${agent.name || agent.id}"?`)) {
+          sendWS({ type: "delete_agent", id: agent.id });
+        }
+      });
+      row.appendChild(del);
+
+      row.addEventListener("click", () => {
+        if (!currentAgent || agent.id !== currentAgent.id) sendWS({ type: "select_agent", id: agent.id });
+        if (window.RundeerPalette && typeof window.RundeerPalette.showPane === "function") window.RundeerPalette.showPane("chat");
+      });
+      agentListEl.appendChild(row);
+    }
+  }
+
+  AgentChat.requestAgents = function () {
+    sendWS({ type: "list_agents" });
+  };
+  AgentChat.getSelectedAgentId = function () {
+    return (currentAgent && currentAgent.id) || "default";
+  };
+  AgentChat.getSelectedAgentName = function () {
+    return (currentAgent && currentAgent.name) || "Default";
+  };
 
   function replayEvent(ev) {
     handleEvent(ev);

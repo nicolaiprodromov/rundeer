@@ -1,6 +1,6 @@
 // rundeer node editor — Blender-style node graph controller.
 // Features: modal G/R/S transforms, preview nodes, collapse-under-preview,
-// autosave (localStorage + JSON file), Node-Wrangler shortcuts, past-runs panel.
+// autosave to .rundeer, Node-Wrangler shortcuts, past-runs panel.
 
 "use strict";
 
@@ -14,6 +14,9 @@ const SOCKET_TYPES = {
   boolean:      { color: "oklch(78% 0.190 45)", label: "Boolean" },
   definition:   { color: "oklch(76% 0.170 185)", label: "Definition" },
   filepath:     { color: "oklch(80% 0.180 58)", label: "File Path" },
+  vector:       { color: "oklch(74% 0.16 340)", label: "Vector" },
+  "vector-map": { color: "oklch(70% 0.135 304)", label: "Vector Map" },
+  color:        { color: "oklch(74% 0.180 35)", label: "Color" },
   "image-bundle": { color: "oklch(88% 0.220 88)", label: "Image Bundle" },
   "video-bundle": { color: "oklch(76% 0.230 310)", label: "Video Bundle" },
   run:          { color: "oklch(80% 0.180 100)", label: "Run" },
@@ -81,6 +84,21 @@ const COMMAND_REFERENCE_PROPS = [
 const COMMAND_MEDIA_INPUT_PROPS = [
   { id: "pad_reference", label: "Pad Inputs", kind: "checkbox", default: true },
   { id: "ref_quality", label: "JPEG Quality", kind: "number", default: 85 },
+];
+
+const PROMPT_MODEL_PROPS = [
+  { id: "model", label: "Model override", kind: "text", default: "", placeholder: "uses env MODEL_NAME" },
+  { id: "reasoning_effort", label: "Reasoning Effort", kind: "select", options: ["default", "none", "low", "medium", "high"], default: "default" },
+];
+
+const PROMPT_SAMPLING_PROPS = [
+  { id: "temperature", label: "Temperature", kind: "number", default: 0.7, placeholder: "0.0 - 2.0" },
+  { id: "top_p", label: "Top P", kind: "number", default: "", placeholder: "0.0 - 1.0 (unset)" },
+  { id: "max_tokens", label: "Max Tokens", kind: "number", default: 1024 },
+  { id: "seed", label: "Seed", kind: "number", default: "", placeholder: "optional" },
+  { id: "frequency_penalty", label: "Frequency Penalty", kind: "number", default: "", placeholder: "-2.0 - 2.0 (non-reasoning only)" },
+  { id: "presence_penalty", label: "Presence Penalty", kind: "number", default: "", placeholder: "-2.0 - 2.0 (non-reasoning only)" },
+  { id: "stop", label: "Stop", kind: "text", default: "", placeholder: "comma-separated (non-reasoning only)" },
 ];
 
 const COMMAND_CHAIN_PROPS = [
@@ -282,6 +300,52 @@ function _coerceMixInput(v, { isFactor } = {}) {
   return { payload: { color: [0, 0, 0, 1] }, isPath: false, color: [0, 0, 0, 1] };
 }
 
+function _coerceVector2Value(v, fallback = [0, 0]) {
+  if (v == null || v === "") return fallback.slice(0, 2);
+  if (Array.isArray(v)) {
+    const nums = v.map(Number).filter((n) => Number.isFinite(n));
+    if (nums.length >= 2) return [nums[0], nums[1]];
+    if (nums.length === 1) return [nums[0], nums[0]];
+    return fallback.slice(0, 2);
+  }
+  if (typeof v === "number") return Number.isFinite(v) ? [v, v] : fallback.slice(0, 2);
+  // Dict shapes that mirror the Python `_coerce_vector2` helper. These can
+  // come from prop sockets when an upstream node ships a wrapped vector
+  // (e.g. {x, y}) or a typed primitive ({scalar} / {color} / {value}).
+  if (typeof v === "object") {
+    if ("x" in v || "y" in v) return _coerceVector2Value([v.x ?? fallback[0], v.y ?? fallback[1]], fallback);
+    if ("value" in v) return _coerceVector2Value(v.value, fallback);
+    if ("color" in v) return _coerceVector2Value(v.color, fallback);
+    if ("scalar" in v) return _coerceVector2Value(v.scalar, fallback);
+    return fallback.slice(0, 2);
+  }
+  const raw = String(v).trim().replace(/[\[\]()]/g, "").replace(/[×xX]/g, ",");
+  const nums = raw.split(/[\s,]+/).map(Number).filter((n) => Number.isFinite(n));
+  if (nums.length >= 2) return [nums[0], nums[1]];
+  if (nums.length === 1) return [nums[0], nums[0]];
+  return fallback.slice(0, 2);
+}
+
+// Detect strings that look like file paths (e.g. ".npy" UV maps) wired into
+// a size/position socket. Returns the offending path or "" — used to warn
+// users that a wired socket silently fell back to its default value.
+function _vectorSocketUnparseableSource(v) {
+  if (typeof v !== "string") return "";
+  const s = v.trim();
+  if (!s) return "";
+  if (!/[\\/]/.test(s) && !/\.[a-z0-9]{2,4}$/i.test(s)) return "";
+  const stripped = s.replace(/[\[\]()]/g, "").replace(/[×xX]/g, ",");
+  const nums = stripped.split(/[\s,]+/).map(Number).filter((n) => Number.isFinite(n));
+  if (nums.length >= 1) return "";
+  return s;
+}
+
+function _mediaPathList(v) {
+  if (Array.isArray(v)) return v.filter((x) => x != null && x !== "").map((x) => String(x));
+  if (v == null || v === "") return [];
+  return [String(v)];
+}
+
 function _jsBlend(a, b, mode) {
   const pair = (fn) => a.map((va, i) => fn(va, b[i] ?? 0));
   switch (mode) {
@@ -454,8 +518,13 @@ const NODE_CATALOG = [
         defaultHeight: 260,
         resizable: true,
       },
+    ],
+  },
+  {
+    category: "Operations",
+    nodes: [
       {
-        type: "text-join", label: "String Join", desc: "Concatenate two values as strings",
+        type: "text-join", label: "Join", desc: "Concatenate two values as strings",
         inputs: [
           { id: "a", label: "A", type: "any" },
           { id: "b", label: "B", type: "any" },
@@ -492,6 +561,26 @@ const NODE_CATALOG = [
         ],
       },
       {
+        type: "crop-media", label: "Crop",
+        desc: "Crop an image or video. Size and position use pixel vectors; position starts at the source bottom-left.",
+        inputs: [{ id: "in", label: "Media", type: "any" }],
+        outputs: [{ id: "out", label: "Cropped", type: "any" }],
+        props: [
+          { id: "size", label: "Size", kind: "text", default: "512,512", placeholder: "width,height", socketType: "vector", passthroughWired: true },
+          { id: "position", label: "Position", kind: "text", default: "0,0", placeholder: "x,y from bottom-left", socketType: "vector", passthroughWired: true },
+        ],
+      },
+      {
+        type: "resize-media", label: "Resize",
+        desc: "Resize an image or video to a target size with aspect handling.",
+        inputs: [{ id: "in", label: "Media", type: "any" }],
+        outputs: [{ id: "out", label: "Resized", type: "any" }],
+        props: [
+          { id: "size", label: "Size", kind: "text", default: "1024,1024", placeholder: "width,height", socketType: "vector", passthroughWired: true },
+          { id: "mode", label: "Integration", kind: "select", options: ["none", "fill", "stretch", "contain"], default: "contain", socketType: "text" },
+        ],
+      },
+      {
         type: "math-op", label: "Math", desc: "Numeric operation",
         inputs: [
           { id: "a", label: "A", type: "number" },
@@ -514,6 +603,17 @@ const NODE_CATALOG = [
           { id: "extra", label: "Extra (replace=with, slice=start:end, format=tpl with {a}/{b})", kind: "text", default: "" },
         ],
       },
+      {
+        type: "random", label: "Random", desc: "Generate a random integer, float, or string",
+        inputs: [],
+        outputs: [{ id: "out", label: "Value", type: "any" }],
+        props: [
+          { id: "mode", label: "Mode", kind: "select", options: ["integer", "float", "string"], default: "integer", socketType: "text" },
+          { id: "min", label: "Min", kind: "number", default: 0 },
+          { id: "max", label: "Max", kind: "number", default: 100 },
+          { id: "charset", label: "Charset", kind: "select", options: ["alphanumeric", "alpha", "lower_alpha", "upper_alpha", "numeric", "hex", "special", "ascii"], default: "alphanumeric", socketType: "text" },
+        ],
+      },
     ],
   },
   {
@@ -533,6 +633,18 @@ const NODE_CATALOG = [
     category: "Prompt",
     nodes: [
       {
+        type: "prompt", label: "Prompt", desc: "Prompt a model with optional image context",
+        inputs: [
+          { id: "prompt", label: "Prompt In", type: "text" },
+          { id: "input", label: "Context Images", type: "image", multi: true },
+        ],
+        outputs: [{ id: "out", label: "Response", type: "text" }],
+        props: [
+          ...groupProps("model", PROMPT_MODEL_PROPS),
+          ...groupProps("sampling", PROMPT_SAMPLING_PROPS),
+        ],
+      },
+      {
         type: "prompt-filter", label: "Prompt Filter", desc: "Use a model to transform a prompt",
         inputs: [
           { id: "prompt", label: "Prompt In", type: "text" },
@@ -541,20 +653,8 @@ const NODE_CATALOG = [
         ],
         outputs: [{ id: "out", label: "Prompt Out", type: "text" }],
         props: [
-          ...groupProps("model", [
-            { id: "model", label: "Model override", kind: "text", default: "", placeholder: "uses env MODEL_NAME" },
-            { id: "model_api_key", label: "API Key override", kind: "text", default: "", placeholder: "uses env MODEL_API_KEY" },
-            { id: "reasoning_effort", label: "Reasoning Effort", kind: "select", options: ["default", "none", "low", "medium", "high"], default: "default" },
-          ]),
-          ...groupProps("sampling", [
-            { id: "temperature", label: "Temperature", kind: "number", default: 0.7, placeholder: "0.0 – 2.0" },
-            { id: "top_p", label: "Top P", kind: "number", default: "", placeholder: "0.0 – 1.0 (unset)" },
-            { id: "max_tokens", label: "Max Tokens", kind: "number", default: 1024 },
-            { id: "seed", label: "Seed", kind: "number", default: "", placeholder: "optional" },
-            { id: "frequency_penalty", label: "Frequency Penalty", kind: "number", default: "", placeholder: "-2.0 – 2.0 (non-reasoning only)" },
-            { id: "presence_penalty", label: "Presence Penalty", kind: "number", default: "", placeholder: "-2.0 – 2.0 (non-reasoning only)" },
-            { id: "stop", label: "Stop", kind: "text", default: "", placeholder: "comma-separated (non-reasoning only)" },
-          ]),
+          ...groupProps("model", PROMPT_MODEL_PROPS),
+          ...groupProps("sampling", PROMPT_SAMPLING_PROPS),
         ],
       },
       {
@@ -749,6 +849,14 @@ const NODE_CATALOG = [
         outputs: [{ id: "run", label: "Run", type: "run" }],
         props: [],
       },
+      {
+        type: "pause", label: "Pause", desc: "Pause graph execution at this passthrough point, then resume from the node or footer.",
+        defaultWidth: 220,
+        defaultHeight: 170,
+        inputs: [{ id: "in", label: "In", type: "any" }],
+        outputs: [{ id: "out", label: "Out", type: "any" }],
+        props: [],
+      },
     ],
   },
   {
@@ -761,7 +869,7 @@ const NODE_CATALOG = [
         // preview, uv-render), while the `.npy` flows naturally into
         // downstream vector ops.
         type: "coordinate", label: "Coordinate",
-        desc: "Generate a UV coordinate map (R=u, G=v in [0,1]). Acts as both a vector field and an image — wire into Mapping, Vector, UV Render, Preview, or any command's image input.",
+        desc: "Generate a bottom-left UV coordinate map (R=u, G=v in [0,1]). Acts as both a vector field and an image - wire into Mapping, Vector, Render, Preview, or any command's image input.",
         defaultWidth: 260,
         defaultHeight: 240,
         resizable: true,
@@ -855,12 +963,26 @@ const NODE_CATALOG = [
         resizable: true,
       },
       {
-        // UV Render: samples a pixel image at the UV coordinates in `uv`.
+        type: "canvas", label: "Canvas", desc: "Composite multiple images on a sized canvas. Each image can be paired with a bottom-left position vector.",
+        inputs: [
+          { id: "images", label: "Image", type: "image", multi: true },
+          { id: "positions", label: "Position", type: "vector", multi: true },
+        ],
+        outputs: [{ id: "out", label: "Image", type: "image" }],
+        props: [
+          { id: "size", label: "Size", kind: "text", default: "1024,1024", placeholder: "width,height", socketType: "vector", passthroughWired: true },
+        ],
+        defaultWidth: 360,
+        defaultHeight: 300,
+        resizable: true,
+      },
+      {
+        // Render: samples a pixel image at the UV coordinates in `uv`.
         // Output is a regular image path, so downstream nodes treat it
         // exactly like any other image. Shares the Preview node's inline
         // rendering machinery (collapse, zoom, refresh).
-        type: "uv-render", label: "UV Render",
-        desc: "Sample a pixel image using a UV coordinate map. Like Blender's Image Texture sampled by a custom UV.",
+        type: "uv-render", label: "Render",
+        desc: "Sample a pixel image using a bottom-left UV coordinate map. Like Blender's Image Texture sampled by a custom UV.",
         inputs: [
           { id: "pixel", label: "Pixel", type: "image" },
           { id: "uv", label: "UV", type: "vector-map" },
@@ -936,7 +1058,7 @@ const NODE_BY_TYPE = Object.fromEntries(
   NODE_CATALOG.flatMap((cat) => cat.nodes.map((n) => [n.type, { ...n, category: cat.category }]))
 );
 
-const PREVIEW_TYPES = new Set(["preview", "file", "uv-render", "coordinate"]);
+const PREVIEW_TYPES = new Set(["preview", "file", "uv-render", "coordinate", "canvas"]);
 const LIVE_UPDATE_TYPES = new Set(["mix"]);
 const LEGACY_PREVIEW_TYPES = new Set(["preview-image", "preview-video", "preview-text"]);
 // Legacy primitive file-source types that were folded into the unified `file`
@@ -1885,6 +2007,7 @@ function renderNodes() {
     paintNodeRunChrome(id);
   }
   refreshActiveNodeHighlight();
+  updateInlineRunControls();
 }
 
 function nodeSignature(node) {
@@ -2294,6 +2417,10 @@ function buildNodeElement(id, node) {
       body.appendChild(buildRunTriggerButton(id));
     }
 
+    if (node.type === "pause") {
+      body.appendChild(buildPauseNodeButton(id));
+    }
+
     el.appendChild(body);
   }
   el.appendChild(buildNodeFooter(node));
@@ -2398,6 +2525,7 @@ function buildNodeFooter(node) {
 
 function formatNodeRuntime(ms, count = 0, status = null) {
   if (status === "running") return count > 0 ? `${count + 1}x · running` : "running";
+  if (status === "cancelled") return "stopped";
   if (typeof ms !== "number" || !Number.isFinite(ms)) return status === "failed" ? "failed" : "not run";
   let label;
   if (ms < 1000) label = `${Math.max(1, Math.round(ms))} ms`;
@@ -2408,7 +2536,151 @@ function formatNodeRuntime(ms, count = 0, status = null) {
   return count > 1 ? `${count}x · ${label}` : label;
 }
 
+class GraphRunCancelled extends Error {
+  constructor(message = "graph stopped") {
+    super(message);
+    this.name = "GraphRunCancelled";
+  }
+}
+
 let _graphRunState = null;
+
+function graphRunFromOpts(opts = {}) {
+  return opts && opts.run ? opts.run : null;
+}
+
+function updateGraphRunControls() {
+  const runBtn = document.getElementById("runGraphBtn");
+  const stopBtn = document.getElementById("stopGraphBtn");
+  const pauseBtn = document.getElementById("pauseGraphBtn");
+  const control = document.getElementById("graphRunControl");
+  const running = Boolean(_graphRunState);
+  const paused = Boolean(_graphRunState?.paused);
+  if (control) control.dataset.state = running ? (paused ? "paused" : "running") : "idle";
+  if (runBtn) runBtn.hidden = running;
+  if (stopBtn) stopBtn.hidden = !running;
+  if (pauseBtn) {
+    pauseBtn.hidden = !running;
+    pauseBtn.innerHTML = paused
+      ? `<span class="btn-glyph" aria-hidden="true">▶</span>`
+      : `<span class="btn-glyph" aria-hidden="true">Ⅱ</span>`;
+    pauseBtn.setAttribute("aria-label", paused ? "Resume graph" : "Pause graph");
+    pauseBtn.title = paused ? "Resume graph" : "Pause graph before the next execution step";
+  }
+  updateInlineRunControls();
+}
+
+function updateInlineRunControls() {
+  const graphBusy = Boolean(_graphRunState);
+  document.querySelectorAll(".ne-run-play").forEach((btn) => {
+    const nodeId = btn.closest(".ne-node")?.dataset.nodeId;
+    const muted = nodeId ? isNodeMuted(nodeId) : false;
+    btn.disabled = graphBusy || muted;
+    btn.title = graphBusy ? "A graph is already running" : (muted ? "Unmute this node before running" : "Run connected command(s)");
+  });
+  document.querySelectorAll(".ne-pause-resume").forEach((btn) => {
+    const nodeId = btn.dataset.pauseResumeNode || btn.closest(".ne-node")?.dataset.nodeId;
+    const active = isPauseNodeResumeReady(nodeId);
+    btn.disabled = !active;
+    btn.classList.toggle("is-active", active);
+    btn.title = active ? "Resume graph flow" : "Available when graph execution is paused here";
+    btn.setAttribute("aria-label", active ? "Resume graph flow" : "Resume graph flow when paused here");
+  });
+}
+
+function resolvePauseWaiters(run) {
+  if (!run || !Array.isArray(run.pauseWaiters)) return;
+  const waiters = run.pauseWaiters.splice(0);
+  for (const resolve of waiters) resolve();
+}
+
+function pauseGraphRun(reason = "manual", nodeId = null) {
+  const run = _graphRunState;
+  if (!run || run.cancelled) return;
+  run.paused = true;
+  run.pauseReason = reason;
+  run.pausedNodeId = nodeId || null;
+  setGraphStatus(reason === "node" ? "paused at node" : "paused", "is-paused");
+  updateGraphRunControls();
+  if (reason === "node") renderNodes();
+}
+
+function resumeGraphRun(source = "manual") {
+  const run = _graphRunState;
+  if (!run || !run.paused) return;
+  run.paused = false;
+  run.pauseReason = "";
+  run.pausedNodeId = null;
+  resolvePauseWaiters(run);
+  appendRunLog(source === "node" ? "▶ Resumed from pause node\n" : "▶ Resumed graph\n");
+  setGraphStatus("running…", "is-running");
+  updateGraphRunControls();
+  renderNodes();
+}
+
+function stopGraphRun() {
+  const run = _graphRunState;
+  if (!run || run.cancelled) return;
+  run.cancelled = true;
+  try { run.abortController?.abort(); } catch (_) { /* ignore */ }
+  resolvePauseWaiters(run);
+  appendRunLog("■ Stopping graph…\n");
+  setGraphStatus("stopping…", "is-cancelled");
+  updateGraphRunControls();
+  const runIds = Array.from(run.activeRunIds || []);
+  for (const runId of runIds) {
+    fetchJSON(`/api/runs/${encodeURIComponent(runId)}/cancel`, { method: "POST", body: JSON.stringify({}) }).catch(() => {});
+  }
+}
+
+async function waitForGraphRunReady(opts = {}) {
+  const run = graphRunFromOpts(opts);
+  if (!run) return;
+  if (run.cancelled) throw new GraphRunCancelled();
+  while (run.paused && !run.cancelled) {
+    await new Promise((resolve) => run.pauseWaiters.push(resolve));
+  }
+  if (run.cancelled) throw new GraphRunCancelled();
+}
+
+async function graphDelay(ms, opts = {}) {
+  const run = graphRunFromOpts(opts);
+  if (!run) {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    return;
+  }
+  if (run.cancelled) throw new GraphRunCancelled();
+  await new Promise((resolve, reject) => {
+    const done = () => {
+      clearTimeout(timer);
+      run.abortController?.signal?.removeEventListener("abort", onAbort);
+      resolve();
+    };
+    const onAbort = () => {
+      clearTimeout(timer);
+      run.abortController?.signal?.removeEventListener("abort", onAbort);
+      reject(new GraphRunCancelled());
+    };
+    const timer = setTimeout(done, ms);
+    run.abortController?.signal?.addEventListener("abort", onAbort, { once: true });
+  });
+  await waitForGraphRunReady(opts);
+}
+
+async function graphFetchJSON(url, fetchOpts = {}, runOpts = {}) {
+  await waitForGraphRunReady(runOpts);
+  const run = graphRunFromOpts(runOpts);
+  const nextOpts = { ...fetchOpts };
+  if (run?.abortController && !nextOpts.signal) nextOpts.signal = run.abortController.signal;
+  try {
+    const data = await fetchJSON(url, nextOpts);
+    await waitForGraphRunReady(runOpts);
+    return data;
+  } catch (err) {
+    if (run?.cancelled || err?.name === "AbortError") throw new GraphRunCancelled();
+    throw err;
+  }
+}
 
 function shouldTraceNodeResolution(opts = {}) {
   return Boolean(_graphRunState) && !opts.lite && !opts.liteCommands;
@@ -2425,15 +2697,28 @@ function resetGraphRunMetrics() {
 }
 
 function beginGraphRunState() {
-  _graphRunState = { frames: [] };
+  _graphRunState = {
+    frames: [],
+    cancelled: false,
+    paused: false,
+    pauseReason: "",
+    pausedNodeId: null,
+    pauseWaiters: [],
+    abortController: new AbortController(),
+    activeRunIds: new Set(),
+  };
   resetGraphRunMetrics();
+  updateGraphRunControls();
+  return _graphRunState;
 }
 
 function finishGraphRunState() {
   if (!_graphRunState) return;
+  resolvePauseWaiters(_graphRunState);
   _graphRunState.frames.length = 0;
   clearActiveNodeHighlight();
   _graphRunState = null;
+  updateGraphRunControls();
 }
 
 function nodeExecutionFrame() {
@@ -2465,6 +2750,7 @@ function paintNodeRunChrome(nodeId) {
   if (!node || !el) return;
   el.classList.toggle("is-done", node.lastRunStatus === "done");
   el.classList.toggle("is-failed", node.lastRunStatus === "failed");
+  el.classList.toggle("is-cancelled", node.lastRunStatus === "cancelled");
   const runtime = el.querySelector(".ne-node-footer-runtime");
   if (runtime) {
     runtime.dataset.state = node.lastRunStatus || "idle";
@@ -2808,6 +3094,36 @@ function clampPreviewPan(node) {
   return { x: node.previewPanX, y: node.previewPanY };
 }
 
+function clampPreviewPanToStage(node, stage, media) {
+  if (!node || !stage || !media) return clampPreviewPan(node);
+  const zoom = clampPreviewZoom(node);
+  if (zoom <= 1.005) {
+    node.previewPanX = 0;
+    node.previewPanY = 0;
+    return { x: 0, y: 0 };
+  }
+  const stageRect = stage.getBoundingClientRect();
+  const stageW = stage.clientWidth || stageRect.width || 0;
+  const stageH = stage.clientHeight || stageRect.height || 0;
+  const mediaW = media.offsetWidth || 0;
+  const mediaH = media.offsetHeight || 0;
+  if (stageW <= 0 || stageH <= 0 || mediaW <= 1 || mediaH <= 1) return clampPreviewPan(node);
+
+  const clampAxis = (rawPan, stageSize, mediaSize) => {
+    const base = (stageSize - mediaSize) / 2;
+    const scaled = mediaSize * zoom;
+    if (scaled <= stageSize) return 0;
+    const min = stageSize - base - scaled;
+    const max = -base;
+    return clampValue(rawPan, min, max);
+  };
+
+  const current = clampPreviewPan(node);
+  node.previewPanX = Math.round(clampAxis(current.x, stageW, mediaW) * 10) / 10;
+  node.previewPanY = Math.round(clampAxis(current.y, stageH, mediaH) * 10) / 10;
+  return { x: node.previewPanX, y: node.previewPanY };
+}
+
 function clampTextZoom(node) {
   if (!node) return 1;
   const raw = Number(node.textZoom);
@@ -2944,8 +3260,9 @@ function updatePreviewZoomDom(nodeId) {
     node.previewPanX = 0;
     node.previewPanY = 0;
   }
-  const pan = clampPreviewPan(node);
   el.querySelectorAll(".ne-preview-zoom-stage").forEach((stage) => {
+    const media = stage.querySelector("img, video");
+    const pan = clampPreviewPanToStage(node, stage, media);
     stage.style.setProperty("--preview-zoom", String(zoom));
     stage.style.setProperty("--preview-pan-x", `${pan.x}px`);
     stage.style.setProperty("--preview-pan-y", `${pan.y}px`);
@@ -3348,6 +3665,10 @@ function makePreviewZoomStage(node, media) {
   stage.style.setProperty("--preview-pan-y", `${pan.y}px`);
   stage.classList.toggle("is-zoomed", clampPreviewZoom(node) > 1.005);
   stage.appendChild(media);
+  const refreshPan = () => updatePreviewZoomDom(node.id);
+  if (media.tagName === "IMG" && !media.complete) media.addEventListener("load", refreshPan, { once: true });
+  else if (media.tagName === "VIDEO") media.addEventListener("loadedmetadata", refreshPan, { once: true });
+  queueMicrotask(refreshPan);
   bindPreviewStagePan(stage, node.id);
   return stage;
 }
@@ -3534,7 +3855,7 @@ function makeBundleMedia(value, kindHint) {
   img.className = "ne-preview-img";
   img.alt = "preview";
   img.decoding = "async";
-  img.loading = "lazy";
+  img.loading = "eager";
   img.src = url;
   img.addEventListener("error", () => img.replaceWith(makeBrokenLabel(value)));
   return img;
@@ -5034,6 +5355,237 @@ function segmentsIntersect(a, b, c, d) {
 
 // ─── Keyboard shortcuts ──────────────────────────────────────────────────────
 
+const SHORTCUT_DEFINITIONS = [
+  { id: "runGraph", group: "Run", label: "Run graph", description: "Run active graph", default: "Mod+Enter" },
+  { id: "addNodeMenu", group: "Graph", label: "Add node menu", description: "Open node picker", default: "Shift+A" },
+  { id: "renameNode", group: "Graph", label: "Rename node", description: "Edit selected node title", default: "F2" },
+  { id: "grabNodes", group: "Graph", label: "Grab", description: "Move selected nodes", default: "G" },
+  { id: "scaleNodes", group: "Graph", label: "Scale", description: "Resize selected nodes", default: "S" },
+  { id: "placeReroute", group: "Graph", label: "Place reroute", description: "Sprout reroute from selection", default: "E" },
+  { id: "muteNodes", group: "Graph", label: "Mute nodes", description: "Toggle selected or hovered nodes", default: "M" },
+  { id: "togglePalette", group: "Panels", label: "Node palette", description: "Toggle node palette", default: "T" },
+  { id: "toggleProperties", group: "Panels", label: "Properties", description: "Toggle properties panel", default: "P" },
+  { id: "openRuns", group: "Panels", label: "Runs", description: "Open runs page", default: "R" },
+  { id: "toggleAgentPanel", group: "Panels", label: "Palette", description: "Toggle floating palette", default: "N" },
+  { id: "cutSelection", group: "Edit", label: "Cut selection", description: "Copy and remove selected nodes", default: "Mod+X" },
+  { id: "deleteSelection", group: "Edit", label: "Delete selection", description: "Remove selected nodes", default: "Delete" },
+  { id: "selectAll", group: "Edit", label: "Select all", description: "Toggle all nodes", default: "A" },
+  { id: "duplicateSelection", group: "Edit", label: "Duplicate", description: "Duplicate selected nodes", default: "Shift+D" },
+  { id: "frameAll", group: "View", label: "Frame all", description: "Fit graph to view", default: "Home" },
+  { id: "fitView", group: "View", label: "Fit to view", description: "Fit graph to view", default: "Shift+C" },
+  { id: "autoConnect", group: "Wire", label: "Auto connect", description: "Connect two selected nodes", default: "F" },
+  { id: "hideNodes", group: "View", label: "Hide nodes", description: "Collapse selected or hovered nodes", default: "H" },
+  { id: "previewSelected", group: "Preview", label: "Preview selected", description: "Create preview node", default: "Alt+P" },
+  { id: "previewPrevious", group: "Preview", label: "Previous preview item", description: "Step selected preview backward", default: "ArrowLeft" },
+  { id: "previewNext", group: "Preview", label: "Next preview item", description: "Step selected preview forward", default: "ArrowRight" },
+  { id: "previewZoomIn", group: "Preview", label: "Preview zoom in", description: "Zoom selected preview", default: "ArrowUp" },
+  { id: "previewZoomOut", group: "Preview", label: "Preview zoom out", description: "Zoom selected preview", default: "ArrowDown" },
+  { id: "saveGraph", group: "Graphs", label: "Save graph", description: "Save current graph", default: "Mod+S" },
+  { id: "loadGraphJson", group: "Graphs", label: "Load graph JSON", description: "Open graph JSON", default: "Mod+O" },
+];
+
+const SHORTCUT_BY_ID = Object.fromEntries(SHORTCUT_DEFINITIONS.map((def) => [def.id, def]));
+let shortcutCaptureAction = null;
+
+function shortcutState() {
+  if (!webStore.state.shortcuts || typeof webStore.state.shortcuts !== "object") webStore.state.shortcuts = {};
+  return webStore.state.shortcuts;
+}
+
+function normalizeShortcutKey(key) {
+  const raw = String(key || "").trim();
+  if (!raw) return "";
+  const lower = raw.toLowerCase();
+  const aliases = {
+    esc: "Escape",
+    escape: "Escape",
+    del: "Delete",
+    delete: "Delete",
+    space: "Space",
+    return: "Enter",
+    enter: "Enter",
+    left: "ArrowLeft",
+    right: "ArrowRight",
+    up: "ArrowUp",
+    down: "ArrowDown",
+  };
+  if (aliases[lower]) return aliases[lower];
+  if (/^f\d{1,2}$/i.test(raw)) return raw.toUpperCase();
+  if (raw.length === 1) return raw.toUpperCase();
+  return raw[0].toUpperCase() + raw.slice(1);
+}
+
+function normalizeShortcutCombo(combo) {
+  const parts = String(combo || "").split("+").map((part) => part.trim()).filter(Boolean);
+  if (!parts.length) return "";
+  let hasMod = false;
+  let hasShift = false;
+  let hasAlt = false;
+  let key = "";
+  for (const part of parts) {
+    const lower = part.toLowerCase();
+    if (["mod", "ctrl", "control", "cmd", "command", "meta"].includes(lower)) hasMod = true;
+    else if (lower === "shift") hasShift = true;
+    else if (["alt", "option"].includes(lower)) hasAlt = true;
+    else key = normalizeShortcutKey(part);
+  }
+  if (!key) return "";
+  const out = [];
+  if (hasMod) out.push("Mod");
+  if (hasShift) out.push("Shift");
+  if (hasAlt) out.push("Alt");
+  out.push(key);
+  return out.join("+");
+}
+
+function shortcutFor(actionId) {
+  const def = SHORTCUT_BY_ID[actionId];
+  if (!def) return "";
+  const custom = shortcutState()[actionId];
+  return normalizeShortcutCombo(custom || def.default || "");
+}
+
+function eventShortcutKey(e) {
+  if (!e || !e.key) return "";
+  if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return "";
+  if (e.key === " ") return "Space";
+  return normalizeShortcutKey(e.key);
+}
+
+function shortcutEventToCombo(e) {
+  const key = eventShortcutKey(e);
+  if (!key) return "";
+  const parts = [];
+  if (e.ctrlKey || e.metaKey) parts.push("Mod");
+  if (e.shiftKey) parts.push("Shift");
+  if (e.altKey) parts.push("Alt");
+  parts.push(key);
+  return parts.join("+");
+}
+
+function shortcutMatches(e, actionId) {
+  const expected = shortcutFor(actionId);
+  return Boolean(expected) && shortcutEventToCombo(e) === expected;
+}
+
+function formatShortcut(combo) {
+  const normalized = normalizeShortcutCombo(combo);
+  if (!normalized) return "Unassigned";
+  return normalized.split("+").map((part) => part === "Mod" ? "Ctrl/Cmd" : part).join("+");
+}
+
+function shortcutConflict(actionId, combo) {
+  const normalized = normalizeShortcutCombo(combo);
+  if (!normalized) return null;
+  return SHORTCUT_DEFINITIONS.find((def) => def.id !== actionId && shortcutFor(def.id) === normalized) || null;
+}
+
+function setShortcut(actionId, combo) {
+  const def = SHORTCUT_BY_ID[actionId];
+  if (!def) return;
+  const normalized = normalizeShortcutCombo(combo);
+  const store = shortcutState();
+  if (!normalized || normalized === normalizeShortcutCombo(def.default)) delete store[actionId];
+  else store[actionId] = normalized;
+  scheduleWebStoreSave();
+  renderShortcutSettings();
+}
+
+function resetShortcut(actionId) {
+  delete shortcutState()[actionId];
+  scheduleWebStoreSave();
+  renderShortcutSettings();
+}
+
+function resetAllShortcuts() {
+  webStore.state.shortcuts = {};
+  shortcutCaptureAction = null;
+  scheduleWebStoreSave();
+  renderShortcutSettings();
+}
+
+function beginShortcutCapture(actionId) {
+  shortcutCaptureAction = actionId;
+  renderShortcutSettings();
+}
+
+function handleShortcutCaptureKeydown(e) {
+  if (!shortcutCaptureAction) return false;
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.key === "Escape") {
+    shortcutCaptureAction = null;
+    renderShortcutSettings();
+    return true;
+  }
+  const combo = shortcutEventToCombo(e);
+  if (!combo) return true;
+  const conflict = shortcutConflict(shortcutCaptureAction, combo);
+  if (conflict) {
+    setHint(`${formatShortcut(combo)} is used by ${conflict.label}`);
+    setTimeout(clearHint, 1800);
+    return true;
+  }
+  setShortcut(shortcutCaptureAction, combo);
+  shortcutCaptureAction = null;
+  return true;
+}
+
+function renderShortcutSettings() {
+  const root = document.getElementById("shortcutsList");
+  if (!root) return;
+  const groups = [];
+  for (const def of SHORTCUT_DEFINITIONS) {
+    let group = groups.find((item) => item.name === def.group);
+    if (!group) {
+      group = { name: def.group, items: [] };
+      groups.push(group);
+    }
+    group.items.push(def);
+  }
+  const frag = document.createDocumentFragment();
+  for (const group of groups) {
+    const section = document.createElement("section");
+    section.className = "shortcut-group";
+    const title = document.createElement("div");
+    title.className = "shortcut-group-title";
+    title.textContent = group.name;
+    section.appendChild(title);
+    for (const def of group.items) {
+      const row = document.createElement("div");
+      row.className = "shortcut-row";
+
+      const name = document.createElement("div");
+      name.className = "shortcut-name";
+      const strong = document.createElement("strong");
+      strong.textContent = def.label;
+      const desc = document.createElement("span");
+      desc.textContent = def.description || "";
+      name.append(strong, desc);
+
+      const key = document.createElement("button");
+      key.type = "button";
+      key.className = "shortcut-key" + (shortcutCaptureAction === def.id ? " is-capturing" : "");
+      key.textContent = shortcutCaptureAction === def.id ? "Press keys" : formatShortcut(shortcutFor(def.id));
+      key.addEventListener("click", () => beginShortcutCapture(def.id));
+
+      const reset = document.createElement("button");
+      reset.type = "button";
+      reset.className = "btn btn-ghost btn-tiny shortcut-reset";
+      reset.textContent = "Reset";
+      reset.disabled = !Object.prototype.hasOwnProperty.call(shortcutState(), def.id);
+      reset.addEventListener("click", () => resetShortcut(def.id));
+
+      row.append(name, key, reset);
+      section.appendChild(row);
+    }
+    frag.appendChild(section);
+  }
+  root.replaceChildren(frag);
+  const meta = document.getElementById("settingsPageMeta");
+  if (meta) meta.textContent = `${SHORTCUT_DEFINITIONS.length} shortcuts · .rundeer/web-state.json`;
+}
+
 function selectedSliderPreviewNodeId() {
   const ids = [...ix.selection].filter((id) => {
     const node = graph.nodes[id];
@@ -5055,21 +5607,25 @@ function selectedZoomablePreviewNodeId() {
 }
 
 function handlePreviewKeydown(e) {
-  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
-  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return false;
+  const isPrevious = shortcutMatches(e, "previewPrevious");
+  const isNext = shortcutMatches(e, "previewNext");
+  const isZoomIn = shortcutMatches(e, "previewZoomIn");
+  const isZoomOut = shortcutMatches(e, "previewZoomOut");
+  if (!isPrevious && !isNext && !isZoomIn && !isZoomOut) return false;
   const sliderNodeId = selectedSliderPreviewNodeId();
   const zoomNodeId = selectedZoomablePreviewNodeId();
-  if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !sliderNodeId) return false;
-  if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !zoomNodeId) return false;
-  if (e.key === "ArrowLeft") stepPreviewIndex(sliderNodeId, -1);
-  if (e.key === "ArrowRight") stepPreviewIndex(sliderNodeId, 1);
-  if (e.key === "ArrowUp") stepPreviewZoom(zoomNodeId, 1);
-  if (e.key === "ArrowDown") stepPreviewZoom(zoomNodeId, -1);
+  if ((isPrevious || isNext) && !sliderNodeId) return false;
+  if ((isZoomIn || isZoomOut) && !zoomNodeId) return false;
+  if (isPrevious) stepPreviewIndex(sliderNodeId, -1);
+  if (isNext) stepPreviewIndex(sliderNodeId, 1);
+  if (isZoomIn) stepPreviewZoom(zoomNodeId, 1);
+  if (isZoomOut) stepPreviewZoom(zoomNodeId, -1);
   e.preventDefault();
   return true;
 }
 
 function onKeydown(e) {
+  if (handleShortcutCaptureKeydown(e)) return;
   const tag = document.activeElement?.tagName;
   const inInput = (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") && document.activeElement.id !== "addMenuSearch";
   if (inInput) {
@@ -5106,16 +5662,19 @@ function onKeydown(e) {
 
   if (handlePreviewKeydown(e)) return;
 
-  // Shift+A → add menu at cursor
-  if ((e.key === "A" || e.key === "a") && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+  if (shortcutMatches(e, "runGraph")) {
+    e.preventDefault();
+    runGraph();
+    return;
+  }
+
+  if (shortcutMatches(e, "addNodeMenu")) {
     e.preventDefault();
     showAddMenu(ix.lastMouseScreen.x, ix.lastMouseScreen.y);
     return;
   }
 
-  // G / S — modal transforms (R freed for runs panel toggle below; rotation
-  // wasn't meaningful for a 2D node graph)
-  if (e.key === "F2") {
+  if (shortcutMatches(e, "renameNode")) {
     e.preventDefault();
     const ids = [...ix.selection].filter((id) => graph.nodes[id] && !graph.nodes[id].hidden);
     if (ids.length === 1) {
@@ -5126,26 +5685,24 @@ function onKeydown(e) {
     }
     return;
   }
-  if ((e.key === "g" || e.key === "G") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  if (shortcutMatches(e, "grabNodes")) {
     e.preventDefault();
     startModal("G");
     return;
   }
-  if ((e.key === "s" || e.key === "S") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  if (shortcutMatches(e, "scaleNodes")) {
     e.preventDefault();
     startModal("S");
     return;
   }
 
-  // E — sprout a reroute from the selected node and place it at the cursor.
-  if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if (shortcutMatches(e, "placeReroute")) {
     e.preventDefault();
     startReroutePlacement();
     return;
   }
 
-  // M — mute / unmute selected nodes.
-  if ((e.key === "m" || e.key === "M") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if (shortcutMatches(e, "muteNodes")) {
     e.preventDefault();
     if (ix.selection.size > 0) {
       toggleNodeMuted([...ix.selection]);
@@ -5161,37 +5718,34 @@ function onKeydown(e) {
     return;
   }
 
-  // T / P / R — panel toggles (palette, properties, runs)
-  if ((e.key === "t" || e.key === "T") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if (shortcutMatches(e, "togglePalette")) {
     e.preventDefault();
     togglePanel("palette");
     return;
   }
-  if ((e.key === "p" || e.key === "P") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if (shortcutMatches(e, "toggleProperties")) {
     e.preventDefault();
     togglePanel("props");
     return;
   }
-  if ((e.key === "r" || e.key === "R") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if (shortcutMatches(e, "openRuns")) {
     e.preventDefault();
     togglePanel("runs");
     return;
   }
-  if ((e.key === "n" || e.key === "N") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if (shortcutMatches(e, "toggleAgentPanel")) {
     e.preventDefault();
     togglePanel("n");
     return;
   }
 
-  // Ctrl+X — cut selected nodes (copy JSON payload, then remove)
-  if ((e.key === "x" || e.key === "X") && (e.ctrlKey || e.metaKey) && !e.altKey) {
+  if (shortcutMatches(e, "cutSelection")) {
     e.preventDefault();
     cutSelectionToClipboard();
     return;
   }
 
-  // Delete — remove selected nodes without touching the clipboard
-  if (e.key === "Delete") {
+  if (shortcutMatches(e, "deleteSelection")) {
     if (ix.selection.size > 0) {
       e.preventDefault();
       removeSelectedNodes();
@@ -5199,8 +5753,7 @@ function onKeydown(e) {
     return;
   }
 
-  // A — select all (Blender uses A as toggle, not Ctrl+A)
-  if ((e.key === "a") && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+  if (shortcutMatches(e, "selectAll")) {
     e.preventDefault();
     if (ix.selection.size === Object.keys(graph.nodes).length) {
       ix.selection.clear();
@@ -5211,36 +5764,31 @@ function onKeydown(e) {
     return;
   }
 
-  // Shift+D — duplicate
-  if ((e.key === "D" || e.key === "d") && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+  if (shortcutMatches(e, "duplicateSelection")) {
     e.preventDefault();
     duplicateSelection();
     return;
   }
 
-  // Home / Numpad . — frame all
-  if (e.key === "Home") {
+  if (shortcutMatches(e, "frameAll")) {
     e.preventDefault();
     frameAll();
     return;
   }
 
-  // Shift+C — fit-to-view (Blender-style)
-  if ((e.key === "C" || e.key === "c") && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  if (shortcutMatches(e, "fitView")) {
     e.preventDefault();
     frameAll();
     return;
   }
 
-  // F — auto-connect two selected nodes (Node Wrangler style)
-  if ((e.key === "f" || e.key === "F") && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+  if (shortcutMatches(e, "autoConnect")) {
     e.preventDefault();
     autoConnectSelected();
     return;
   }
 
-  // H — hide / restore selected node bodies
-  if ((e.key === "h" || e.key === "H") && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  if (shortcutMatches(e, "hideNodes")) {
     e.preventDefault();
     if (ix.selection.size > 0) {
       toggleNodeMinimized([...ix.selection]);
@@ -5256,22 +5804,19 @@ function onKeydown(e) {
     return;
   }
 
-  // Alt+P — preview from selected (Node Wrangler style)
-  if ((e.key === "p" || e.key === "P") && e.altKey) {
+  if (shortcutMatches(e, "previewSelected")) {
     e.preventDefault();
     previewSelected();
     return;
   }
 
-  // Ctrl+S — save to file
-  if ((e.key === "s" || e.key === "S") && (e.ctrlKey || e.metaKey)) {
+  if (shortcutMatches(e, "saveGraph")) {
     e.preventDefault();
     saveGraphToFile();
     return;
   }
 
-  // Ctrl+O — load from file
-  if ((e.key === "o" || e.key === "O") && (e.ctrlKey || e.metaKey)) {
+  if (shortcutMatches(e, "loadGraphJson")) {
     e.preventDefault();
     document.getElementById("loadGraphFile").click();
     return;
@@ -5362,33 +5907,25 @@ function togglePanel(which) {
   if (!shell) return;
   if (which === "palette") {
     shell.classList.toggle("hide-palette");
+    applyPaletteLayout({ commitHandleSide: true });
     setHint(shell.classList.contains("hide-palette") ? "palette hidden (T)" : "palette shown (T)");
   } else if (which === "props") {
     const willShow = shell.classList.contains("hide-props");
     preserveCanvasRightEdge(() => {
       if (willShow) {
         shell.classList.remove("hide-props");
-        shell.classList.add("hide-n");
       } else {
         shell.classList.add("hide-props");
       }
     });
-    try {
-      if (willShow) localStorage.setItem("rundeer_n_hidden", "1");
-    } catch (_) {}
+    applyPaletteLayout({ commitHandleSide: true });
     setHint(shell.classList.contains("hide-props") ? "properties hidden (P)" : "properties shown (P)");
   } else if (which === "n") {
-    const willShow = shell.classList.contains("hide-n");
-    preserveCanvasRightEdge(() => {
-      if (willShow) {
-        shell.classList.remove("hide-n");
-        shell.classList.add("hide-props");
-      } else {
-        shell.classList.add("hide-n");
-      }
-    });
-    try { localStorage.setItem("rundeer_n_hidden", shell.classList.contains("hide-n") ? "1" : "0"); } catch (_) {}
-    setHint(shell.classList.contains("hide-n") ? "side panel hidden (N)" : "side panel shown (N)");
+    shell.classList.toggle("hide-n");
+    paletteLayoutState().hidden = shell.classList.contains("hide-n");
+    applyPaletteLayout({ commitHandleSide: true });
+    scheduleWebStoreSave();
+    setHint(shell.classList.contains("hide-n") ? "palette hidden (N)" : "palette shown (N)");
   } else if (which === "runs") {
     setActiveView("runs");
     setHint("runs view (R)");
@@ -6581,8 +7118,9 @@ function buildRunTriggerButton(nodeId) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "ne-run-play";
-  btn.title = isNodeMuted(nodeId) ? "Unmute this node before running" : "Run connected command(s)";
-  btn.disabled = isNodeMuted(nodeId);
+  const graphBusy = Boolean(_graphRunState);
+  btn.title = graphBusy ? "A graph is already running" : (isNodeMuted(nodeId) ? "Unmute this node before running" : "Run connected command(s)");
+  btn.disabled = graphBusy || isNodeMuted(nodeId);
   btn.setAttribute("aria-label", "Run connected command nodes");
   btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5.14v13.72c0 .79.87 1.27 1.54.84l10.74-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg><span>Run</span>`;
   btn.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -6592,6 +7130,49 @@ function buildRunTriggerButton(nodeId) {
   });
   wrap.appendChild(btn);
   return wrap;
+}
+
+function isPauseNodeResumeReady(nodeId) {
+  return Boolean(_graphRunState && _graphRunState.paused && _graphRunState.pausedNodeId === nodeId && !_graphRunState.cancelled);
+}
+
+function buildPauseNodeButton(nodeId) {
+  const wrap = document.createElement("div");
+  wrap.className = "ne-pause-node-wrap";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "ne-pause-resume";
+  btn.dataset.pauseResumeNode = nodeId;
+  const active = isPauseNodeResumeReady(nodeId);
+  btn.classList.toggle("is-active", active);
+  btn.disabled = !active;
+  btn.title = active ? "Resume graph flow" : "Available when graph execution is paused here";
+  btn.setAttribute("aria-label", active ? "Resume graph flow" : "Resume graph flow when paused here");
+  btn.innerHTML = `<span aria-hidden="true">▶</span><span>Resume</span>`;
+  btn.addEventListener("mousedown", (e) => e.stopPropagation());
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (isPauseNodeResumeReady(nodeId)) resumeGraphRun("node");
+  });
+  wrap.appendChild(btn);
+  return wrap;
+}
+
+async function pauseGraphAtNode(nodeId, outputs, opts = {}) {
+  const run = graphRunFromOpts(opts);
+  if (!run || opts.lite || opts.liteCommands || opts.dryRun) return;
+  const node = graph.nodes[nodeId];
+  if (node) {
+    stashNodeResult(nodeId, outputs);
+    const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+    if (el) el.dataset.signature = "stale-pause";
+    renderNodes();
+  }
+  appendRunLog(`Ⅱ Paused at ${nodeId}\n`);
+  pauseGraphRun("node", nodeId);
+  await refreshAllPreviews().catch(() => {});
+  scheduleAutosave();
+  await waitForGraphRunReady(opts);
 }
 
 // Compute the set of node ids that should be run when a trigger fires:
@@ -6627,6 +7208,11 @@ function nodesInTriggerSubgraph(triggerId) {
 }
 
 async function runFromTrigger(triggerId, opts = {}) {
+  if (_graphRunState) {
+    setHint(_graphRunState.paused ? "graph is paused" : "graph is already running");
+    setTimeout(clearHint, 1600);
+    return;
+  }
   if (isNodeMuted(triggerId)) {
     setHint("unmute this Run node first");
     setTimeout(clearHint, 1800);
@@ -6675,6 +7261,11 @@ function computeLoopBodyMembers() {
 }
 
 async function runGraph(opts = {}) {
+  if (_graphRunState) {
+    setHint(_graphRunState.paused ? "graph is paused" : "graph is already running");
+    setTimeout(clearHint, 1600);
+    return;
+  }
   const subset = opts.subset instanceof Set ? opts.subset : null;
   const removedEdges = pruneInvalidEdges();
   if (removedEdges > 0) {
@@ -6710,19 +7301,23 @@ async function runGraph(opts = {}) {
   }
 
   const dryRun = Boolean(opts.dryRun);
+  const runTab = getActiveTab();
   setGraphStatus(dryRun ? "planning…" : "running…", "is-running");
+  setRunningGraphState(true, runTab);
   startRunLog(`graph ${dryRun ? "dry-run" : "run"} · ${terminals.length} node${terminals.length > 1 ? "s" : ""}`);
   appendRunLog(`▶ ${dryRun ? "Planning" : "Running"} graph (${terminals.length} terminal node${terminals.length > 1 ? "s" : ""})\n\n`);
 
   const cache = {};
   let anyFailed = false;
+  let wasCancelled = false;
 
-  beginGraphRunState();
+  const runState = beginGraphRunState();
   try {
     for (const nodeId of terminals) {
       try {
+        await waitForGraphRunReady({ run: runState });
         appendRunLog(`▶ Resolving ${nodeId} (${graph.nodes[nodeId].type})…\n`);
-        const res = await resolveNode(nodeId, cache, {}, { dryRun });
+        const res = await resolveNode(nodeId, cache, {}, { dryRun, run: runState });
         // Stash result for preview rendering
         const node = graph.nodes[nodeId];
         const outSock = (NODE_BY_TYPE[node.type].outputs || [])[0];
@@ -6750,6 +7345,11 @@ async function runGraph(opts = {}) {
         renderNodes();
         setNodeRunStatus(nodeId, "done");
       } catch (err) {
+        if (err instanceof GraphRunCancelled) {
+          wasCancelled = true;
+          appendRunLog("■ Graph stopped\n\n");
+          break;
+        }
         const el = document.querySelector(`[data-node-id="${nodeId}"]`);
         if (el) el.dataset.signature = "stale";
         renderNodes();
@@ -6760,9 +7360,11 @@ async function runGraph(opts = {}) {
     }
   } finally {
     finishGraphRunState();
+    setRunningGraphState(false);
   }
 
-  setGraphStatus(anyFailed ? "some nodes failed" : "done", anyFailed ? "is-failed" : "is-done");
+  setGraphStatus(wasCancelled ? "stopped" : (anyFailed ? "some nodes failed" : "done"), wasCancelled ? "is-cancelled" : (anyFailed ? "is-failed" : "is-done"));
+  await persistRunLogNow().catch(() => {});
   if (window.refreshRunsList) window.refreshRunsList();
   scheduleAutosave();
   schedulePreviewRefresh();
@@ -6771,6 +7373,7 @@ async function runGraph(opts = {}) {
 async function resolveNode(nodeId, cache, loopCtx, opts) {
   loopCtx = loopCtx || {};
   opts = opts || {};
+  await waitForGraphRunReady(opts);
   // Cache key includes the loop context so the same node can yield different
   // values when re-resolved inside a loop body.
   const ctxKey = Object.keys(loopCtx).sort().map((k) => `${k}=${loopCtx[k].i}`).join("|");
@@ -6823,6 +7426,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     // body in lite mode would mis-feed a bundle into a per-iteration sink.
     const heavy = COMMAND_TYPES.has(node.type)
       || node.type === "compress-image"
+      || node.type === "prompt"
       || node.type === "prompt-filter"
       || node.type === "loop-output";
     if (heavy) {
@@ -6867,7 +7471,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         let v = sourceOutputs[edge.fromSocket];
         v = adaptForDest(v, edge, sock.type);
         if (v != null && v !== "") {
-          if (Array.isArray(v)) values.push(...v); else values.push(v);
+          if (Array.isArray(v) && sock.type !== "vector") values.push(...v); else values.push(v);
         }
       }
       inputs[sock.id] = values;
@@ -6891,19 +7495,33 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
   }
 
+  // Effective props view: each prop is a first-class socket — when wired,
+  // the upstream value overrides the static `node.props` entry; otherwise
+  // the static value is used. Cases below must read from `props` (never
+  // `node.props`) so prop sockets are honoured uniformly. This is what
+  // makes every prop on every node actually "evaluate".
+  const props = { ...node.props };
+  for (const propDef of def.props || []) {
+    if ((def.inputs || []).some((s) => s.id === propDef.id)) continue;
+    const wired = inputs[propDef.id];
+    if (wired !== undefined && wired !== "" && wired !== null) {
+      props[propDef.id] = wired;
+    }
+  }
+
   let outputs = {};
   const work = traceNode ? beginNodeWork(nodeId) : null;
 
   try {
   switch (node.type) {
-    case "text-input":     outputs.out = String(node.props.value || ""); break;
+    case "text-input":     outputs.out = String(props.value || ""); break;
     case "tool-flag": {
       outputs.out = {
-        tool_name: String(node.props.tool_name || ""),
-        enabled: node.props.enabled !== false,
-        description: String(node.props.description || ""),
-        category: String(node.props.category || ""),
-        destructive: node.props.destructive ?? "",
+        tool_name: String(props.tool_name || ""),
+        enabled: props.enabled !== false,
+        description: String(props.description || ""),
+        category: String(props.category || ""),
+        destructive: props.destructive ?? "",
       };
       break;
     }
@@ -6918,47 +7536,40 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         .trim();
       break;
     }
-    case "number-input":   outputs.out = Number(node.props.value ?? 1); break;
-    case "boolean-input":  outputs.out = Boolean(node.props.value); break;
-    case "vector-input":   outputs.out = [
-      Number(node.props.x ?? 0),
-      Number(node.props.y ?? 0),
-      Number(node.props.z ?? 0),
-    ]; break;
+    case "number-input":   outputs.out = Number(props.value ?? 1); break;
+    case "boolean-input":  outputs.out = Boolean(props.value); break;
+    case "vector-input": {
+      outputs.out = [Number(props.x ?? 0), Number(props.y ?? 0), Number(props.z ?? 0)];
+      break;
+    }
     case "image-input":
     case "video-input":
     case "filepath-input":
     case "file": {
-      // Wired prop-socket on `path` (if any) takes precedence over the prop.
-      const wired = inputs.path;
-      const p = (wired !== undefined && wired !== null && wired !== "") ? wired : node.props.path;
-      outputs.out = String(p ?? "");
+      outputs.out = String(props.path ?? "");
       break;
     }
     case "folder-bundle": {
-      // Wired prop sockets win over the static node.props value. `inputs`
-      // already holds the resolved values for any wired prop-socket.
-      const pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null)
-        ? inputs[key]
-        : node.props[key];
-      const folderPath = String(pick("path") || "").trim();
+      // `props` already merges wired prop sockets over the static values,
+      // so each field below is automatically socket-aware.
+      const folderPath = String(props.path || "").trim();
       if (!folderPath) { outputs.out = []; break; }
-      const kind = String(pick("kind") || "all");
-      const recursive = pick("recursive") ? "1" : "0";
+      const kind = String(props.kind || "all");
+      const recursive = props.recursive ? "1" : "0";
       const params = { path: folderPath, kind, recursive };
-      const fps = Number(pick("fps"));
+      const fps = Number(props.fps);
       if (Number.isFinite(fps) && fps > 0) params.fps = String(fps);
-      const modulo = Number(pick("modulo"));
+      const modulo = Number(props.modulo);
       if (Number.isFinite(modulo) && modulo > 1) params.modulo = String(Math.round(modulo));
-      const start = Number(pick("start"));
+      const start = Number(props.start);
       if (Number.isFinite(start) && start > 0) params.start = String(Math.round(start));
-      const end = Number(pick("end"));
+      const end = Number(props.end);
       if (Number.isFinite(end) && end > 0) params.end = String(Math.round(end));
-      const fmt = String(pick("format") || "").trim();
+      const fmt = String(props.format || "").trim();
       if (fmt) params.format = fmt;
       const qs = new URLSearchParams(params).toString();
       appendRunLog(`  ↳ Bundle ${folderPath}…\n`);
-      const result = await fetchJSON(`/api/folder-list?${qs}`);
+      const result = await graphFetchJSON(`/api/folder-list?${qs}`, {}, opts);
       if (result.error) throw new Error(`bundle: ${result.error}`);
       const paths = Array.isArray(result.paths) ? result.paths : [];
       const tag = result.source === "frames" ? `frames${result.cached ? ", cached" : ""}` : "files";
@@ -6978,7 +7589,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     case "sample-bundle": {
       const v = inputs.bundle;
       const items = Array.isArray(v) ? v : (v !== undefined && v !== null && v !== "" ? [v] : []);
-      const expr = String(node.props.expression ?? "").trim();
+      const expr = String(props.expression ?? "").trim();
       const picked = parseSampleBundleExpression(expr, items.length);
       let chosen;
       if (picked === null) {
@@ -7001,7 +7612,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       break;
     }
     case "text-join": {
-      const sep = node.props.sep ?? " ";
+      const sep = props.sep ?? " ";
       outputs.out = [inputs.a, inputs.b].filter((v) => v != null && v !== "").join(sep);
       break;
     }
@@ -7012,10 +7623,10 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         const items = v.filter((x) => x != null && x !== "").map((x) => String(x));
         if (items.length === 0) { outputs.out = ""; break; }
         appendRunLog(`  ↳ Zipping bundle (${items.length} item${items.length === 1 ? "" : "s"})…\n`);
-        const result = await fetchJSON("/api/compress", {
+        const result = await graphFetchJSON("/api/compress", {
           method: "POST",
           body: JSON.stringify({ kind: "bundle", paths: items }),
-        });
+        }, opts);
         if (result.error) throw new Error(`compress: ${result.error}`);
         appendRunLog(`  ↳ → ${result.path} (${formatBytes(result.bytes)})\n`);
         outputs.out = result.path;
@@ -7035,31 +7646,30 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       if (isText) {
         const instructions = inputs.instructions || COMPRESS_HELPER_PROMPT;
         appendRunLog(`  ↳ Compressing text via LLM…\n`);
-        const result = await fetchJSON("/api/filter-prompt", {
+        const result = await graphFetchJSON("/api/filter-prompt", {
           method: "POST",
           body: JSON.stringify({
             prompt: str,
             instructions,
             images: [],
-            model_api_key: "",
           }),
-        });
+        }, opts);
         if (result.error) throw new Error(`compress(text): ${result.error}`);
         outputs.out = result.filtered_prompt || str;
         appendRunLog(`  ↳ → ${(outputs.out || "").length} chars (was ${str.length})\n`);
         break;
       }
       // File path → dispatch by extension server-side.
-      appendRunLog(`  ↳ Compressing ${str} (q=${node.props.quality})…\n`);
-      const result = await fetchJSON("/api/compress", {
+      appendRunLog(`  ↳ Compressing ${str} (q=${props.quality})…\n`);
+      const result = await graphFetchJSON("/api/compress", {
         method: "POST",
         body: JSON.stringify({
           kind: "auto",
           path: str,
-          quality: Number(node.props.quality ?? 75),
-          max_dimension: Number(node.props.max_dimension ?? 0),
+          quality: Number(props.quality ?? 75),
+          max_dimension: Number(props.max_dimension ?? 0),
         }),
-      });
+      }, opts);
       if (result.error) throw new Error(`compress: ${result.error}`);
       const ratio = result.originalBytes ? Math.round((result.bytes / result.originalBytes) * 100) : 0;
       appendRunLog(`  ↳ → ${result.path} (${formatBytes(result.bytes)}, ${ratio}% of original)\n`);
@@ -7069,15 +7679,15 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     case "blur-image": {
       // Gaussian blur via PIL on the server. Accepts a single image path or
       // a bundle (array of paths). Empty input → empty output (no-op).
-      const radius = Math.max(0, Number(node.props.radius ?? 4));
+      const radius = Math.max(0, Number(props.radius ?? 4));
       const blurOne = async (path) => {
         const p = String(path || "").trim();
         if (!p) return "";
         appendRunLog(`  ↳ Blurring ${p} (r=${radius})…\n`);
-        const result = await fetchJSON("/api/blur-image", {
+        const result = await graphFetchJSON("/api/blur-image", {
           method: "POST",
           body: JSON.stringify({ path: p, radius }),
-        });
+        }, opts);
         if (result.error) throw new Error(`blur: ${result.error}`);
         appendRunLog(`  ↳ → ${result.path}\n`);
         return result.path;
@@ -7095,6 +7705,86 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       outputs.out = await blurOne(v);
       break;
     }
+    case "crop-media": {
+      // Both size and position are prop sockets with `passthroughWired:
+      // true`, so `props.X` already reflects whatever was wired in (or
+      // falls back to the static text default). Warn loudly when the
+      // wired value looks like a file path — that's almost always a UV
+      // .npy from a vector-op with spatial inputs, which can't be parsed
+      // as a 2-vector and would silently use the default.
+      const sizeWired = inputs.size;
+      const positionWired = inputs.position;
+      const sizeBad = _vectorSocketUnparseableSource(sizeWired);
+      const positionBad = _vectorSocketUnparseableSource(positionWired);
+      if (sizeBad) appendRunLog(`  ↳ ⚠ Crop size socket received "${sizeBad}" (not a vector) — using default\n`);
+      if (positionBad) appendRunLog(`  ↳ ⚠ Crop position socket received "${positionBad}" (not a vector) — using default\n`);
+      const size = _coerceVector2Value(sizeBad ? "" : props.size, [512, 512]);
+      const position = _coerceVector2Value(positionBad ? "" : props.position, [0, 0]);
+      const sizeTag = (sizeWired !== undefined && sizeWired !== "" && sizeWired !== null && !sizeBad) ? " [wired]" : "";
+      const posTag = (positionWired !== undefined && positionWired !== "" && positionWired !== null && !positionBad) ? " [wired]" : "";
+      const cropOne = async (path) => {
+        const p = String(path || "").trim();
+        if (!p) return "";
+        appendRunLog(`  ↳ Cropping ${p} ${Math.round(size[0])}×${Math.round(size[1])}${sizeTag} @ ${Math.round(position[0])},${Math.round(position[1])}${posTag}\n`);
+        const result = await graphFetchJSON("/api/media/crop", {
+          method: "POST",
+          body: JSON.stringify({ path: p, size, position }),
+        }, opts);
+        if (result.error) throw new Error(`crop: ${result.error}`);
+        appendRunLog(`  ↳ → ${result.path}\n`);
+        return result.path;
+      };
+      // Preserve bundle semantics: array in → array out (even for a single
+      // item). Matches blur-image and keeps downstream bundle-aware nodes
+      // honest.
+      const v = inputs.in;
+      if (Array.isArray(v)) {
+        const out = [];
+        for (const item of v) {
+          const cropped = await cropOne(item);
+          if (cropped) out.push(cropped);
+        }
+        outputs.out = out;
+        break;
+      }
+      outputs.out = await cropOne(v);
+      break;
+    }
+    case "resize-media": {
+      const sizeWired = inputs.size;
+      const modeWired = inputs.mode;
+      const sizeBad = _vectorSocketUnparseableSource(sizeWired);
+      if (sizeBad) appendRunLog(`  ↳ ⚠ Resize size socket received "${sizeBad}" (not a vector) — using default\n`);
+      const size = _coerceVector2Value(sizeBad ? "" : props.size, [1024, 1024]);
+      const mode = String(props.mode || "contain").trim().toLowerCase();
+      const sizeTag = (sizeWired !== undefined && sizeWired !== "" && sizeWired !== null && !sizeBad) ? " [wired]" : "";
+      const modeTag = (modeWired !== undefined && modeWired !== "" && modeWired !== null) ? " [wired]" : "";
+      const resizeOne = async (path) => {
+        const p = String(path || "").trim();
+        if (!p) return "";
+        appendRunLog(`  ↳ Resizing ${p} ${Math.round(size[0])}×${Math.round(size[1])}${sizeTag} (${mode}${modeTag})\n`);
+        const result = await graphFetchJSON("/api/media/resize", {
+          method: "POST",
+          body: JSON.stringify({ path: p, size, mode }),
+        }, opts);
+        if (result.error) throw new Error(`resize: ${result.error}`);
+        appendRunLog(`  ↳ → ${result.path}\n`);
+        return result.path;
+      };
+      const v = inputs.in;
+      if (Array.isArray(v)) {
+        const out = [];
+        for (const item of v) {
+          const resized = await resizeOne(item);
+          if (resized) out.push(resized);
+        }
+        outputs.out = out;
+        break;
+      }
+      outputs.out = await resizeOne(v);
+      break;
+    }
+    case "prompt":
     case "prompt-filter": {
       const imageInputs = Array.isArray(inputs.input)
         ? inputs.input.filter((v) => v).map((v) => String(v))
@@ -7103,7 +7793,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         ? ` + ${imageInputs.length} image${imageInputs.length === 1 ? "" : "s"}`
         : "";
       // Edges into prop-sockets override the static prop value.
-      const pf_pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : node.props[key];
+      const pf_pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : props[key];
       const pf_str = (key) => {
         const v = pf_pick(key);
         return (v == null) ? "" : String(v).trim();
@@ -7118,10 +7808,11 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const reasoningEffort = pf_str("reasoning_effort");
       const payload = {
         prompt: inputs.prompt || "",
-        instructions: inputs.instructions || "",
+        instructions: node.type === "prompt"
+          ? "Answer the user's prompt directly. Return only the response text."
+          : (inputs.instructions || ""),
         images: imageInputs,
         model: modelOverride,
-        model_api_key: pf_str("model_api_key"),
         reasoning_effort: (reasoningEffort && reasoningEffort !== "default") ? reasoningEffort : "",
         temperature: pf_num("temperature"),
         top_p: pf_num("top_p"),
@@ -7133,24 +7824,22 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       };
       const modelLabel = modelOverride || "MODEL_NAME";
       const effortNote = payload.reasoning_effort ? ` (reasoning=${payload.reasoning_effort})` : "";
-      appendRunLog(`  ↳ Filtering prompt via ${modelLabel}${effortNote}${imageNote}…\n`);
-      const result = await fetchJSON("/api/filter-prompt", {
+      appendRunLog(`  ↳ ${node.type === "prompt" ? "Prompting" : "Filtering prompt"} via ${modelLabel}${effortNote}${imageNote}…\n`);
+      const result = await graphFetchJSON("/api/filter-prompt", {
         method: "POST",
         body: JSON.stringify(payload),
-      });
-      if (result.error) throw new Error(`filter-prompt: ${result.error}`);
+      }, opts);
+      if (result.error) throw new Error(`${node.type === "prompt" ? "prompt" : "filter-prompt"}: ${result.error}`);
       outputs.out = result.filtered_prompt || inputs.prompt || "";
       appendRunLog(`  ↳ "${(outputs.out || "").slice(0, 80).replace(/\n/g, " ")}${outputs.out.length > 80 ? "…" : ""}"\n`);
       break;
     }
     case "definition": {
-      const name = node.props.name || "";
+      const name = String(props.name || "").trim().replace(/^@+/, "");
       if (!name) throw new Error("Definition node has no name");
-      const args = inputs.args || "";
-      const file = node.props.file || "";
+      const args = String(inputs.args || "").trim();
       let token = `@${name}`;
       if (args) token += `:${args}`;
-      if (file) token += `:"${file}"`;
       outputs.out = token;
       break;
     }
@@ -7175,16 +7864,52 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         if (alias) node._uvImage = alias;
       }
       break;
+    case "canvas": {
+      const images = _mediaPathList(inputs.images);
+      if (images.length === 0) { outputs.out = ""; break; }
+      const rawPositions = Array.isArray(inputs.positions) ? inputs.positions : (inputs.positions ? [inputs.positions] : []);
+      // Per-image position evaluation. Each multi-edge feeding `positions`
+      // contributes one entry; images with no matching position get [0,0].
+      // Path-like strings (e.g. a UV .npy wired from a spatial vector-op)
+      // are flagged loudly instead of silently defaulting.
+      const positions = images.map((_, i) => {
+        const raw = rawPositions[i];
+        const bad = _vectorSocketUnparseableSource(raw);
+        if (bad) appendRunLog(`  ↳ ⚠ Canvas position[${i}] received "${bad}" (not a vector) — using [0,0]\n`);
+        return _coerceVector2Value(bad ? "" : raw, [0, 0]);
+      });
+      const sizeWired = inputs.size;
+      const sizeBad = _vectorSocketUnparseableSource(sizeWired);
+      if (sizeBad) appendRunLog(`  ↳ ⚠ Canvas size socket received "${sizeBad}" (not a vector) — using default\n`);
+      const size = _coerceVector2Value(sizeBad ? "" : props.size, [1024, 1024]);
+      const sizeTag = (sizeWired !== undefined && sizeWired !== "" && sizeWired !== null && !sizeBad) ? " [wired]" : "";
+      const wiredPosCount = rawPositions.filter((p) => p !== undefined && p !== "" && p !== null).length;
+      const posSummary = wiredPosCount > 0 ? ` (${wiredPosCount}/${images.length} positions wired)` : "";
+      appendRunLog(`  ↳ Canvas ${images.length} image${images.length === 1 ? "" : "s"} ${Math.round(size[0])}×${Math.round(size[1])}${sizeTag}${posSummary}\n`);
+      const result = await graphFetchJSON("/api/media/canvas", {
+        method: "POST",
+        body: JSON.stringify({ images, positions, size }),
+      }, opts);
+      if (result.error) throw new Error(`canvas: ${result.error}`);
+      outputs.out = result.path;
+      break;
+    }
+    case "pause": {
+      outputs.out = inputs.in;
+      outputs.in = inputs.in;
+      await pauseGraphAtNode(nodeId, outputs, opts);
+      break;
+    }
     case "coordinate": {
-      const w = Math.max(1, Math.round(Number(node.props.width ?? 1024)));
-      const h = Math.max(1, Math.round(Number(node.props.height ?? 1024)));
-      const dpi = Math.max(1, Math.round(Number(node.props.dpi ?? 72)));
-      const space = String(node.props.space || "uv");
+      const w = Math.max(1, Math.round(Number(props.width ?? 1024)));
+      const h = Math.max(1, Math.round(Number(props.height ?? 1024)));
+      const dpi = Math.max(1, Math.round(Number(props.dpi ?? 72)));
+      const space = String(props.space || "uv");
       appendRunLog(`  ↳ Coord ${w}×${h}${space === "screen" ? " (screen)" : ""}\n`);
-      const result = await fetchJSON("/api/uv/coordinate", {
+      const result = await graphFetchJSON("/api/uv/coordinate", {
         method: "POST",
         body: JSON.stringify({ width: w, height: h, dpi, space }),
-      });
+      }, opts);
       if (result.error) throw new Error(`coordinate: ${result.error}`);
       outputs.uv = result.path;
       // Stash the .png alias so inline image previews (and any downstream
@@ -7193,19 +7918,22 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       break;
     }
     case "vector-op": {
-      const op = String(node.props.op || "add");
+      const op = String(props.op || "add");
       const payload = {
         op,
         a: _coerceVectorInput(inputs.a),
         b: _coerceVectorInput(inputs.b),
       };
       appendRunLog(`  ↳ Vector ${op}\n`);
-      const result = await fetchJSON("/api/uv/vector", {
+      const result = await graphFetchJSON("/api/uv/vector", {
         method: "POST",
         body: JSON.stringify(payload),
-      });
+      }, opts);
       if (result.error) throw new Error(`vector: ${result.error}`);
-      outputs.out = result.path;
+      // When both inputs are scalar/vector primitives the result is a 1×1
+      // map. Return the raw value array so size/position sockets downstream
+      // can parse it directly instead of receiving an unreadable .npy path.
+      outputs.out = (result.value != null) ? result.value : result.path;
       node._uvImage = result.image || result.preview || "";
       break;
     }
@@ -7214,36 +7942,36 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       if (!uv) throw new Error("mapping: UV input required");
       const payload = {
         uv: { path: String(uv) },
-        location_x: Number(node.props.location_x ?? 0),
-        location_y: Number(node.props.location_y ?? 0),
-        rotation: Number(node.props.rotation ?? 0),
-        scale_x: Number(node.props.scale_x ?? 1),
-        scale_y: Number(node.props.scale_y ?? 1),
-        pivot_x: Number(node.props.pivot_x ?? 0.5),
-        pivot_y: Number(node.props.pivot_y ?? 0.5),
+        location_x: Number(props.location_x ?? 0),
+        location_y: Number(props.location_y ?? 0),
+        rotation: Number(props.rotation ?? 0),
+        scale_x: Number(props.scale_x ?? 1),
+        scale_y: Number(props.scale_y ?? 1),
+        pivot_x: Number(props.pivot_x ?? 0.5),
+        pivot_y: Number(props.pivot_y ?? 0.5),
       };
       appendRunLog(`  ↳ Mapping rot=${payload.rotation}° scale=(${payload.scale_x},${payload.scale_y})\n`);
-      const result = await fetchJSON("/api/uv/mapping", {
+      const result = await graphFetchJSON("/api/uv/mapping", {
         method: "POST",
         body: JSON.stringify(payload),
-      });
+      }, opts);
       if (result.error) throw new Error(`mapping: ${result.error}`);
       outputs.out = result.path;
       node._uvImage = result.image || result.preview || "";
       break;
     }
     case "mix": {
-      const mode = String(node.props.mode || "mix");
-      const clamp = node.props.clamp !== false;
+      const mode = String(props.mode || "mix");
+      const clamp = props.clamp !== false;
       const factorRaw = inputs.factor !== undefined && inputs.factor !== "" && inputs.factor !== null
         ? inputs.factor
-        : Number(node.props.factor ?? 0.5);
+        : Number(props.factor ?? 0.5);
       const aRaw = inputs.a !== undefined && inputs.a !== "" && inputs.a !== null
         ? inputs.a
-        : (node.props.a ?? node.props.color_a ?? "#000000");
+        : (props.a ?? props.color_a ?? "#000000");
       const bRaw = inputs.b !== undefined && inputs.b !== "" && inputs.b !== null
         ? inputs.b
-        : (node.props.b ?? node.props.color_b ?? "#ffffff");
+        : (props.b ?? props.color_b ?? "#ffffff");
 
       const factor = _coerceMixInput(factorRaw, { isFactor: true });
       const a = _coerceMixInput(aRaw, {});
@@ -7269,10 +7997,10 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         b: b.payload,
       };
       appendRunLog(`  ↳ Mix ${mode}\n`);
-      const result = await fetchJSON("/api/uv/mix", {
+      const result = await graphFetchJSON("/api/uv/mix", {
         method: "POST",
         body: JSON.stringify(payload),
-      });
+      }, opts);
       if (result.error) throw new Error(`mix: ${result.error}`);
       if (result.path) outputs.out = result.path;
       else if (result.color) outputs.out = _rgbaToHex(result.color);
@@ -7282,27 +8010,27 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     case "uv-render": {
       const pixel = inputs.pixel;
       const uv = inputs.uv;
-      if (!pixel) throw new Error("uv-render: pixel input required");
-      if (!uv) throw new Error("uv-render: UV input required");
+      if (!pixel) throw new Error("render: pixel input required");
+      if (!uv) throw new Error("render: UV input required");
       const payload = {
         pixel: String(pixel),
         uv: { path: String(uv) },
-        interp: String(node.props.interp || "bilinear"),
-        extension: String(node.props.extension || "clamp"),
+        interp: String(props.interp || "bilinear"),
+        extension: String(props.extension || "clamp"),
       };
-      appendRunLog(`  ↳ UV Render (${payload.interp}, ${payload.extension})\n`);
-      const result = await fetchJSON("/api/uv/render", {
+      appendRunLog(`  ↳ Render (${payload.interp}, ${payload.extension})\n`);
+      const result = await graphFetchJSON("/api/uv/render", {
         method: "POST",
         body: JSON.stringify(payload),
-      });
-      if (result.error) throw new Error(`uv-render: ${result.error}`);
+      }, opts);
+      if (result.error) throw new Error(`render: ${result.error}`);
       outputs.out = result.path;
       break;
     }
     case "math-op": {
       const a = Number(inputs.a ?? 0);
       const b = Number(inputs.b ?? 0);
-      const op = node.props.op || "add";
+      const op = props.op || "add";
       let r = 0;
       switch (op) {
         case "add":      r = a + b; break;
@@ -7317,11 +8045,52 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       outputs.out = r;
       break;
     }
+    case "random": {
+      const pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : props[key];
+      const modeRaw = String(pick("mode") || "integer").trim().toLowerCase();
+      const mode = ({ int: "integer", integer: "integer", float: "float", number: "float", str: "string", string: "string", text: "string" })[modeRaw] || "integer";
+      let min = Number(pick("min") ?? 0);
+      let max = Number(pick("max") ?? 100);
+      if (!Number.isFinite(min)) min = 0;
+      if (!Number.isFinite(max)) max = mode === "string" ? 32 : 100;
+      if (max < min) [min, max] = [max, min];
+      if (mode === "float") {
+        outputs.out = min + Math.random() * (max - min);
+        break;
+      }
+      if (mode === "string") {
+        const charsets = {
+          alphanumeric: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+          alpha: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+          lower_alpha: "abcdefghijklmnopqrstuvwxyz",
+          upper_alpha: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+          numeric: "0123456789",
+          hex: "0123456789abcdef",
+          special: "!@#$%^&*()-_=+[]{};:,.<>/?",
+          ascii: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{};:,.<>/?",
+        };
+        const charsetKey = String(pick("charset") || "alphanumeric").trim().toLowerCase().replace(/[\s-]+/g, "_");
+        const alphabet = charsets[charsetKey] || charsets.alphanumeric;
+        const minLen = Math.max(0, Math.floor(min));
+        const maxLen = Math.max(minLen, Math.floor(max));
+        const length = minLen + Math.floor(Math.random() * (maxLen - minLen + 1));
+        let value = "";
+        for (let i = 0; i < length; i += 1) {
+          value += alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+        outputs.out = value;
+        break;
+      }
+      const lo = Math.ceil(min);
+      const hi = Math.floor(max);
+      outputs.out = hi < lo ? lo : lo + Math.floor(Math.random() * (hi - lo + 1));
+      break;
+    }
     case "text-op": {
       const a = String(inputs.a ?? "");
       const b = String(inputs.b ?? "");
-      const op = node.props.op || "to_string";
-      const extra = String(node.props.extra ?? "");
+      const op = props.op || "to_string";
+      const extra = String(props.extra ?? "");
       switch (op) {
         case "to_string": outputs.out = a; break;
         case "format":   outputs.out = (extra || "{a}").replace(/\{a\}/g, a).replace(/\{b\}/g, b); break;
@@ -7378,6 +8147,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const itemEdges = activeIncomingEdges(nodeId, "item");
       const collected = [];
       for (let i = 0; i < bundleValue.length; i++) {
+        await waitForGraphRunReady(opts);
         const subCtx = { ...loopCtx, [loopId]: { i, total: bundleValue.length, items: bundleValue } };
         const subCache = {};
         if (itemEdges.length > 0) {
@@ -7434,7 +8204,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
   }
   } catch (err) {
-    finishNodeWork(work, "failed");
+    finishNodeWork(work, err instanceof GraphRunCancelled ? "cancelled" : "failed");
     throw err;
   }
 
@@ -7444,6 +8214,28 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   }
   finishNodeWork(work, "done");
   return outputs;
+}
+
+function collectDefinitionMapForCommand(nodeId) {
+  const definitions = {};
+  const stack = [nodeId];
+  const visited = new Set();
+  while (stack.length) {
+    const current = stack.pop();
+    if (!current || visited.has(current)) continue;
+    visited.add(current);
+    for (const edge of activeIncomingEdges(current)) {
+      const source = graph.nodes[edge.fromNode];
+      if (!source || isNodeMuted(source)) continue;
+      if (source.type === "definition") {
+        const name = String(source.props?.name || "").trim().replace(/^@+/, "");
+        const file = String(source.props?.file || "").trim();
+        if (name && file) definitions[name] = file;
+      }
+      if (!visited.has(edge.fromNode)) stack.push(edge.fromNode);
+    }
+  }
+  return definitions;
 }
 
 async function executeCommandNode(node, inputs, opts = {}) {
@@ -7538,25 +8330,37 @@ async function executeCommandNode(node, inputs, opts = {}) {
       pad: bool("pad_reference", true),
       quality: num("ref_quality", 85),
     },
-    definitions: [],
+    definitions: collectDefinitionMapForCommand(node.id),
     extra: {},
   };
 
   appendRunLog(`  ↳ ${command} · "${(payload.subject || "").slice(0, 50)}"\n`);
 
   const endpoint = payload.dryRun ? "/api/plan" : "/api/run";
-  const result = await fetchJSON(endpoint, { method: "POST", body: JSON.stringify(payload) });
+  const result = await graphFetchJSON(endpoint, { method: "POST", body: JSON.stringify(payload) }, opts);
 
   if (payload.dryRun) {
     appendRunLog(result.output || "(no output)\n");
+    bindRunLogToRun(result.id);
+    await persistRunLogNow(result.id);
     return { id: result.id };
   }
 
   appendRunLog(`  ↳ run ${result.id}\n`);
-  const final = await pollUntilDone(result.id);
+  const runState = graphRunFromOpts(opts);
+  if (runState && result.id) runState.activeRunIds.add(result.id);
+  bindRunLogToRun(result.id);
+  await persistRunLogNow(result.id);
+  let final;
+  try {
+    final = await pollUntilDone(result.id, opts);
+  } finally {
+    if (runState && result.id) runState.activeRunIds.delete(result.id);
+    await persistRunLogNow(result.id).catch(() => {});
+  }
   // Resolve the produced artifact(s). When iterations > 1 we collect ALL
   // matching artifacts so the output socket carries a bundle.
-  const artifacts = await findArtifactsForRun(final, { output_dir: outputDir, output_name: outputName });
+  const artifacts = await findArtifactsForRun(final, { output_dir: outputDir, output_name: outputName }, opts);
   return {
     id: result.id,
     firstArtifact: artifacts[0] || "",
@@ -7564,7 +8368,7 @@ async function executeCommandNode(node, inputs, opts = {}) {
   };
 }
 
-async function findArtifactsForRun(runRecord, props) {
+async function findArtifactsForRun(runRecord, props, opts = {}) {
   const outputDir = (props?.output_dir || ".rundeer/outputs").replace(/^\.\//, "");
   const outputName = String(props?.output_name || "");
   const startedAt = (runRecord.startedAt || 0) - 5;
@@ -7581,7 +8385,7 @@ async function findArtifactsForRun(runRecord, props) {
     // .rundeer/outputs (e.g. a user-specified `hurl_test/`) would otherwise
     // be invisible to /api/artifacts and we'd fall back to the run ID.
     const qs = outputDir ? `?dir=${encodeURIComponent(outputDir)}` : "";
-    const data = await fetchJSON(`/api/artifacts${qs}`);
+    const data = await graphFetchJSON(`/api/artifacts${qs}`, {}, opts);
     const items = data.artifacts || [];
     const matches = items.filter((a) => {
       const p = String(a.path || "");
@@ -7616,45 +8420,38 @@ function findArtifactPath(output, props) {
   return "";
 }
 
-async function pollUntilDone(runId) {
-  return new Promise((resolve, reject) => {
-    let lastLen = 0;
-    const handle = setInterval(async () => {
-      try {
-        const rec = await fetchJSON(`/api/runs/${encodeURIComponent(runId)}`);
-        const out = rec.output || "";
-        if (out.length > lastLen) {
-          appendRunLog(out.slice(lastLen));
-          lastLen = out.length;
-        }
-        // Server emits "failed (rc=N)" — treat any status starting with these
-        // tokens as terminal so polling can never spin forever.
-        const status = String(rec.status || "");
-        const finished = rec.endedAt != null
-          || status === "done"
-          || status.startsWith("failed")
-          || status.startsWith("error");
-        updateRunLogStatus(status, runId);
-        if (finished) {
-          clearInterval(handle);
-          if (status === "done" && (rec.returncode === 0 || rec.returncode == null)) {
-            resolve(rec);
-          } else {
-            reject(new Error(`Run ${runId} ${status} (rc=${rec.returncode})`));
-          }
-        }
-      } catch (err) {
-        clearInterval(handle);
-        reject(err);
-      }
-    }, 1100);
-  });
+async function pollUntilDone(runId, opts = {}) {
+  bindRunLogToRun(runId);
+  let lastLen = 0;
+  while (true) {
+    await graphDelay(1100, opts);
+    const rec = await graphFetchJSON(`/api/runs/${encodeURIComponent(runId)}`, {}, opts);
+    const out = rec.output || "";
+    if (out.length > lastLen) {
+      appendRunLog(out.slice(lastLen));
+      lastLen = out.length;
+    }
+    // Server emits "failed (rc=N)" — treat any status starting with these
+    // tokens as terminal so polling can never spin forever.
+    const status = String(rec.status || "");
+    const finished = rec.endedAt != null
+      || status === "done"
+      || status === "cancelled"
+      || status.startsWith("failed")
+      || status.startsWith("error");
+    updateRunLogStatus(status, runId);
+    if (!finished) continue;
+    await persistRunLogNow(runId).catch(() => {});
+    if (status === "done" && (rec.returncode === 0 || rec.returncode == null)) return rec;
+    if (status === "cancelled") throw new GraphRunCancelled();
+    throw new Error(`Run ${runId} ${status} (rc=${rec.returncode})`);
+  }
 }
 
 function markNodeState(nodeId, cls) {
   const el = document.querySelector(`[data-node-id="${nodeId}"]`);
   if (!el) return;
-  el.classList.remove("is-executing", "is-done", "is-failed");
+  el.classList.remove("is-executing", "is-done", "is-failed", "is-cancelled");
   if (cls) el.classList.add(cls);
 }
 
@@ -7668,11 +8465,14 @@ function markNodeState(nodeId, cls) {
 let _runLogState = {
   currentRunId: null,    // active run we're streaming into
   lastShownRunId: null,  // most recently displayed run (for dedup)
+  linkedRunIds: new Set(),
+  persistTimer: null,
+  persistInFlight: false,
+  persistAgain: false,
+  persistPromise: null,
 };
 
 const RUN_DOCK_PAD = 12;
-const RUN_DOCK_STORAGE_KEY = "rundeer_run_dock_v2";
-
 function clampRunDockValue(value, min, max) {
   if (max < min) return min;
   return Math.min(max, Math.max(min, value));
@@ -7701,27 +8501,21 @@ function legacyRunDockState(value) {
 }
 
 function readRunDockState() {
-  try {
-    const saved = localStorage.getItem(RUN_DOCK_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      const edge = normalizeRunDockEdge(parsed.edge);
-      const along = Number.isFinite(parsed.along) ? parsed.along : defaultRunDockAlong(edge);
-      return { edge, along };
-    }
-    const legacy = localStorage.getItem("rundeer_run_dock");
-    if (legacy) return legacyRunDockState(legacy);
-  } catch (_) {}
+  const saved = webStore.state.runDock;
+  if (saved && typeof saved === "object") {
+    const edge = normalizeRunDockEdge(saved.edge);
+    const along = Number.isFinite(saved.along) ? saved.along : defaultRunDockAlong(edge);
+    return { edge, along };
+  }
   return { edge: "bottom", along: defaultRunDockAlong("bottom") };
 }
 
 function saveRunDockState(state) {
-  try {
-    localStorage.setItem(RUN_DOCK_STORAGE_KEY, JSON.stringify({
-      edge: normalizeRunDockEdge(state.edge),
-      along: clampRunDockValue(state.along, 0, 1),
-    }));
-  } catch (_) {}
+  webStore.state.runDock = {
+    edge: normalizeRunDockEdge(state.edge),
+    along: clampRunDockValue(state.along, 0, 1),
+  };
+  scheduleWebStoreSave();
 }
 
 function closestRunDockEdge(localX, localY, viewportRect) {
@@ -7815,37 +8609,114 @@ function repositionRunDockFromCurrentState() {
 
 function showRunLog() {
   const log = document.getElementById("runLog");
-  log.classList.remove("is-hidden");
-  requestAnimationFrame(repositionRunDockFromCurrentState);
+  if (log) log.classList.remove("is-empty");
 }
 
 function startRunLog(title) {
+  if (_runLogState.persistTimer) {
+    clearTimeout(_runLogState.persistTimer);
+    _runLogState.persistTimer = null;
+  }
   const log = document.getElementById("runLog");
-  log.classList.remove("is-hidden");
-  log.dataset.minimized = "false";
-  document.getElementById("runLogBody").textContent = "";
+  if (log) log.classList.remove("is-empty");
+  const body = document.getElementById("runLogBody");
+  if (body) body.textContent = "";
   const pill = document.getElementById("runLogStatus");
-  pill.dataset.state = "running";
-  pill.textContent = "Running";
-  document.getElementById("runLogTitle").textContent = title || "graph run";
+  if (pill) {
+    pill.dataset.state = "running";
+    pill.textContent = "Running";
+  }
+  const titleEl = document.getElementById("runLogTitle");
+  if (titleEl) titleEl.textContent = title || "graph run";
+  const meta = document.getElementById("runLogMeta");
+  if (meta) meta.textContent = "live graph output";
   _runLogState.currentRunId = null;
   _runLogState.lastShownRunId = null;
-  requestAnimationFrame(repositionRunDockFromCurrentState);
+  _runLogState.linkedRunIds = new Set();
+}
+
+function runLogDisplayPayload() {
+  const body = document.getElementById("runLogBody");
+  const title = document.getElementById("runLogTitle");
+  const meta = document.getElementById("runLogMeta");
+  const status = document.getElementById("runLogStatus");
+  return {
+    displayOutput: body ? body.textContent : "",
+    displayTitle: title ? title.textContent : "",
+    displayMeta: meta ? meta.textContent : "",
+    displayStatus: status ? status.dataset.state || status.textContent || "" : "",
+  };
+}
+
+function bindRunLogToRun(runId) {
+  if (!runId) return;
+  _runLogState.currentRunId = runId;
+  _runLogState.lastShownRunId = runId;
+  _runLogState.linkedRunIds.add(runId);
+  const title = document.getElementById("runLogTitle");
+  if (title) title.textContent = `id ${runId}`;
+  scheduleRunLogPersist(0);
+}
+
+function scheduleRunLogPersist(delay = 250) {
+  if (_runLogState.linkedRunIds.size === 0) return;
+  if (_runLogState.persistTimer) clearTimeout(_runLogState.persistTimer);
+  _runLogState.persistTimer = setTimeout(() => {
+    _runLogState.persistTimer = null;
+    persistRunLogNow().catch(() => {});
+  }, delay);
+}
+
+async function persistRunLogNow(runId = null) {
+  if (runId) _runLogState.linkedRunIds.add(runId);
+  if (_runLogState.linkedRunIds.size === 0) return;
+  if (_runLogState.persistInFlight) {
+    _runLogState.persistAgain = true;
+    return _runLogState.persistPromise || Promise.resolve();
+  }
+  _runLogState.persistInFlight = true;
+  _runLogState.persistPromise = (async () => {
+    try {
+      let ids = runId ? new Set([runId]) : new Set(_runLogState.linkedRunIds);
+      while (ids.size > 0) {
+        _runLogState.persistAgain = false;
+        const payload = runLogDisplayPayload();
+        await Promise.allSettled(Array.from(ids).map((id) => fetchJSON(`/api/runs/${encodeURIComponent(id)}/display-log`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        })));
+        ids = _runLogState.persistAgain ? new Set(_runLogState.linkedRunIds) : new Set();
+      }
+    } finally {
+      _runLogState.persistInFlight = false;
+      _runLogState.persistPromise = null;
+    }
+  })();
+  return _runLogState.persistPromise;
 }
 
 function appendRunLog(text) {
   const body = document.getElementById("runLogBody");
+  const log = document.getElementById("runLog");
+  if (log) log.classList.remove("is-empty");
+  if (!body) return;
   body.textContent += text;
   body.scrollTop = body.scrollHeight;
+  scheduleRunLogPersist();
 }
 
 function updateRunLogStatus(status, id) {
   const pill = document.getElementById("runLogStatus");
-  pill.dataset.state = status;
-  pill.textContent = { done: "Done", failed: "Failed", running: "Running", queued: "Queued" }[status] || status;
+  const normalizedStatus = String(status || "idle");
+  if (pill) {
+    pill.dataset.state = normalizedStatus;
+    pill.textContent = { done: "Done", failed: "Failed", running: "Running", queued: "Queued", cancelling: "Cancelling", cancelled: "Cancelled" }[normalizedStatus] || normalizedStatus;
+  }
   if (id) {
-    document.getElementById("runLogTitle").textContent = `id ${id}`;
-    _runLogState.currentRunId = id;
+    const title = document.getElementById("runLogTitle");
+    if (title) title.textContent = `id ${id}`;
+    if (_runLogState.linkedRunIds.has(id)) scheduleRunLogPersist();
+    _runLogState.lastShownRunId = id;
   }
 }
 
@@ -7911,27 +8782,86 @@ function setupRunDockDrag() {
   window.addEventListener("resize", repositionRunDockFromCurrentState);
 }
 
-// ─── Past runs panel ─────────────────────────────────────────────────────────
+// ─── Past runs page ──────────────────────────────────────────────────────────
+
+function runStatusText(status) {
+  const raw = String(status || "?");
+  return { done: "Done", failed: "Failed", running: "Running", queued: "Queued", cancelling: "Cancelling", cancelled: "Cancelled" }[raw] || raw;
+}
+
+function runIsActive(run) {
+  const status = String(run?.status || "");
+  return status === "running" || status === "queued" || status === "cancelling";
+}
+
+function formatRunTime(ts) {
+  if (!ts) return "time unknown";
+  return new Date(ts * 1000).toLocaleString();
+}
+
+function displayRunCommand(command) {
+  if (Array.isArray(command)) return command.join(" ");
+  return String(command || "");
+}
+
+function renderRunDetail(rec) {
+  showRunLog();
+  _runLogState.currentRunId = null;
+  if (_runLogState.persistTimer) {
+    clearTimeout(_runLogState.persistTimer);
+    _runLogState.persistTimer = null;
+  }
+  _runLogState.linkedRunIds = new Set();
+  updateRunLogStatus(rec.status || "done", rec.id);
+  _runLogState.currentRunId = null;
+  const title = document.getElementById("runLogTitle");
+  const meta = document.getElementById("runLogMeta");
+  const body = document.getElementById("runLogBody");
+  const command = displayRunCommand(rec.command);
+  if (title) title.textContent = rec.displayTitle || (rec.id ? `id ${rec.id}` : "run log");
+  if (meta) {
+    if (rec.displayMeta) {
+      meta.textContent = rec.displayMeta;
+    } else {
+      const bits = [formatRunTime(rec.startedAt)];
+      if (rec.returncode != null) bits.push(`rc=${rec.returncode}`);
+      if (command) bits.push(command);
+      meta.textContent = bits.join(" · ");
+    }
+  }
+  if (body) {
+    body.textContent = rec.displayOutput || rec.output || "(no output)";
+    body.scrollTop = body.scrollHeight;
+  }
+}
 
 async function refreshRunsList() {
   try {
     const data = await fetchJSON("/api/runs");
+    const runs = Array.isArray(data.runs) ? data.runs : [];
     const list = document.getElementById("runsList");
+    const meta = document.getElementById("runsPageMeta");
+    const listMeta = document.getElementById("runsListMeta");
+    const activeCount = runs.filter(runIsActive).length;
+    if (meta) meta.textContent = runs.length ? `${runs.length} recent · ${activeCount} active` : "no runs yet";
+    if (listMeta) listMeta.textContent = activeCount ? `${activeCount} active` : `${runs.length} total`;
+    if (!list) return;
     list.innerHTML = "";
-    if (!data.runs || data.runs.length === 0) {
+    if (runs.length === 0) {
       list.innerHTML = `<li class="ne-runs-empty">no runs yet</li>`;
       return;
     }
-    for (const run of data.runs) {
+    for (const run of runs) {
       const li = document.createElement("li");
-      li.className = "ne-run-item";
+      li.className = "ne-run-item" + (run.id === _runLogState.lastShownRunId ? " is-selected" : "");
       li.dataset.runId = run.id;
-      const when = run.startedAt ? new Date(run.startedAt * 1000).toLocaleTimeString() : "";
+      const command = displayRunCommand(run.command);
+      const tail = String(run.outputTail || "").trim();
       li.innerHTML = `
-        <span class="ne-run-status" data-state="${escAttr(run.status)}">${escHtml(run.status || "?")}</span>
-        <span class="ne-run-id" title="${escAttr(run.id)}">${escHtml(run.id.slice(-12))}</span>
-        <span class="ne-run-time">${escHtml(when)}</span>
-        <span class="ne-run-cmd" title="${escAttr(run.command || "")}">${escHtml((run.command || "").slice(0, 40))}</span>`;
+        <span class="ne-run-status" data-state="${escAttr(run.status || "")}">${escHtml(runStatusText(run.status))}</span>
+        <span class="ne-run-id" title="${escAttr(run.id)}">${escHtml(run.id || "run")}</span>
+        <span class="ne-run-time">${escHtml(formatRunTime(run.startedAt))}</span>
+        <span class="ne-run-cmd" title="${escAttr(command || tail)}">${escHtml(command || tail || "no command")}</span>`;
       li.addEventListener("click", () => openRunInLog(run.id));
       list.appendChild(li);
     }
@@ -7942,13 +8872,9 @@ window.refreshRunsList = refreshRunsList;
 async function openRunInLog(runId) {
   try {
     const rec = await fetchJSON(`/api/runs/${encodeURIComponent(runId)}`);
-    showRunLog();
-    document.getElementById("runLog").dataset.minimized = "false";
-    document.getElementById("runLogBody").textContent = rec.output || "(no output)";
-    const body = document.getElementById("runLogBody");
-    body.scrollTop = body.scrollHeight;
-    updateRunLogStatus(rec.status || "done", runId);
     _runLogState.lastShownRunId = runId;
+    renderRunDetail(rec);
+    refreshRunsList().catch(() => {});
   } catch (e) {
     setHint(`could not load run: ${e.message}`);
     setTimeout(clearHint, 2500);
@@ -7957,10 +8883,409 @@ async function openRunInLog(runId) {
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 
-const GRAPH_STORAGE_KEY = "rundeer_node_graph_v2";
-const SAVED_GRAPHS_KEY = "rundeer_saved_graphs_v1";
-const TABS_KEY = "rundeer_open_tabs_v1";
 let autosaveTimer = null;
+
+const webStore = {
+  loaded: false,
+  state: {},
+  saveTimer: null,
+};
+
+const graphLibrary = {
+  loaded: false,
+  graphs: [],
+};
+
+const runningGraphState = {
+  running: false,
+  tabId: null,
+  name: "",
+};
+
+function updateCurrentTabButton() {
+  const tab = getActiveTab();
+  const nameEl = document.getElementById("currentTabName");
+  const stateEl = document.getElementById("currentTabState");
+  const button = document.getElementById("currentTabButton");
+  if (!nameEl || !stateEl || !button) return;
+  nameEl.textContent = tab?.name || "Untitled";
+  const parts = [];
+  if (tab?.dirty) parts.push("*");
+  if (runningGraphState.running && tab?.id === runningGraphState.tabId) parts.push("running");
+  stateEl.textContent = parts.join(" ");
+  button.title = tab?.name || "Untitled";
+}
+
+function updateRunningGraphTag() {
+  const tag = document.getElementById("runningGraphTag");
+  const label = document.getElementById("runningGraphLabel");
+  if (!tag || !label) return;
+  if (!runningGraphState.running) {
+    tag.hidden = true;
+    label.textContent = "graph running";
+    return;
+  }
+  const name = runningGraphState.name || "Untitled";
+  label.textContent = `${name} running`;
+  tag.hidden = false;
+}
+
+function setRunningGraphState(running, tab = null) {
+  runningGraphState.running = Boolean(running);
+  runningGraphState.tabId = running ? (tab?.id || tabsState.activeId || null) : null;
+  runningGraphState.name = running ? (tab?.name || "Untitled") : "";
+  updateRunningGraphTag();
+  renderGraphTabs();
+}
+
+async function loadWebStore() {
+  if (webStore.loaded) return webStore.state;
+  try {
+    const payload = await fetchJSON("/api/web-state");
+    webStore.state = (payload && payload.state && typeof payload.state === "object") ? payload.state : {};
+  } catch (_) {
+    webStore.state = {};
+  }
+  webStore.loaded = true;
+  return webStore.state;
+}
+
+function webLayoutState() {
+  if (!webStore.state.layout || typeof webStore.state.layout !== "object") webStore.state.layout = {};
+  return webStore.state.layout;
+}
+
+function paletteLayoutState() {
+  const layout = webLayoutState();
+  if (!layout.agentPalette || typeof layout.agentPalette !== "object") layout.agentPalette = {};
+  return layout.agentPalette;
+}
+
+function clampPaletteNumber(value, min, max, fallback) {
+  const n = Number(value);
+  const lower = Math.min(min, max);
+  const upper = Math.max(min, max);
+  if (!Number.isFinite(n)) return Math.max(lower, Math.min(upper, fallback));
+  return Math.max(lower, Math.min(upper, n));
+}
+
+function paletteNodeViewportRect() {
+  const wrap = document.getElementById("canvasWrap");
+  const shell = document.querySelector(".ne-shell");
+  if (!wrap || !shell) {
+    return { left: 0, top: 52, width: window.innerWidth, height: Math.max(240, window.innerHeight - 52) };
+  }
+  const wrapRect = wrap.getBoundingClientRect();
+  const shellRect = shell.getBoundingClientRect();
+  return {
+    left: wrapRect.left - shellRect.left,
+    top: wrapRect.top - shellRect.top,
+    width: Math.max(0, wrapRect.width),
+    height: Math.max(0, wrapRect.height),
+  };
+}
+
+function migratePaletteStateToNodeViewport(state, viewport) {
+  if (state.coordinateSpace === "node-viewport") return;
+  const storedLeft = Number(state.x);
+  const storedTop = Number(state.y);
+  if (Number.isFinite(storedLeft)) state.x = storedLeft - viewport.left;
+  if (Number.isFinite(storedTop)) state.y = storedTop - viewport.top;
+  state.coordinateSpace = "node-viewport";
+}
+
+function paletteViewportDefaults(viewport = paletteNodeViewportRect()) {
+  const edgePadding = 8;
+  const availableWidth = Math.max(180, viewport.width - edgePadding * 2);
+  const availableHeight = Math.max(160, viewport.height - edgePadding * 2);
+  const minWidth = Math.min(260, availableWidth);
+  const minHeight = Math.min(220, availableHeight);
+  const width = Math.min(350, Math.max(minWidth, availableWidth));
+  const height = Math.min(350, Math.max(minHeight, Math.min(availableHeight, 350)));
+  return {
+    w: width,
+    h: height,
+    x: Math.max(edgePadding, Math.round((viewport.width - width) / 2)),
+    y: Math.max(edgePadding, Math.round(viewport.height - height - edgePadding)),
+  };
+}
+
+function normalizedPaletteState() {
+  const state = paletteLayoutState();
+  const viewport = paletteNodeViewportRect();
+  migratePaletteStateToNodeViewport(state, viewport);
+  const defaults = paletteViewportDefaults(viewport);
+  const edgePadding = 8;
+  const availableWidth = Math.max(180, viewport.width - edgePadding * 2);
+  const availableHeight = Math.max(160, viewport.height - edgePadding * 2);
+  const minWidth = Math.min(260, availableWidth);
+  const minHeight = Math.min(220, availableHeight);
+  const width = clampPaletteNumber(state.w, minWidth, availableWidth, defaults.w);
+  const height = clampPaletteNumber(state.h, minHeight, availableHeight, defaults.h);
+  const maxLeft = Math.max(edgePadding, viewport.width - width - edgePadding);
+  const maxTop = Math.max(edgePadding, viewport.height - height - edgePadding);
+  const left = clampPaletteNumber(state.x, edgePadding, maxLeft, defaults.x);
+  const top = clampPaletteNumber(state.y, edgePadding, maxTop, defaults.y);
+  state.w = Math.round(width);
+  state.h = Math.round(height);
+  state.x = Math.round(left);
+  state.y = Math.round(top);
+  state.conversationCollapsed = Boolean(state.conversationCollapsed);
+  state.fullscreen = Boolean(state.fullscreen);
+  return state;
+}
+
+function paletteHandleSide(state, viewport) {
+  return state.x + state.w / 2 < viewport.width / 2 ? "right" : "left";
+}
+
+function applyPaletteLayout(options = {}) {
+  const root = document.getElementById("agentPalette");
+  if (!root) return;
+  const viewport = paletteNodeViewportRect();
+  const state = normalizedPaletteState();
+  const absoluteLeft = viewport.left + state.x;
+  const absoluteTop = viewport.top + state.y;
+  const conversationGap = 8;
+  const paletteCenterY = state.y + state.h / 2;
+  const conversationBelow = paletteCenterY < viewport.height / 2;
+  const conversationHeight = Math.max(0, Math.floor(conversationBelow
+    ? viewport.height - (state.y + state.h) - conversationGap
+    : state.y - conversationGap));
+  const fullscreenInset = 12;
+  const fullscreenLeft = viewport.left + fullscreenInset;
+  const fullscreenTop = viewport.top + fullscreenInset;
+  const fullscreenWidth = Math.max(220, viewport.width - fullscreenInset * 2);
+  const fullscreenHeight = Math.max(260, viewport.height - fullscreenInset * 2);
+  const desiredHandleSide = paletteHandleSide(state, viewport);
+  if (options.commitHandleSide || !["left", "right"].includes(state.handleSide) || (!root.classList.contains("is-dragging") && !root.classList.contains("is-resizing"))) {
+    state.handleSide = desiredHandleSide;
+  }
+  root.style.setProperty("--agent-palette-w", `${state.w}px`);
+  root.style.setProperty("--agent-palette-h", `${state.h}px`);
+  root.style.setProperty("--agent-palette-x", `${absoluteLeft}px`);
+  root.style.setProperty("--agent-palette-y", `${absoluteTop}px`);
+  root.style.setProperty("--agent-conversation-h", `${conversationHeight}px`);
+  root.style.setProperty("--agent-conversation-gap", `${conversationGap}px`);
+  root.style.setProperty("--agent-palette-full-x", `${fullscreenLeft}px`);
+  root.style.setProperty("--agent-palette-full-y", `${fullscreenTop}px`);
+  root.style.setProperty("--agent-palette-full-w", `${fullscreenWidth}px`);
+  root.style.setProperty("--agent-palette-full-h", `${fullscreenHeight}px`);
+  root.classList.toggle("is-conversation-collapsed", state.conversationCollapsed);
+  root.classList.toggle("is-conversation-below", conversationBelow);
+  root.classList.toggle("is-conversation-above", !conversationBelow);
+  root.classList.toggle("is-conversation-cramped", conversationHeight < 44);
+  root.classList.toggle("is-fullscreen", state.fullscreen);
+  root.classList.toggle("is-handle-right", state.handleSide === "right");
+  root.classList.toggle("is-handle-left", state.handleSide !== "right");
+  const collapse = document.getElementById("agentConversationToggle");
+  if (collapse) {
+    collapse.setAttribute("aria-pressed", String(state.conversationCollapsed));
+    collapse.title = state.conversationCollapsed ? "Show conversation" : "Collapse conversation";
+    collapse.setAttribute("aria-label", collapse.title);
+  }
+  const fullscreen = document.getElementById("agentPaletteFullscreen");
+  if (fullscreen) {
+    fullscreen.setAttribute("aria-pressed", String(state.fullscreen));
+    fullscreen.title = state.fullscreen ? "Exit fullscreen" : "Fullscreen palette";
+    fullscreen.setAttribute("aria-label", fullscreen.title);
+  }
+}
+
+function setPalettePane(name = "chat") {
+  const wanted = ["chat", "history", "agents", "tabs"].includes(name) ? name : "chat";
+  document.querySelectorAll(".ne-palette-pane[data-palette-pane]").forEach((pane) => {
+    const active = pane.dataset.palettePane === wanted;
+    pane.hidden = !active;
+    pane.classList.toggle("is-active", active);
+  });
+  const historyOpen = wanted === "history";
+  const agentsOpen = wanted === "agents";
+  const tabsOpen = wanted === "tabs";
+  document.getElementById("agentHistoryBtn")?.setAttribute("aria-expanded", String(historyOpen));
+  document.getElementById("agentSelectorBtn")?.setAttribute("aria-expanded", String(agentsOpen));
+  document.getElementById("currentTabButton")?.setAttribute("aria-expanded", String(tabsOpen));
+}
+
+function isPalettePaneOpen(name) {
+  const pane = document.querySelector(`.ne-palette-pane[data-palette-pane="${name}"]`);
+  return Boolean(pane && !pane.hidden);
+}
+
+function togglePalettePane(name) {
+  if (isPalettePaneOpen(name)) setPalettePane("chat");
+  else setPalettePane(name);
+}
+
+function updateAgentInputLines() {
+  const input = document.getElementById("agentInput");
+  const lines = document.getElementById("agentInputLines");
+  const surface = lines?.closest?.(".ne-string-surface");
+  if (!input || !lines) return;
+  const count = Math.max(1, String(input.value || "").split(/\n/).length);
+  const frag = document.createDocumentFragment();
+  for (let i = 1; i <= count; i += 1) {
+    const span = document.createElement("span");
+    span.textContent = String(i);
+    frag.appendChild(span);
+  }
+  lines.replaceChildren(frag);
+  if (surface) surface.style.setProperty("--line-number-digits", String(String(count).length));
+  lines.scrollTop = input.scrollTop || 0;
+}
+
+function setupAgentPalette() {
+  const root = document.getElementById("agentPalette");
+  if (!root) return;
+  applyPaletteLayout();
+  setPalettePane("chat");
+
+  const input = document.getElementById("agentInput");
+  if (input) {
+    input.addEventListener("input", updateAgentInputLines);
+    input.addEventListener("scroll", updateAgentInputLines, { passive: true });
+    updateAgentInputLines();
+  }
+
+  document.getElementById("currentTabButton")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    togglePalettePane("tabs");
+  });
+  document.getElementById("agentSelectorBtn")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    togglePalettePane("agents");
+    if (window.AgentChat && typeof window.AgentChat.requestAgents === "function") window.AgentChat.requestAgents();
+  });
+  document.querySelectorAll("[data-palette-close]").forEach((btn) => {
+    btn.addEventListener("click", () => setPalettePane("chat"));
+  });
+  document.getElementById("agentConversationToggle")?.addEventListener("click", () => {
+    const state = paletteLayoutState();
+    state.conversationCollapsed = !state.conversationCollapsed;
+    applyPaletteLayout();
+    scheduleWebStoreSave();
+  });
+  document.getElementById("agentPaletteFullscreen")?.addEventListener("click", () => {
+    const state = paletteLayoutState();
+    state.fullscreen = !state.fullscreen;
+    applyPaletteLayout();
+    scheduleWebStoreSave();
+  });
+
+  const drag = document.getElementById("agentPaletteDrag");
+  if (drag) {
+    let start = null;
+    drag.addEventListener("mousedown", (e) => {
+      if (paletteLayoutState().fullscreen) return;
+      e.preventDefault();
+      const state = normalizedPaletteState();
+      start = { x: e.clientX, y: e.clientY, px: state.x, py: state.y };
+      root.classList.add("is-dragging");
+      document.body.style.cursor = "grabbing";
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!start) return;
+      const state = paletteLayoutState();
+      state.x = start.px + (e.clientX - start.x);
+      state.y = start.py + (e.clientY - start.y);
+      applyPaletteLayout();
+    });
+    window.addEventListener("mouseup", () => {
+      if (!start) return;
+      start = null;
+      root.classList.remove("is-dragging");
+      document.body.style.cursor = "";
+      applyPaletteLayout({ commitHandleSide: true });
+      scheduleWebStoreSave();
+    });
+  }
+
+  const resize = document.getElementById("agentPaletteResize");
+  if (resize) {
+    let start = null;
+    resize.addEventListener("mousedown", (e) => {
+      if (paletteLayoutState().fullscreen) return;
+      e.preventDefault();
+      const state = normalizedPaletteState();
+      start = { x: e.clientX, y: e.clientY, w: state.w, h: state.h };
+      root.classList.add("is-resizing");
+      document.body.style.cursor = "nwse-resize";
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!start) return;
+      const state = paletteLayoutState();
+      state.w = start.w + (e.clientX - start.x);
+      state.h = start.h + (e.clientY - start.y);
+      applyPaletteLayout();
+      updateAgentInputLines();
+    });
+    window.addEventListener("mouseup", () => {
+      if (!start) return;
+      start = null;
+      root.classList.remove("is-resizing");
+      document.body.style.cursor = "";
+      applyPaletteLayout({ commitHandleSide: true });
+      scheduleWebStoreSave();
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    applyPaletteLayout({ commitHandleSide: true });
+    scheduleWebStoreSave();
+  });
+}
+
+window.RundeerPalette = {
+  showPane: setPalettePane,
+  togglePane: togglePalettePane,
+  isPaneOpen: isPalettePaneOpen,
+  updateInputLines: updateAgentInputLines,
+};
+
+function scheduleWebStoreSave() {
+  if (!webStore.loaded) return;
+  if (webStore.saveTimer) clearTimeout(webStore.saveTimer);
+  webStore.saveTimer = setTimeout(() => { saveWebStoreNow().catch(() => {}); }, 350);
+}
+
+async function saveWebStoreNow() {
+  if (!webStore.loaded) return;
+  if (webStore.saveTimer) {
+    clearTimeout(webStore.saveTimer);
+    webStore.saveTimer = null;
+  }
+  await fetchJSON("/api/web-state", {
+    method: "POST",
+    body: JSON.stringify({ state: webStore.state || {} }),
+  });
+}
+
+function sendWebStoreKeepalive() {
+  if (!webStore.loaded) return;
+  try {
+    fetch("/api/web-state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: webStore.state || {} }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (_) {}
+}
+
+function tabsPayload() {
+  return {
+    activeId: tabsState.activeId,
+    tabs: tabsState.tabs.map((t) => ({
+      id: t.id,
+      name: t.name,
+      savedGraphId: t.savedGraphId || null,
+      dirty: !!t.dirty,
+      snapshot: t.snapshot || null,
+      kind: t.kind || "workflow",
+      agentId: t.agentId || null,
+    })),
+  };
+}
 
 // ─── Graph tabs + saved graphs library ───────────────────────────────────────
 //
@@ -7968,7 +9293,7 @@ let autosaveTimer = null;
 //   { id, name, savedGraphId|null, dirty, snapshot }
 // The active tab's `snapshot` is what's currently materialised in `graph`.
 // When switching/closing, we serialize the live graph into the active tab
-// before swapping. Persisted to localStorage so reloads restore the layout.
+// before swapping. Persisted to .rundeer so reloads restore the layout.
 
 const tabsState = {
   tabs: [],
@@ -7976,21 +9301,56 @@ const tabsState = {
   _suspendDirty: false,
 };
 
+window.addEventListener("agent:selected", (e) => {
+  const agent = e.detail && e.detail.agent;
+  if (!agent || !agent.id) return;
+  let changed = false;
+  for (const tab of tabsState.tabs) {
+    if (tab.kind === "brain" && (tab.agentId || "default") === agent.id) {
+      const nextName = brainTabNameForAgent(agent.name || agent.id);
+      if (tab.name !== nextName) {
+        tab.name = nextName;
+        changed = true;
+      }
+    }
+  }
+  if (changed) {
+    renderGraphTabs();
+    persistTabs();
+  }
+});
+
 function genStorageId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function getSavedGraphs() {
+async function refreshSavedGraphs(opts = {}) {
   try {
-    const raw = localStorage.getItem(SAVED_GRAPHS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (_) { return []; }
+    const payload = await fetchJSON("/api/graphs");
+    graphLibrary.graphs = Array.isArray(payload.graphs) ? payload.graphs : [];
+    graphLibrary.loaded = true;
+    if (opts.render !== false) renderGraphsPage();
+  } catch (err) {
+    graphLibrary.graphs = [];
+    graphLibrary.loaded = true;
+    if (opts.render !== false) {
+      setHint(`graphs unavailable: ${err.message}`);
+      setTimeout(clearHint, 2500);
+      renderGraphsPage();
+    }
+  }
+  return graphLibrary.graphs;
 }
 
-function setSavedGraphs(list) {
-  try { localStorage.setItem(SAVED_GRAPHS_KEY, JSON.stringify(list)); }
-  catch (_) {}
+function getSavedGraphs() {
+  return graphLibrary.graphs || [];
+}
+
+function upsertSavedGraph(saved) {
+  if (!saved || !saved.id) return;
+  const idx = graphLibrary.graphs.findIndex((g) => g.id === saved.id);
+  if (idx >= 0) graphLibrary.graphs[idx] = saved;
+  else graphLibrary.graphs.push(saved);
 }
 
 function findSavedGraph(id) {
@@ -8004,20 +9364,8 @@ function summarizeGraphData(data) {
 }
 
 function persistTabs() {
-  try {
-    const payload = {
-      activeId: tabsState.activeId,
-      tabs: tabsState.tabs.map((t) => ({
-        id: t.id,
-        name: t.name,
-        savedGraphId: t.savedGraphId || null,
-        dirty: !!t.dirty,
-        snapshot: t.snapshot || null,
-        kind: t.kind || "workflow",
-      })),
-    };
-    localStorage.setItem(TABS_KEY, JSON.stringify(payload));
-  } catch (_) {}
+  webStore.state.tabs = tabsPayload();
+  scheduleWebStoreSave();
 }
 
 function captureActiveSnapshot() {
@@ -8068,12 +9416,6 @@ function activateTab(id, opts = {}) {
   renderGraphTabs();
   renderPalette();
   persistTabs();
-  // Don't pollute the workflow autosave with brain-tab contents.
-  if ((tab.kind || "workflow") === "workflow") {
-    try {
-      localStorage.setItem(GRAPH_STORAGE_KEY, JSON.stringify(tab.snapshot || serializeGraph()));
-    } catch (_) {}
-  }
 }
 
 function applyShellKind(tab) {
@@ -8091,6 +9433,7 @@ function newTab(opts = {}) {
     dirty: !!opts.dirty,
     snapshot: opts.snapshot || null,
     kind: opts.kind || "workflow",
+    agentId: opts.agentId || null,
   };
   tabsState.tabs.push(tab);
   tabsState.activeId = tab.id;
@@ -8116,22 +9459,29 @@ function openSavedGraphInTab(savedId) {
   });
 }
 
-function closeTab(id) {
+async function closeTab(id) {
   const tab = tabsState.tabs.find((t) => t.id === id);
   if (!tab) return;
   // If this tab is the active one, capture latest before deciding.
   const isActive = tabsState.activeId === id;
   if (isActive) captureActiveSnapshot();
   if (tab.dirty) {
-    const msg = `"${tab.name}" has unsaved changes. Save before closing?\n\nOK = Save, Cancel = Discard.`;
-    const wantSave = confirm(msg);
-    if (wantSave) {
+    const decision = await openAppDialog({
+      title: "Unsaved graph",
+      message: `"${tab.name}" has unsaved changes.`,
+      confirmText: "Save",
+      secondaryText: "Discard",
+      cancelText: "Cancel",
+      showInput: false,
+    });
+    if (decision.action === "cancel") return;
+    if (decision.action === "confirm") {
       // Temporarily activate so saveCurrentGraph operates on this tab's data.
       if (!isActive) {
         const prevActive = tabsState.activeId;
         tabsState.activeId = id;
         applyTabToCanvas(tab);
-        const ok = saveCurrentGraph({ silent: true, download: false });
+        const ok = await saveCurrentGraph({ silent: true });
         if (!ok) {
           // User cancelled the name prompt — abort close.
           tabsState.activeId = prevActive;
@@ -8141,7 +9491,7 @@ function closeTab(id) {
           return;
         }
       } else {
-        const ok = saveCurrentGraph({ silent: true, download: false });
+        const ok = await saveCurrentGraph({ silent: true });
         if (!ok) return;
       }
     }
@@ -8182,14 +9532,24 @@ function renameTab(id, name) {
 
 function renderGraphTabs() {
   const root = document.getElementById("graphTabs");
+  updateCurrentTabButton();
   if (!root) return;
   root.innerHTML = "";
   for (const tab of tabsState.tabs) {
     const el = document.createElement("div");
-    el.className = "ne-graph-tab" + (tab.id === tabsState.activeId ? " is-active" : "");
+    const isRunning = runningGraphState.running && tab.id === runningGraphState.tabId;
+    el.className = "ne-graph-tab"
+      + (tab.id === tabsState.activeId ? " is-active" : "")
+      + (isRunning ? " is-running" : "");
     el.dataset.tabId = tab.id;
     el.dataset.tabKind = tab.kind || "workflow";
     el.title = tab.name + (tab.dirty ? " (unsaved)" : "");
+    if (isRunning) {
+      const runDot = document.createElement("span");
+      runDot.className = "ne-graph-tab-run-dot";
+      runDot.title = "Running";
+      el.appendChild(runDot);
+    }
     const name = document.createElement("span");
     name.className = "ne-graph-tab-name";
     name.textContent = tab.name;
@@ -8207,76 +9567,74 @@ function renderGraphTabs() {
     close.title = "Close tab";
     close.addEventListener("click", (e) => {
       e.stopPropagation();
-      closeTab(tab.id);
+      closeTab(tab.id).catch((err) => {
+        setHint(`close failed: ${err.message}`);
+        setTimeout(clearHint, 2500);
+      });
     });
     el.appendChild(close);
-    el.addEventListener("click", () => activateTab(tab.id));
+    el.addEventListener("click", () => {
+      activateTab(tab.id);
+      window.RundeerPalette?.showPane?.("chat");
+    });
     root.appendChild(el);
   }
 }
 
-// Save current canvas → saved-graphs library + (optionally) JSON download.
+// Save current canvas into .rundeer/graphs.
 // Returns true on success, false if cancelled.
-function saveCurrentGraph(opts = {}) {
+async function saveCurrentGraph(opts = {}) {
   const tab = getActiveTab();
-  // Brain tabs save to the server, not localStorage.
+  // Brain tabs save to their own server-backed agent graph.
   if (tab && tab.kind === "brain") {
     return saveBrainGraphTab(tab, opts);
   }
   const data = serializeGraph();
-  const list = getSavedGraphs();
-  const now = Date.now();
-  let saved;
+  let saved = null;
   if (tab && tab.savedGraphId) {
-    saved = list.find((g) => g.id === tab.savedGraphId);
-    if (saved) {
-      saved.data = data;
-      saved.updatedAt = now;
-      // Allow rename if tab name diverged from saved name.
-      saved.name = tab.name || saved.name;
-    }
+    saved = findSavedGraph(tab.savedGraphId);
   }
+  let name = saved?.name || tab?.name || "Untitled";
   if (!saved) {
     const defaultName = tab?.name && tab.name !== "Untitled" ? tab.name : `graph-${new Date().toISOString().slice(0, 10)}`;
-    const name = prompt("Save graph as:", defaultName);
-    if (name == null) return false; // cancelled
-    const trimmed = String(name).trim() || defaultName;
-    saved = {
-      id: genStorageId("g"),
-      name: trimmed,
-      createdAt: now,
-      updatedAt: now,
-      data,
-    };
-    list.push(saved);
-    if (tab) {
-      tab.savedGraphId = saved.id;
-      tab.name = trimmed;
+    const result = await openAppDialog({
+      title: "Save graph",
+      message: "This writes the graph to .rundeer/graphs.",
+      inputLabel: "Graph name",
+      defaultValue: defaultName,
+      confirmText: "Save",
+      cancelText: "Cancel",
+    });
+    if (result.action !== "confirm") return false;
+    name = String(result.value || defaultName).trim() || defaultName;
+  } else if (tab && tab.name && tab.name !== saved.name) {
+    name = tab.name;
+  }
+  const oldId = tab?.savedGraphId || saved?.id || null;
+  const response = await fetchJSON("/api/graphs", {
+    method: "POST",
+    body: JSON.stringify({ id: oldId, name, data }),
+  });
+  saved = response.graph;
+  if (!saved || !saved.id) throw new Error("save did not return a graph id");
+  upsertSavedGraph(saved);
+  if (oldId && oldId !== saved.id) {
+    graphLibrary.graphs = graphLibrary.graphs.filter((g) => g.id !== oldId);
+    for (const t of tabsState.tabs) {
+      if (t.savedGraphId === oldId) t.savedGraphId = saved.id;
     }
   }
-  setSavedGraphs(list);
   if (tab) {
+    tab.savedGraphId = saved.id;
+    tab.name = saved.name || name;
     tab.dirty = false;
     tab.snapshot = data;
   }
   renderGraphTabs();
   renderGraphsPage();
   persistTabs();
-
-  if (opts.download !== false) {
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const safe = (saved.name || "graph").replace(/[^a-z0-9_\-]+/gi, "-");
-    a.download = `${safe}-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
-  }
   if (!opts.silent) {
-    setHint("graph saved");
+    setHint(`saved ${saved.path || saved.name}`);
     setTimeout(clearHint, 1500);
   }
   return true;
@@ -8284,25 +9642,45 @@ function saveCurrentGraph(opts = {}) {
 
 // ─── Agent brain tab ─────────────────────────────────────────────────────
 // Brain tabs persist to the server (.rundeer/agent/brain.json) instead of
-// localStorage, and recompile the runtime config on every save so the next
+// regular graph state, and recompile the runtime config on every save so the next
 // agent turn picks up the changes.
 
 const BRAIN_TAB_NAME = "Agent Brain";
 
-async function openBrainTab() {
+function selectedAgentId() {
+  if (window.AgentChat && typeof window.AgentChat.getSelectedAgentId === "function") {
+    return window.AgentChat.getSelectedAgentId() || "default";
+  }
+  return "default";
+}
+
+function selectedAgentName() {
+  if (window.AgentChat && typeof window.AgentChat.getSelectedAgentName === "function") {
+    return window.AgentChat.getSelectedAgentName() || "Default";
+  }
+  return "Default";
+}
+
+function brainTabNameForAgent(agentName) {
+  return `${BRAIN_TAB_NAME} · ${agentName || "Default"}`;
+}
+
+async function openBrainTab(agentId = null) {
+  const targetAgentId = agentId || selectedAgentId();
   // Focus existing brain tab if open.
-  const existing = tabsState.tabs.find((t) => t.kind === "brain");
+  const existing = tabsState.tabs.find((t) => t.kind === "brain" && (t.agentId || "default") === targetAgentId);
   if (existing) { activateTab(existing.id); return existing; }
   let payload = null;
   try {
-    const res = await fetch("/api/agent/brain-graph");
+    const res = await fetch(`/api/agent/brain-graph?agent_id=${encodeURIComponent(targetAgentId)}`);
     if (res.ok) payload = await res.json();
   } catch (_) {}
   const snapshot = (payload && payload.graph) || { version: 1, nodes: {}, edges: [], _nextId: 1 };
   const tab = newTab({
-    name: BRAIN_TAB_NAME,
+    name: brainTabNameForAgent(targetAgentId === selectedAgentId() ? selectedAgentName() : targetAgentId),
     snapshot,
     kind: "brain",
+    agentId: targetAgentId,
     dirty: false,
   });
   return tab;
@@ -8313,7 +9691,7 @@ function saveBrainGraphTab(tab, opts = {}) {
   fetch("/api/agent/brain-graph", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ graph: data }),
+    body: JSON.stringify({ graph: data, agent_id: tab?.agentId || selectedAgentId() }),
   }).then(async (res) => {
     if (!res.ok) {
       const err = await res.text().catch(() => "");
@@ -8337,7 +9715,7 @@ function saveBrainGraphTab(tab, opts = {}) {
   // its in-memory snapshot + runtime. The HTTP POST above already
   // persisted + recompiled on disk, so skip a second write here.
   try {
-    if (window.AgentChat && typeof window.AgentChat.sendBrainSnapshot === "function") {
+    if (window.AgentChat && typeof window.AgentChat.sendBrainSnapshot === "function" && (tab?.agentId || "default") === selectedAgentId()) {
       window.AgentChat.sendBrainSnapshot(data, { persist: false });
     }
   } catch (_) {}
@@ -8352,11 +9730,22 @@ function applyBrainPatchOp(op) {
   applyAgentPatchOp(op);
 }
 
-function deleteSavedGraph(id) {
+async function deleteSavedGraph(id) {
   const saved = findSavedGraph(id);
   if (!saved) return;
-  if (!confirm(`Delete saved graph "${saved.name}"? This cannot be undone.`)) return;
-  setSavedGraphs(getSavedGraphs().filter((g) => g.id !== id));
+  const decision = await openAppDialog({
+    title: "Delete graph",
+    message: `Delete "${saved.name}" from .rundeer/graphs?`,
+    confirmText: "Delete",
+    cancelText: "Cancel",
+    showInput: false,
+  });
+  if (decision.action !== "confirm") return;
+  await fetchJSON("/api/graphs/delete", {
+    method: "POST",
+    body: JSON.stringify({ id }),
+  });
+  graphLibrary.graphs = getSavedGraphs().filter((g) => g.id !== id);
   // Detach any open tabs pointing at it (they remain as unsaved dirty tabs).
   for (const t of tabsState.tabs) {
     if (t.savedGraphId === id) { t.savedGraphId = null; t.dirty = true; }
@@ -8376,7 +9765,7 @@ function renderGraphsPage() {
   if (list.length === 0) {
     const empty = document.createElement("li");
     empty.className = "ne-graphs-empty";
-    empty.textContent = "No saved graphs yet. Click Save in the toolbar to store the current graph.";
+    empty.textContent = "No saved graphs yet. Use Save Current to store this graph.";
     root.appendChild(empty);
     return;
   }
@@ -8417,16 +9806,32 @@ function renderGraphsPage() {
     renameBtn.type = "button";
     renameBtn.className = "btn btn-ghost btn-tiny";
     renameBtn.textContent = "rename";
-    renameBtn.addEventListener("click", (e) => {
+    renameBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      const nn = prompt("Rename graph:", g.name);
-      if (nn == null) return;
-      const trimmed = String(nn).trim();
+      const result = await openAppDialog({
+        title: "Rename graph",
+        message: "Update the graph name in .rundeer/graphs.",
+        inputLabel: "Graph name",
+        defaultValue: g.name,
+        confirmText: "Rename",
+        cancelText: "Cancel",
+      });
+      if (result.action !== "confirm") return;
+      const trimmed = String(result.value || "").trim();
       if (!trimmed) return;
-      const list2 = getSavedGraphs();
-      const target = list2.find((x) => x.id === g.id);
-      if (target) { target.name = trimmed; target.updatedAt = Date.now(); setSavedGraphs(list2); }
-      for (const t of tabsState.tabs) { if (t.savedGraphId === g.id) t.name = trimmed; }
+      const response = await fetchJSON("/api/graphs", {
+        method: "POST",
+        body: JSON.stringify({ id: g.id, name: trimmed }),
+      });
+      const renamed = response.graph;
+      graphLibrary.graphs = getSavedGraphs().filter((x) => x.id !== g.id && x.id !== renamed.id);
+      upsertSavedGraph(renamed);
+      for (const t of tabsState.tabs) {
+        if (t.savedGraphId === g.id) {
+          t.savedGraphId = renamed.id;
+          t.name = renamed.name;
+        }
+      }
       renderGraphsPage(); renderGraphTabs(); persistTabs();
     });
     const delBtn = document.createElement("button");
@@ -8435,7 +9840,10 @@ function renderGraphsPage() {
     delBtn.textContent = "delete";
     delBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      deleteSavedGraph(g.id);
+      deleteSavedGraph(g.id).catch((err) => {
+        setHint(`delete failed: ${err.message}`);
+        setTimeout(clearHint, 2500);
+      });
     });
     actions.appendChild(openBtn);
     actions.appendChild(renameBtn);
@@ -8452,13 +9860,10 @@ function renderGraphsPage() {
   }
 }
 
-function initTabsSystem() {
-  // Try to restore persisted tabs; fall back to GRAPH_STORAGE_KEY single doc.
-  let restored = null;
-  try {
-    const raw = localStorage.getItem(TABS_KEY);
-    if (raw) restored = JSON.parse(raw);
-  } catch (_) {}
+async function initTabsSystem() {
+  await loadWebStore();
+  await refreshSavedGraphs({ render: false });
+  const restored = webStore.state.tabs || null;
   if (restored && Array.isArray(restored.tabs) && restored.tabs.length > 0) {
     tabsState.tabs = restored.tabs.map((t) => ({
       id: t.id || genStorageId("tab"),
@@ -8467,23 +9872,19 @@ function initTabsSystem() {
       dirty: !!t.dirty,
       snapshot: t.snapshot || null,
       kind: t.kind || "workflow",
+      agentId: t.agentId || null,
     }));
     tabsState.activeId = restored.activeId && tabsState.tabs.find((t) => t.id === restored.activeId)
       ? restored.activeId
       : tabsState.tabs[0].id;
   } else {
-    // Seed from legacy single-graph storage if present.
-    let legacy = null;
-    try {
-      const raw = localStorage.getItem(GRAPH_STORAGE_KEY);
-      if (raw) legacy = JSON.parse(raw);
-    } catch (_) {}
     tabsState.tabs = [{
       id: genStorageId("tab"),
       name: "Untitled",
       savedGraphId: null,
       dirty: false,
-      snapshot: legacy,
+      snapshot: null,
+      kind: "workflow",
     }];
     tabsState.activeId = tabsState.tabs[0].id;
   }
@@ -8499,12 +9900,13 @@ function initTabsSystem() {
   renderPalette();
   // Auto-fit once the canvas is laid out.
   requestAnimationFrame(() => requestAnimationFrame(() => frameAll()));
+  persistTabs();
 }
 
 function scheduleAutosave() {
   if (autosaveTimer) clearTimeout(autosaveTimer);
   markActiveDirty();
-  autosaveTimer = setTimeout(autosaveLocalStorage, 400);
+  autosaveTimer = setTimeout(autosaveWorkspaceState, 400);
 }
 
 // ─── Preview auto-refresh ────────────────────────────────────────────────────
@@ -8575,7 +9977,7 @@ async function refreshAllPreviews(opts = {}) {
         }
         continue;
       }
-      // Most previews use an "in" socket. UV Render and any future preview
+      // Most previews use an "in" socket. Render and any future preview
       // with bespoke inputs still need to refresh — accept any incoming edge.
       // Coordinate has no inputs but is self-driving from its props.
       if (node.type !== "coordinate" && !graph.edges.some((e) => e.toNode === node.id)) continue;
@@ -8720,16 +10122,13 @@ function loadGraphData(data) {
   return true;
 }
 
-function autosaveLocalStorage() {
-  try {
-    const data = serializeGraph();
-    localStorage.setItem(GRAPH_STORAGE_KEY, JSON.stringify(data));
-    // Mirror into the active tab's snapshot so tabs persist across reloads.
-    const tab = getActiveTab();
-    if (tab) tab.snapshot = data;
-    persistTabs();
-    flashAutosave();
-  } catch (e) { /* quota or disabled */ }
+function autosaveWorkspaceState() {
+  const data = serializeGraph();
+  // Mirror into the active tab's snapshot so tabs persist across reloads.
+  const tab = getActiveTab();
+  if (tab) tab.snapshot = data;
+  persistTabs();
+  flashAutosave();
 }
 
 function flashAutosave() {
@@ -8739,18 +10138,12 @@ function flashAutosave() {
   setTimeout(() => dot.classList.remove("is-saving"), 600);
 }
 
-function loadGraphFromLocalStorage() {
-  // Superseded by initTabsSystem() — kept for backwards compatibility.
-  try {
-    const raw = localStorage.getItem(GRAPH_STORAGE_KEY);
-    if (!raw) return false;
-    return loadGraphData(JSON.parse(raw));
-  } catch (e) { return false; }
-}
-
 function saveGraphToFile() {
-  // Persists to the saved-graphs library AND triggers a JSON download.
-  return saveCurrentGraph({ download: true });
+  return saveCurrentGraph().catch((err) => {
+    setHint(`save failed: ${err.message}`);
+    setTimeout(clearHint, 2500);
+    return false;
+  });
 }
 
 function loadGraphFromFile(file) {
@@ -8771,8 +10164,15 @@ function loadGraphFromFile(file) {
   reader.readAsText(file);
 }
 
-function clearGraph() {
-  if (!confirm("Clear the graph? All nodes and connections will be lost.")) return;
+async function clearGraph() {
+  const decision = await openAppDialog({
+    title: "Clear graph",
+    message: "Clear the current canvas? Unsaved nodes and links will be removed.",
+    confirmText: "Clear",
+    cancelText: "Cancel",
+    showInput: false,
+  });
+  if (decision.action !== "confirm") return;
   graph.nodes = {}; graph.edges = []; graph._nextId = 1;
   ix.selection.clear();
   renderGraph();
@@ -8785,10 +10185,16 @@ function clearGraph() {
 let graphStatusTimer = null;
 function setGraphStatus(text, cls) {
   const el = document.getElementById("graphStatus");
+  if (!el) return;
+  const hidden = el.classList.contains("sr-only");
   el.textContent = text;
-  el.className = `ne-status ${cls || ""}`.trim();
+  el.className = `${hidden ? "sr-only " : ""}ne-status ${cls || ""}`.trim();
   if (graphStatusTimer) clearTimeout(graphStatusTimer);
-  if (!cls) graphStatusTimer = setTimeout(() => { el.textContent = "ready"; el.className = "ne-status"; }, 3000);
+  if (!cls) graphStatusTimer = setTimeout(() => {
+    const stillHidden = el.classList.contains("sr-only");
+    el.textContent = "ready";
+    el.className = `${stillHidden ? "sr-only " : ""}ne-status`.trim();
+  }, 3000);
 }
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
@@ -8917,7 +10323,7 @@ async function loadState() {
           for (const op of ops) applyAgentPatchOp(op);
           window.dispatchEvent(new CustomEvent("agent:patch-applied"));
         },
-        openBrainTab: () => openBrainTab(),
+        openBrainTab: (agentId) => openBrainTab(agentId),
         applyBrainPatch: (ops) => {
           if (!Array.isArray(ops)) return;
           // Ensure the brain tab is active so patches mutate the correct
@@ -8935,7 +10341,7 @@ async function loadState() {
         },
         getBrainSnapshot: () => {
           const active = getActiveTab();
-          if (active && active.kind === "brain") return serializeGraph();
+          if (active && active.kind === "brain" && (active.agentId || "default") === selectedAgentId()) return serializeGraph();
           return null;
         },
       });
@@ -9064,6 +10470,75 @@ async function fetchJSON(url, opts = {}) {
   return res.json();
 }
 
+let activeAppDialog = null;
+
+function openAppDialog(opts = {}) {
+  if (activeAppDialog) activeAppDialog("cancel");
+  const overlay = document.getElementById("appDialog");
+  const form = document.getElementById("appDialogForm");
+  const title = document.getElementById("appDialogTitle");
+  const message = document.getElementById("appDialogMessage");
+  const field = document.getElementById("appDialogField");
+  const input = document.getElementById("appDialogInput");
+  const inputLabel = document.getElementById("appDialogInputLabel");
+  const cancelBtn = document.getElementById("appDialogCancel");
+  const secondaryBtn = document.getElementById("appDialogSecondary");
+  const confirmBtn = document.getElementById("appDialogConfirm");
+  if (!overlay || !form || !title || !message || !field || !input || !cancelBtn || !secondaryBtn || !confirmBtn) {
+    return Promise.resolve({ action: "cancel", value: null });
+  }
+  const showInput = opts.showInput !== false;
+  title.textContent = opts.title || "Confirm";
+  message.textContent = opts.message || "";
+  field.hidden = !showInput;
+  if (inputLabel) inputLabel.textContent = opts.inputLabel || "Name";
+  input.value = opts.defaultValue || "";
+  cancelBtn.textContent = opts.cancelText || "Cancel";
+  confirmBtn.textContent = opts.confirmText || "OK";
+  secondaryBtn.hidden = !opts.secondaryText;
+  secondaryBtn.textContent = opts.secondaryText || "";
+  overlay.classList.remove("is-hidden");
+
+  return new Promise((resolve) => {
+    const finish = (action) => {
+      overlay.classList.add("is-hidden");
+      form.removeEventListener("submit", onSubmit);
+      cancelBtn.removeEventListener("click", onCancel);
+      secondaryBtn.removeEventListener("click", onSecondary);
+      overlay.removeEventListener("mousedown", onOverlayMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+      activeAppDialog = null;
+      resolve({ action, value: showInput ? input.value : null });
+    };
+    const onSubmit = (e) => { e.preventDefault(); finish("confirm"); };
+    const onCancel = () => finish("cancel");
+    const onSecondary = () => finish("secondary");
+    const onOverlayMouseDown = (e) => { if (e.target === overlay) finish("cancel"); };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        finish("cancel");
+      }
+    };
+    activeAppDialog = finish;
+    form.addEventListener("submit", onSubmit);
+    cancelBtn.addEventListener("click", onCancel);
+    secondaryBtn.addEventListener("click", onSecondary);
+    overlay.addEventListener("mousedown", onOverlayMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    requestAnimationFrame(() => {
+      if (showInput) {
+        input.focus();
+        input.select();
+      } else {
+        confirmBtn.focus();
+      }
+    });
+  });
+}
+
+window.openAppDialog = openAppDialog;
+
 function escHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
@@ -9080,8 +10555,8 @@ function formatBytes(n) {
 
 // ─── View tabs (Explore / Nodes) ─────────────────────────────────────────────
 
-function setActiveView(name) {
-  if (name !== "explore" && name !== "nodes" && name !== "runs" && name !== "graphs") name = "nodes";
+function setActiveView(name, opts = {}) {
+  if (name !== "explore" && name !== "nodes" && name !== "runs" && name !== "graphs" && name !== "settings") name = "nodes";
   const shell = document.querySelector(".ne-shell");
   if (!shell) return;
   shell.dataset.activeView = name;
@@ -9098,6 +10573,7 @@ function setActiveView(name) {
   if (name === "explore") initExplore();
   if (name === "runs" && window.refreshRunsList) window.refreshRunsList();
   if (name === "graphs") renderGraphsPage();
+  if (name === "settings") renderShortcutSettings();
   // Update history without reload so deep links still work.
   const url = name === "explore"
     ? "/explore"
@@ -9105,15 +10581,19 @@ function setActiveView(name) {
       ? "/runs"
       : name === "graphs"
         ? "/graphs"
-        : "/nodes";
+        : name === "settings"
+          ? "/settings"
+          : "/nodes";
   if (location.pathname !== url) {
-    try { history.replaceState({ view: name }, "", url); } catch (_) {}
+    try {
+      if (opts.history === false) history.replaceState({ view: name }, "", url);
+      else history.pushState({ view: name }, "", url);
+    } catch (_) {}
   }
   // Frame all when entering nodes (gives the canvas a chance to recompute size).
   if (name === "nodes") {
     requestAnimationFrame(() => { applyViewport(); renderConnections(); });
   }
-  requestAnimationFrame(repositionRunDockFromCurrentState);
 }
 
 function initialViewFromPath() {
@@ -9121,6 +10601,7 @@ function initialViewFromPath() {
   if (p === "/explore") return "explore";
   if (p === "/runs") return "runs";
   if (p === "/graphs") return "graphs";
+  if (p === "/settings") return "settings";
   if (p === "/nodes") return "nodes";
   return "nodes";
 }
@@ -9142,10 +10623,8 @@ async function initExplore() {
   bindExploreHandlers();
   await loadExploreTree();
   // Restore previous split width.
-  try {
-    const saved = localStorage.getItem("rundeer_explore_split");
-    if (saved) document.getElementById("exShell").style.setProperty("--ex-split", saved);
-  } catch (_) {}
+  const saved = webLayoutState().exploreSplit;
+  if (saved) document.getElementById("exShell").style.setProperty("--ex-split", saved);
   setupExploreResizer();
 }
 
@@ -9338,20 +10817,12 @@ function setupSidePanelResizers() {
   const shell = document.querySelector(".ne-shell");
   if (!shell) return;
   // Restore saved widths.
-  try {
-    const pw = localStorage.getItem("rundeer_palette_w");
-    if (pw) shell.style.setProperty("--palette-w", pw);
-    const rw = localStorage.getItem("rundeer_props_w");
-    if (rw) shell.style.setProperty("--props-w", rw);
-    const nw = localStorage.getItem("rundeer_n_w");
-    if (nw) shell.style.setProperty("--n-w", nw);
-    if (localStorage.getItem("rundeer_n_hidden") === "0") {
-      shell.classList.remove("hide-n");
-      shell.classList.add("hide-props");
-    }
-  } catch (_) {}
+  const layout = webLayoutState();
+  if (layout.paletteW) shell.style.setProperty("--palette-w", layout.paletteW);
+  if (layout.propsW) shell.style.setProperty("--props-w", layout.propsW);
+  shell.classList.toggle("hide-n", Boolean(paletteLayoutState().hidden));
 
-  const bind = (resizerId, varName, storageKey, side) => {
+  const bind = (resizerId, varName, layoutKey, side) => {
     const resizer = document.getElementById(resizerId);
     if (!resizer) return;
     let dragging = false;
@@ -9359,6 +10830,7 @@ function setupSidePanelResizers() {
       const value = `${Math.round(w)}px`;
       if (side === "right") preserveCanvasRightEdge(() => shell.style.setProperty(varName, value));
       else shell.style.setProperty(varName, value);
+      applyPaletteLayout({ commitHandleSide: true });
     };
     resizer.addEventListener("mousedown", (e) => {
       e.preventDefault();
@@ -9380,16 +10852,16 @@ function setupSidePanelResizers() {
       dragging = false;
       resizer.classList.remove("is-active");
       document.body.style.cursor = "";
-      try {
-        const cur = getComputedStyle(shell).getPropertyValue(varName).trim();
-        if (cur) localStorage.setItem(storageKey, cur);
-      } catch (_) {}
+      const cur = getComputedStyle(shell).getPropertyValue(varName).trim();
+      if (cur) {
+        webLayoutState()[layoutKey] = cur;
+        scheduleWebStoreSave();
+      }
     });
   };
 
-  bind("paletteResizer", "--palette-w", "rundeer_palette_w", "left");
-  bind("propsResizer", "--props-w", "rundeer_props_w", "right");
-  bind("nResizer", "--n-w", "rundeer_n_w", "right");
+  bind("paletteResizer", "--palette-w", "paletteW", "left");
+  bind("propsResizer", "--props-w", "propsW", "right");
 }
 
 function setupExploreResizer() {
@@ -9415,21 +10887,24 @@ function setupExploreResizer() {
     dragging = false;
     resizer.classList.remove("is-active");
     document.body.style.cursor = "";
-    try {
-      const cur = getComputedStyle(shell).getPropertyValue("--ex-split").trim();
-      if (cur) localStorage.setItem("rundeer_explore_split", cur);
-    } catch (_) {}
+    const cur = getComputedStyle(shell).getPropertyValue("--ex-split").trim();
+    if (cur) {
+      webLayoutState().exploreSplit = cur;
+      scheduleWebStoreSave();
+    }
   });
 }
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadWebStore();
   loadState();
   renderPalette();
   applyViewport();
   renderProps(null);
   setupSidePanelResizers();
+  setupAgentPalette();
 
   const wrap = document.getElementById("canvasWrap");
 
@@ -9502,10 +10977,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Toolbar
   document.getElementById("runGraphBtn").addEventListener("click", () => runGraph());
-  document.getElementById("clearGraphBtn").addEventListener("click", clearGraph);
-  document.getElementById("saveGraphBtn").addEventListener("click", saveGraphToFile);
-  document.getElementById("loadGraphBtn").addEventListener("click", () => document.getElementById("loadGraphFile").click());
-  document.getElementById("loadGraphFile").addEventListener("change", (e) => {
+  const stopGraphBtn = document.getElementById("stopGraphBtn");
+  if (stopGraphBtn) stopGraphBtn.addEventListener("click", stopGraphRun);
+  const pauseGraphBtn = document.getElementById("pauseGraphBtn");
+  if (pauseGraphBtn) pauseGraphBtn.addEventListener("click", () => {
+    if (!_graphRunState) return;
+    if (_graphRunState.paused) resumeGraphRun("footer");
+    else pauseGraphRun("manual");
+  });
+  const saveGraphBtn = document.getElementById("saveGraphBtn");
+  if (saveGraphBtn) saveGraphBtn.addEventListener("click", saveGraphToFile);
+  const loadGraphBtn = document.getElementById("loadGraphBtn");
+  if (loadGraphBtn) loadGraphBtn.addEventListener("click", () => document.getElementById("loadGraphFile").click());
+  const clearGraphBtn = document.getElementById("clearGraphBtn");
+  if (clearGraphBtn) clearGraphBtn.addEventListener("click", () => clearGraph().catch(() => {}));
+  const loadGraphFile = document.getElementById("loadGraphFile");
+  if (loadGraphFile) loadGraphFile.addEventListener("change", (e) => {
     if (e.target.files && e.target.files[0]) loadGraphFromFile(e.target.files[0]);
     e.target.value = "";
   });
@@ -9516,10 +11003,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const runsPageRefresh = document.getElementById("runsPageRefresh");
   if (runsPageRefresh) runsPageRefresh.addEventListener("click", () => refreshRunsList());
   const graphsPageRefresh = document.getElementById("graphsPageRefresh");
-  if (graphsPageRefresh) graphsPageRefresh.addEventListener("click", () => renderGraphsPage());
-  document.getElementById("runLogClose").addEventListener("click", () => document.getElementById("runLog").classList.add("is-hidden"));
-  document.getElementById("runLogMinimize").addEventListener("click", toggleRunLogMinimized);
-  setupRunDockDrag();
+  if (graphsPageRefresh) graphsPageRefresh.addEventListener("click", () => refreshSavedGraphs());
+  const resetShortcutsBtn = document.getElementById("resetShortcutsBtn");
+  if (resetShortcutsBtn) resetShortcutsBtn.addEventListener("click", resetAllShortcuts);
 
   // View tabs (Tree / Runs / Graphs / Explore) — switching is a CSS toggle
   // so state (graph, panels, run dock) is preserved without a reload. The
@@ -9527,12 +11013,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // skip it here and bind it to the help modal separately.
   document.querySelectorAll(".view-tab").forEach((b) => {
     if (!b.dataset.view) return;
-    b.addEventListener("click", () => setActiveView(b.dataset.view));
+    b.addEventListener("click", () => setActiveView(b.dataset.view, { history: true }));
   });
-  setActiveView(initialViewFromPath());
+  setActiveView(initialViewFromPath(), { history: false });
   window.addEventListener("popstate", (e) => {
     const v = (e.state && e.state.view) || initialViewFromPath();
-    setActiveView(v);
+    setActiveView(v, { history: false });
   });
 
   const runsPanelClose = document.getElementById("runsPanelClose");
@@ -9568,13 +11054,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Restore from localStorage (tabs + saved graphs library)
-  initTabsSystem();
+  // Restore tabs and saved graphs from .rundeer.
+  await initTabsSystem();
   refreshRunsList();
   setInterval(refreshRunsList, 4000);
   // Initial preview pass so non-command upstream values populate immediately.
   schedulePreviewRefresh();
 
-  // Save before unload as a final safety net
-  window.addEventListener("beforeunload", () => autosaveLocalStorage());
+  // Save before unload as a final safety net.
+  window.addEventListener("beforeunload", () => {
+    captureActiveSnapshot();
+    persistTabs();
+    sendWebStoreKeepalive();
+  });
 });

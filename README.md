@@ -57,7 +57,7 @@ rundeer web --open
 rundeer image --subject="a quiet station at sunrise" --dry-run --no-tui
 ```
 
-The first CLI or web command creates `.rundeer/` in the current directory. Outputs default to `.rundeer/outputs`, encoded references are cached in `.rundeer/cache`, web-triggered run configs are written to `.rundeer/web/runs/<run-id>/config.json`, and logs live under `.rundeer/logs`.
+The first CLI or web command creates `.rundeer/` in the current directory. Outputs default to `.rundeer/outputs`, encoded references are cached in `.rundeer/cache`, node graphs live under `.rundeer/graphs`, web-triggered run records and configs are written to `.rundeer/runs/<run-id>/`, and logs live under `.rundeer/logs`.
 
 Use `--dry-run` whenever you want to inspect the resolved prompt, job count, output paths, references, and definitions without spending API credits:
 
@@ -86,15 +86,19 @@ The **Nodes** view is a Blender-style graph editor. The palette includes:
 
 | Category | Nodes |
 |---|---|
-| Primitives | String, Number, Image File, Video File, File Path, Reroute, String Join, Compress Image, Math, String Op |
-| Prompt | Prompt Filter, Definition |
+| Primitives | String, Number, Boolean, Vector, File, String Join |
+| Operations | Compress, Blur, Math, String Op, Random |
+| Prompt | Prompt, Prompt Filter, Definition |
 | Commands | Image, Video, Edit, Merge, Extend |
+| Bundle | Bundle, Create Bundle, Sample Bundle |
 | Loop | Loop · Decompose, Loop · Output |
-| Output | Preview |
+| Coordinates | Coordinate, Mapping |
+| Vector | Vector, Mix |
+| Output | Preview, Render |
 
-Command nodes expose their props as sockets, so graph edges can override static fields like subject, style, iterations, output name, or reference ids. Prompt Filter nodes accept multiple context images, letting a language model rewrite a prompt using visual information from upstream image files or generated outputs. Runs with more than one iteration produce bundles; Loop · Decompose and Loop · Output let you fan out a bundle, process each item, and collect the results again. Preview nodes display upstream image, video, or text values inline and can collapse their upstream chain for a cleaner graph.
+Command nodes expose their props as sockets, so graph edges can override static fields like subject, style, iterations, output name, or reference ids. Prompt nodes accept multiple context images, letting a language model answer directly or rewrite a prompt using visual information from upstream image files or generated outputs. Runs with more than one iteration produce bundles; Loop · Decompose and Loop · Output let you fan out a bundle, process each item, and collect the results again. Preview nodes display upstream image, video, or text values inline and can collapse their upstream chain for a cleaner graph.
 
-Graph execution resolves terminal command and preview nodes, calls `/api/plan` for dry-runs or `/api/run` for live runs, then polls the run record until it finishes. Web-triggered runs use the same Python CLI code as terminal commands and keep each generated config under `.rundeer/web/runs/`.
+Graph execution resolves terminal command and preview nodes, calls `/api/plan` for dry-runs or `/api/run` for live runs, then polls the run record until it finishes. Web-triggered runs use the same Python CLI code as terminal commands and keep each generated config under `.rundeer/runs/`. Saved node graphs are regular JSON files under `.rundeer/graphs`, and webapp layout/tab state is stored in `.rundeer/web-state.json`.
 
 The **Explore** view is a split-pane file browser and previewer for the current project. It can filter the workspace tree, open files in a separate tab, copy paths, and preview supported images, videos, JSON, text, Markdown, logs, CSV, and Python files. The Runs panel shows recent in-memory web runs and their output tails.
 
@@ -240,7 +244,7 @@ CLI flags win over config files. If no config path is provided, rundeer reads `.
 }
 ```
 
-rundeer loads environment values only from the project-root `.env` file. It does not read parent `.env` files, or `.rundeer/.env`. Use `VISION_API_KEY` for image and video generation, `MODEL_API_KEY` for definition scripts and Prompt Filter nodes that call language models, and `BASE_URL` as the shared API endpoint. `BASE_URL` may be the API root (`https://api.x.ai`) or the OpenAI-compatible base (`https://api.x.ai/v1`); rundeer normalizes the final path per call.
+rundeer loads environment values only from the project-root `.env` file. It does not read parent `.env` files, or `.rundeer/.env`. Use `VISION_API_KEY` for image and video generation, `MODEL_API_KEY` for definition scripts and Prompt/Prompt Filter nodes that call language models, and `BASE_URL` as the shared API endpoint. `BASE_URL` may be the API root (`https://api.x.ai`) or the OpenAI-compatible base (`https://api.x.ai/v1`); rundeer normalizes the final path per call.
 
 ## Styles And References
 

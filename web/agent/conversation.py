@@ -27,6 +27,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional
 import litellm
 
 from .config import AgentSettings
+from .profiles import DEFAULT_AGENT_ID, normalize_agent_id
 from .diff import diff_graphs, format_diff_note, has_changes
 from .system_prompt import build_system_prompt
 from .tools import (
@@ -62,6 +63,7 @@ class Conversation:
     root: Path
     server: Any  # RundeerWebServer
     record: Dict[str, Any]  # persisted record (see persistence.py)
+    agent_id: str = DEFAULT_AGENT_ID
     messages: List[Dict[str, Any]] = field(default_factory=list)
     snapshot: Dict[str, Any] = field(default_factory=lambda: {"nodes": {}, "edges": []})
     last_seen_snapshot: Dict[str, Any] = field(default_factory=lambda: {"nodes": {}, "edges": []})
@@ -80,8 +82,10 @@ class Conversation:
 
     # ── Lifecycle ─────────────────────────────────────────────────────────
     @classmethod
-    def from_record(cls, settings: AgentSettings, root: Path, server: Any, record: Dict[str, Any]) -> "Conversation":
-        conv = cls(settings=settings, root=root, server=server, record=record)
+    def from_record(cls, settings: AgentSettings, root: Path, server: Any, record: Dict[str, Any], agent_id: Optional[str] = None) -> "Conversation":
+        resolved_agent_id = normalize_agent_id(agent_id or record.get("agent_id"))
+        record["agent_id"] = resolved_agent_id
+        conv = cls(settings=settings, root=root, server=server, record=record, agent_id=resolved_agent_id)
         conv.messages = list(record.get("messages") or [])
         return conv
 
@@ -165,7 +169,7 @@ class Conversation:
         """Refresh the cached runtime config + effective settings from disk."""
         from .brain_graph import AgentRuntimeConfig, load_runtime_config
         try:
-            self._runtime = load_runtime_config(self.root)
+            self._runtime = load_runtime_config(self.root, agent_id=self.agent_id)
         except Exception:  # noqa: BLE001
             self._runtime = AgentRuntimeConfig()
         self._effective_settings = self._merge_settings(self._runtime)
@@ -220,6 +224,7 @@ class Conversation:
         sync paths) we fall back to a direct write.
         """
         self.record["messages"] = self.messages
+        self.record["agent_id"] = self.agent_id
         from .persistence import save_conversation
         # Take a shallow copy of the record so concurrent mutations during
         # the executor write don't trip serialization mid-flight.
@@ -540,7 +545,7 @@ class Conversation:
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(
                 None,
-                lambda: invoke_tool(name, args, root=self.root, server=self.server, graph=self.snapshot),
+                lambda: invoke_tool(name, args, root=self.root, server=self.server, graph=self.snapshot, agent_id=self.agent_id),
             )
 
         # If the tool emitted a graph patch, forward it to the client.

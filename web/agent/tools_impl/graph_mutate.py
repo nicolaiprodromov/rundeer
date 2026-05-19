@@ -18,13 +18,18 @@ NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = {
     "text-input": {"inputs": {}, "outputs": {"out": "text"}},
     "number-input": {"inputs": {}, "outputs": {"out": "number"}},
     "boolean-input": {"inputs": {}, "outputs": {"out": "boolean"}},
+    "vector-input": {"inputs": {}, "outputs": {"out": "vector"}},
     "file": {"inputs": {}, "outputs": {"out": "any"}},
     "text-join": {"inputs": {"a": "any", "b": "any"}, "outputs": {"out": "text"}},
     "compress-image": {"inputs": {"in": "any", "instructions": "text"}, "outputs": {"out": "any"}},
     "blur-image": {"inputs": {"in": "image"}, "outputs": {"out": "image"}},
+    "crop-media": {"inputs": {"in": "any", "size": "vector", "position": "vector"}, "outputs": {"out": "any"}},
+    "resize-media": {"inputs": {"in": "any", "size": "vector", "mode": "text"}, "outputs": {"out": "any"}},
     "math-op": {"inputs": {"a": "number", "b": "number"}, "outputs": {"out": "number"}},
     "text-op": {"inputs": {"a": "any", "b": "any"}, "outputs": {"out": "text"}},
+    "random": {"inputs": {"mode": "text", "min": "number", "max": "number", "charset": "text"}, "outputs": {"out": "any"}},
     "reroute": {"inputs": {"in": "any"}, "outputs": {"out": "any"}},
+    "prompt": {"inputs": {"prompt": "text", "input": "image"}, "outputs": {"out": "text"}},
     "prompt-filter": {"inputs": {"prompt": "text", "instructions": "text", "input": "image"}, "outputs": {"out": "text"}},
     "definition": {"inputs": {"args": "text"}, "outputs": {"out": "text"}},
     "cmd-image": {"inputs": {"trigger": "run", "subject": "text", "input": "image"}, "outputs": {"out": "image"}},
@@ -39,6 +44,12 @@ NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = {
     "loop-output": {"inputs": {"item": "any"}, "outputs": {"out": "any"}},
     "run-trigger": {"inputs": {}, "outputs": {"run": "run"}},
     "preview": {"inputs": {"in": "any"}, "outputs": {"out": "any"}},
+    "canvas": {"inputs": {"images": "image", "positions": "vector", "size": "vector"}, "outputs": {"out": "image"}},
+    "coordinate": {"inputs": {"width": "number", "height": "number", "dpi": "number", "space": "text"}, "outputs": {"uv": "vector-map"}},
+    "mapping": {"inputs": {"uv": "vector-map", "location_x": "number", "location_y": "number", "rotation": "number", "scale_x": "number", "scale_y": "number", "pivot_x": "number", "pivot_y": "number"}, "outputs": {"out": "vector-map"}},
+    "vector-op": {"inputs": {"a": "any", "b": "any", "op": "text"}, "outputs": {"out": "any"}},
+    "mix": {"inputs": {"factor": "any", "a": "any", "b": "any", "mode": "text", "clamp": "boolean"}, "outputs": {"out": "any"}},
+    "uv-render": {"inputs": {"pixel": "image", "uv": "vector-map", "interp": "text", "extension": "text"}, "outputs": {"out": "image"}},
 }
 
 
@@ -49,6 +60,10 @@ NODE_SOCKET_ALIASES: Dict[Tuple[str, str], Dict[str, str]] = {
     ("cmd-merge", "inputs"): {"run": "trigger", "prompt": "subject", "text": "subject", "description": "subject", "images": "input", "references": "input"},
     ("cmd-extend", "inputs"): {"run": "trigger", "prompt": "subject", "text": "subject", "description": "subject", "clip": "source", "video": "source"},
     ("preview", "inputs"): {"input": "in", "image": "in", "video": "in", "text": "in", "value": "in", "preview": "in"},
+    ("canvas", "inputs"): {"input": "images", "image": "images", "images": "images", "position": "positions", "pos": "positions", "size": "size"},
+    ("crop-media", "inputs"): {"input": "in", "media": "in", "image": "in", "video": "in", "pos": "position"},
+    ("resize-media", "inputs"): {"input": "in", "media": "in", "image": "in", "video": "in", "integration": "mode"},
+    ("uv-render", "inputs"): {"image": "pixel", "texture": "pixel", "map": "uv"},
     ("text-input", "outputs"): {"value": "out", "text": "out", "string": "out", "output": "out"},
     ("number-input", "outputs"): {"value": "out", "number": "out", "output": "out"},
     ("boolean-input", "outputs"): {"value": "out", "boolean": "out", "output": "out"},
@@ -58,8 +73,8 @@ NODE_SOCKET_ALIASES: Dict[Tuple[str, str], Dict[str, str]] = {
 }
 
 
-GLOBAL_SINGLE_OUTPUT_ALIASES = {"out", "output", "result", "value", "image", "video", "text", "string", "bundle", "file", "path"}
-GLOBAL_SINGLE_INPUT_ALIASES = {"in", "input", "value", "item", "image", "video", "text", "string", "bundle", "file", "path"}
+GLOBAL_SINGLE_OUTPUT_ALIASES = {"out", "output", "result", "value", "image", "video", "text", "string", "bundle", "file", "path", "vector", "uv"}
+GLOBAL_SINGLE_INPUT_ALIASES = {"in", "input", "value", "item", "image", "images", "video", "text", "string", "bundle", "file", "path", "vector", "position", "size", "uv"}
 
 
 def _patch(op: str, **fields) -> Dict[str, Any]:
@@ -98,6 +113,8 @@ def _can_connect(from_type: str, to_type: str) -> bool:
     if from_type == "any" or to_type == "any":
         return True
     if _base_type(from_type) == _base_type(to_type):
+        return True
+    if {from_type, to_type} in ({"vector", "vector-map"}, {"vector-map", "image"}, {"vector", "image"}):
         return True
     return {from_type, to_type} == {"filepath", "text"}
 

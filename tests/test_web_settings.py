@@ -1,18 +1,29 @@
 import json
 import sys
+import threading
 from pathlib import Path
 
 from rundeer.web.server import (
     build_cli_command,
     build_run_config,
+    cancel_run,
     chat_completions_url,
     extract_frames,
     filter_prompt_image_urls,
     filter_prompt_messages,
     filter_prompt,
+    list_graphs,
     list_folder,
     load_settings,
+    run_plan,
+    load_web_state,
+    save_graph,
     save_settings,
+    save_web_state,
+    load_run_records,
+    list_runs,
+    save_run_display_log,
+    write_run_record,
 )
 
 
@@ -220,6 +231,109 @@ def test_web_cli_command_uses_current_python(tmp_path):
     )
 
     assert command[:2] == [sys.executable, "-c"]
+    assert _config_path == tmp_path / ".rundeer" / "runs" / "run-1" / "config.json"
+
+
+def test_graph_storage_lists_and_saves_existing_graphs(tmp_path):
+    graphs = tmp_path / ".rundeer" / "graphs"
+    graphs.mkdir(parents=True)
+    first = graphs / "kept-one.json"
+    second = graphs / "kept-two.json"
+    graph_data = {"version": 2, "nodes": {}, "edges": [], "_nextId": 1}
+    first.write_text(json.dumps(graph_data), encoding="utf-8")
+    second.write_text(json.dumps({**graph_data, "_nextId": 2}), encoding="utf-8")
+
+    listed = list_graphs(tmp_path)
+
+    assert {item["id"] for item in listed} == {"kept-one.json", "kept-two.json"}
+
+    saved = save_graph(tmp_path, {"name": "New Graph", "data": graph_data})
+
+    assert saved["id"] == "New-Graph.json"
+    assert first.exists()
+    assert second.exists()
+    assert (graphs / "New-Graph.json").is_file()
+
+
+def test_web_state_round_trips_to_rundeer(tmp_path):
+    payload = {"state": {"layout": {"paletteW": "240px"}, "runDock": {"edge": "right", "along": 0.6}}}
+
+    saved = save_web_state(tmp_path, payload)
+    loaded = load_web_state(tmp_path)
+
+    assert saved == payload
+    assert loaded == payload
+    assert (tmp_path / ".rundeer" / "web-state.json").is_file()
+
+
+def test_run_records_persist_under_rundeer_runs(tmp_path):
+    record = {"id": "run-abc", "status": "done", "command": ["rundeer", "image"], "output": "ok"}
+
+    write_run_record(tmp_path, record)
+    loaded = load_run_records(tmp_path)
+
+    assert loaded["run-abc"]["status"] == "done"
+    assert (tmp_path / ".rundeer" / "runs" / "run-abc" / "run.json").is_file()
+
+
+def test_save_run_display_log_preserves_exact_visible_output(tmp_path):
+    record = {"id": "run-abc", "status": "done", "command": ["rundeer", "image"], "output": "cli only"}
+    visible_output = "Running graph\n\nResolving n1 (cmd-image)...\n  run run-abc\ncli only\n"
+    server = type("FakeServer", (), {
+        "project_root": tmp_path,
+        "runs": {},
+        "runs_lock": threading.Lock(),
+    })()
+
+    write_run_record(tmp_path, record)
+    saved = save_run_display_log(server, "run-abc", {
+        "displayOutput": visible_output,
+        "displayTitle": "id run-abc",
+        "displayMeta": "live graph output",
+    })
+    loaded = load_run_records(tmp_path)["run-abc"]
+
+    assert saved["displayOutput"] == visible_output
+    assert loaded["displayOutput"] == visible_output
+    assert loaded["displayTitle"] == "id run-abc"
+    assert list_runs(server)[0]["outputTail"] == visible_output[-400:]
+
+
+def test_run_plan_persists_dry_run_record(tmp_path):
+    result = run_plan(tmp_path, {"command": "image", "subject": "deer", "iterations": 1})
+
+    run_dir = tmp_path / ".rundeer" / "runs" / result["id"]
+    saved = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+    assert saved["dryRun"] is True
+    assert saved["status"] == "done"
+    assert saved["configPath"] == f".rundeer/runs/{result['id']}/config.json"
+    assert (run_dir / "config.json").is_file()
+
+
+def test_cancel_run_marks_active_process_cancelling(tmp_path, monkeypatch):
+    record = {"id": "run-abc", "status": "running", "command": ["rundeer", "image"], "output": ""}
+    calls = []
+
+    class FakeProc:
+        pid = 12345
+
+        def poll(self):
+            return None
+
+    server = type("FakeServer", (), {
+        "project_root": tmp_path,
+        "runs": {"run-abc": record},
+        "runs_lock": threading.Lock(),
+        "run_processes": {"run-abc": FakeProc()},
+    })()
+    monkeypatch.setattr("rundeer.web.server.os.killpg", lambda pid, sig: calls.append((pid, sig)))
+
+    result = cancel_run(server, "run-abc")
+
+    saved = load_run_records(tmp_path)["run-abc"]
+    assert result["status"] == "cancelling"
+    assert saved["status"] == "cancelling"
+    assert calls and calls[0][0] == 12345
 
 
 def test_list_folder_applies_modulo_after_range(tmp_path):

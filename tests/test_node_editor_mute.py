@@ -15,7 +15,7 @@ def test_node_editor_has_muted_node_execution_contract():
     assert "function toggleNodeMuted" in source
     assert "nodeMuteButtonMarkup" in source
     assert "Mute node" in source
-    assert "e.key === \"m\" || e.key === \"M\"" in source
+    assert 'shortcutMatches(e, "muteNodes")' in source
     assert "muted: Boolean(n.muted)" in source
     assert "muted: Boolean(migrated.muted)" in source
     assert "activeIncomingEdges(nodeId, sock.id)" in source

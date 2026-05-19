@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="/static/node-editor.css">
   </head>
   <body>
-    <div class="ne-shell hide-n" data-active-view="nodes">
+    <div class="ne-shell" data-active-view="nodes">
 
       <!-- Compact masthead — slim, footer-aligned style -->
       <header class="masthead masthead-compact" role="banner">
@@ -24,6 +24,13 @@
               <span id="projectRoot" class="project-path">resolving project…</span>
             </span>
           </div>
+        </div>
+
+        <div class="masthead-center">
+          <span class="run-header-tag" id="runningGraphTag" hidden>
+            <span class="run-header-dot" aria-hidden="true"></span>
+            <span id="runningGraphLabel">graph running</span>
+          </span>
         </div>
 
         <div class="masthead-right">
@@ -39,6 +46,9 @@
             </button>
             <button class="view-tab" type="button" role="tab" data-view="explore" aria-selected="false">
               <span aria-hidden="true">▢</span> Explore
+            </button>
+            <button class="view-tab" type="button" role="tab" data-view="settings" aria-selected="false">
+              <span aria-hidden="true">⚙</span> Settings
             </button>
             <button class="view-tab view-tab-help" type="button" id="helpBtn" aria-label="Help">
               <span aria-hidden="true">?</span> Help
@@ -102,74 +112,7 @@
             </div>
           </aside>
 
-          <!-- N panel resizer -->
-          <div class="ne-side-resizer ne-side-resizer-right" id="nResizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize side panel"></div>
-
-          <!-- Far right: N panel — agent chat -->
-          <aside class="ne-n-panel" id="nPanel" aria-label="Agent chat">
-            <div class="ne-agent" id="agentRoot" hidden>
-              <header class="ne-agent-head">
-                <div class="ne-agent-id">
-                  <span class="ne-agent-dot" id="agentDot" data-state="idle" aria-hidden="true"></span>
-                  <p class="ne-props-eyebrow">agent</p>
-                  <span class="ne-agent-model" id="agentModel">—</span>
-                </div>
-                <div class="ne-agent-head-actions">
-                  <button class="btn btn-ghost btn-tiny" id="agentNewBtn" type="button" title="New conversation">+ new</button>
-                  <button class="btn btn-ghost btn-tiny" id="agentHistoryBtn" type="button" title="Conversations" aria-expanded="false">history</button>
-                  <button class="btn btn-ghost btn-tiny" id="agentBrainBtn" type="button" title="Edit the agent's brain (system prompt · tools · settings) as a graph">edit brain</button>
-                </div>
-              </header>
-              <div class="ne-agent-history" id="agentHistory" hidden>
-                <ul class="ne-agent-history-list" id="agentHistoryList"></ul>
-              </div>
-              <div class="ne-agent-stream" id="agentStream" role="log" aria-live="polite" aria-atomic="false">
-                <div class="ne-agent-empty">
-                  Ask the agent to build, connect, debug, or run a graph.<br>
-                  <span class="ne-agent-empty-hint">Type @ to mention files. Drag images here to attach.</span>
-                </div>
-              </div>
-              <div class="ne-agent-confirm-bar" id="agentConfirmBar" hidden></div>
-              <form class="ne-agent-composer" id="agentComposer" autocomplete="off">
-                <div class="ne-agent-attachments" id="agentAttachments" hidden></div>
-                <div class="ne-agent-input-row">
-                  <button class="ne-agent-icon-btn" id="agentAttachBtn" type="button" title="Attach image" aria-label="Attach image">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                  </button>
-                  <textarea id="agentInput" rows="1" placeholder="Talk to the agent…" aria-label="Message"></textarea>
-                  <button class="btn btn-primary btn-tiny" id="agentSendBtn" type="submit">send</button>
-                  <button class="btn btn-ghost btn-tiny" id="agentCancelBtn" type="button" hidden>stop</button>
-                </div>
-                <input type="file" id="agentFileInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
-              </form>
-            </div>
-            <div class="ne-props-body" id="agentDisabledBody">
-              <div class="ne-props-empty">
-                Agent disabled. Set <code>MODEL_API_KEY</code> in <code>.env</code> and restart <code>rundeer web</code>.
-              </div>
-            </div>
-          </aside>
         </div>
-
-        <!-- Bottom toolbar (inside nodes view) -->
-        <footer class="ne-toolbar" role="toolbar" aria-label="Node editor controls">
-          <div class="ne-toolbar-left">
-            <button class="btn btn-primary" id="runGraphBtn" type="button">
-              <span class="btn-glyph" aria-hidden="true">▶</span> Run Graph
-            </button>
-            <button class="btn btn-ghost" id="clearGraphBtn" type="button">Clear</button>
-            <button class="btn btn-ghost" id="saveGraphBtn" type="button">Save</button>
-            <button class="btn btn-ghost" id="loadGraphBtn" type="button">Load</button>
-            <input type="file" id="loadGraphFile" accept="application/json,.json" style="display:none">
-            <div class="ne-toolbar-sep" aria-hidden="true"></div>
-            <span class="ne-status" id="graphStatus">ready</span>
-            <span class="ne-autosave-dot" id="autosaveDot" title="Autosave to localStorage" aria-hidden="true"></span>
-          </div>
-          <div class="ne-toolbar-right">
-            <div class="ne-graph-tabs" id="graphTabs" role="tablist" aria-label="Open graphs"></div>
-            <button class="btn btn-ghost btn-tiny" id="newTabBtn" type="button" title="New graph tab">+ new</button>
-          </div>
-        </footer>
       </div>
 
       <!-- ============================================================ -->
@@ -216,15 +159,36 @@
       <!-- VIEW: RUNS (past runs list as a full page)                    -->
       <!-- ============================================================ -->
       <div class="ne-view" id="view-runs" data-view="runs" hidden>
-        <section class="runs-page" aria-label="Past runs">
-          <header class="runs-page-head">
-            <p class="ex-eyebrow">past runs</p>
-            <span class="ex-panel-meta" id="runsPageMeta">—</span>
+        <section class="work-page runs-page" aria-label="Past runs">
+          <header class="work-page-head runs-page-head">
+            <div class="work-page-title">
+              <p class="ex-eyebrow">runs</p>
+              <h2>Run history</h2>
+            </div>
+            <span class="ex-panel-meta" id="runsPageMeta">-</span>
             <div class="ex-panel-actions">
               <button class="btn btn-ghost btn-tiny" id="runsPageRefresh" type="button" title="Refresh list">↻</button>
             </div>
           </header>
-          <ul class="ne-runs-list" id="runsList"></ul>
+          <div class="runs-workspace">
+            <section class="runs-list-panel" aria-label="Recent runs">
+              <div class="work-subhead">
+                <span>recent</span>
+                <span id="runsListMeta">-</span>
+              </div>
+              <ul class="ne-runs-list" id="runsList"></ul>
+            </section>
+            <section class="run-detail-panel is-empty" id="runLog" role="region" aria-label="Run log">
+              <header class="run-detail-head" id="runLogHead">
+                <span class="status-pill" id="runLogStatus" data-state="idle">Idle</span>
+                <div class="run-detail-title-wrap">
+                  <p class="run-detail-title" id="runLogTitle">no run selected</p>
+                  <span class="run-detail-meta" id="runLogMeta">select a run to inspect its log</span>
+                </div>
+              </header>
+              <pre class="run-detail-body" id="runLogBody"></pre>
+            </section>
+          </div>
         </section>
       </div>
 
@@ -232,31 +196,185 @@
       <!-- VIEW: GRAPHS (saved graphs library)                           -->
       <!-- ============================================================ -->
       <div class="ne-view" id="view-graphs" data-view="graphs" hidden>
-        <section class="runs-page" aria-label="Saved graphs">
-          <header class="runs-page-head">
-            <p class="ex-eyebrow">saved graphs</p>
-            <span class="ex-panel-meta" id="graphsPageMeta">—</span>
+        <section class="work-page graphs-page" aria-label="Saved graphs">
+          <header class="work-page-head graphs-page-head">
+            <div class="work-page-title">
+              <p class="ex-eyebrow">graphs</p>
+              <h2>Saved graphs</h2>
+            </div>
+            <span class="ex-panel-meta" id="graphsPageMeta">-</span>
             <div class="ex-panel-actions">
+              <button class="btn btn-primary btn-tiny" id="saveGraphBtn" type="button">Save Current</button>
+              <button class="btn btn-ghost btn-tiny" id="newTabBtn" type="button" title="New graph tab">New</button>
+              <button class="btn btn-ghost btn-tiny" id="loadGraphBtn" type="button">Load JSON</button>
+              <button class="btn btn-ghost btn-tiny" id="clearGraphBtn" type="button">Clear Current</button>
               <button class="btn btn-ghost btn-tiny" id="graphsPageRefresh" type="button" title="Refresh list">↻</button>
             </div>
           </header>
+          <input type="file" id="loadGraphFile" accept="application/json,.json" hidden>
           <ul class="ne-graphs-list" id="graphsList"></ul>
         </section>
       </div>
 
       <!-- ============================================================ -->
-      <!-- Floating run-log dock — visible across all views              -->
+      <!-- VIEW: SETTINGS (shortcut editor)                             -->
       <!-- ============================================================ -->
-      <div class="run-dock is-hidden" id="runLog" data-edge="bottom" data-minimized="false" role="region" aria-label="Run log">
-        <div class="run-dock-head" id="runLogHead">
-          <span class="run-dock-grip" aria-hidden="true">⋮⋮</span>
-          <span class="status-pill" id="runLogStatus" data-state="idle">Idle</span>
-          <span class="run-dock-title" id="runLogTitle">no run</span>
-          <button class="run-dock-btn" id="runLogMinimize" type="button" title="Minimize">–</button>
-          <button class="run-dock-btn" id="runLogClose" type="button" title="Close">×</button>
-        </div>
-        <pre class="run-dock-body" id="runLogBody"></pre>
+      <div class="ne-view" id="view-settings" data-view="settings" hidden>
+        <section class="work-page shortcut-settings-page" aria-label="Settings">
+          <header class="work-page-head shortcut-settings-head">
+            <div class="work-page-title">
+              <p class="ex-eyebrow">settings</p>
+              <h2>Shortcuts</h2>
+            </div>
+            <span class="ex-panel-meta" id="settingsPageMeta">saved in .rundeer/web-state.json</span>
+            <div class="ex-panel-actions">
+              <button class="btn btn-ghost btn-tiny" id="resetShortcutsBtn" type="button">Reset All</button>
+            </div>
+          </header>
+          <div class="settings-workspace">
+            <section class="settings-panel" aria-label="Keyboard shortcuts">
+              <div class="shortcut-list" id="shortcutsList"></div>
+            </section>
+          </div>
+        </section>
       </div>
+
+      <!-- ============================================================ -->
+      <!-- Floating Palette: agent, graph run controls, graph tabs       -->
+      <!-- ============================================================ -->
+      <section class="ne-agent-palette" id="agentPalette" role="region" aria-label="Palette">
+        <section class="ne-agent-conversation" id="agentConversation" aria-label="Agent conversation">
+          <div class="ne-agent" id="agentRoot" hidden>
+            <div class="ne-agent-stream" id="agentStream" role="log" aria-live="polite" aria-atomic="false">
+              <div class="ne-agent-empty">
+                Ask the agent to build, connect, debug, or run a graph.<br>
+                <span class="ne-agent-empty-hint">Type @ to mention files. Drag images here to attach.</span>
+              </div>
+            </div>
+            <div class="ne-agent-confirm-bar" id="agentConfirmBar" hidden></div>
+          </div>
+          <div class="ne-agent-disabled" id="agentDisabledBody">
+            <div class="ne-props-empty">
+              Agent disabled. Set <code>MODEL_API_KEY</code> in <code>.env</code> and restart <code>rundeer web</code>.
+            </div>
+          </div>
+        </section>
+
+        <section class="ne-palette-card" id="agentPaletteCard" aria-label="Agent palette">
+          <button class="ne-palette-drag-tab" id="agentPaletteDrag" type="button" aria-label="Move palette" title="Move palette">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+          </button>
+
+          <header class="ne-palette-header">
+            <div class="ne-palette-header-left">
+              <button class="ne-agent-icon-btn" id="agentNewBtn" type="button" title="New conversation" aria-label="New conversation">+</button>
+              <button class="ne-agent-icon-btn" id="agentHistoryBtn" type="button" title="Conversations" aria-label="Conversations" aria-expanded="false" aria-controls="paletteHistoryPane">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+              </button>
+            </div>
+            <button class="ne-agent-selector" id="agentSelectorBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="paletteAgentsPane" title="Choose agent">
+              <span class="ne-agent-selector-label" id="agentModel">agent</span>
+              <span class="ne-agent-selector-caret" aria-hidden="true">⌄</span>
+            </button>
+            <div class="ne-palette-header-right">
+              <button class="ne-agent-icon-btn" id="agentBrainBtn" type="button" title="Edit selected agent brain" aria-label="Edit selected agent brain">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2A3.5 3.5 0 0 0 6 5.5v.4A4.2 4.2 0 0 0 3.5 13a4 4 0 0 0 3.6 6H8"/><path d="M14.5 2A3.5 3.5 0 0 1 18 5.5v.4A4.2 4.2 0 0 1 20.5 13a4 4 0 0 1-3.6 6H16"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h8"/><path d="M12 2v20"/></svg>
+              </button>
+              <button class="ne-agent-icon-btn" id="agentConversationToggle" type="button" title="Collapse conversation" aria-label="Collapse conversation" aria-pressed="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+              </button>
+              <button class="ne-agent-icon-btn" id="agentPaletteFullscreen" type="button" title="Fullscreen palette" aria-label="Fullscreen palette" aria-pressed="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+              </button>
+            </div>
+          </header>
+
+          <div class="ne-palette-middle" id="paletteMiddle">
+            <div class="ne-palette-pane ne-palette-pane-chat is-active" id="paletteChatPane" data-palette-pane="chat">
+              <form class="ne-agent-composer" id="agentComposer" autocomplete="off">
+                <div class="ne-agent-attachments" id="agentAttachments" hidden></div>
+                <div class="ne-agent-input-row">
+                  <div class="ne-string-surface ne-agent-text-surface">
+                    <div class="ne-string-lines" id="agentInputLines" aria-hidden="true"><span>1</span></div>
+                    <div class="ne-string-stage">
+                      <textarea class="ne-string-textarea" id="agentInput" rows="1" placeholder="Talk to the agent…" aria-label="Message"></textarea>
+                      <div class="ne-agent-input-actions" aria-label="Message actions">
+                        <button class="ne-agent-icon-btn" id="agentAttachBtn" type="button" title="Attach image" aria-label="Attach image">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        </button>
+                        <button class="ne-agent-icon-btn ne-agent-send" id="agentSendBtn" type="submit" title="Send" aria-label="Send">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        </button>
+                        <button class="ne-agent-icon-btn ne-agent-cancel" id="agentCancelBtn" type="button" title="Cancel turn" aria-label="Cancel turn" hidden>
+                          <span class="btn-glyph" aria-hidden="true">■</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <input type="file" id="agentFileInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+              </form>
+            </div>
+
+            <div class="ne-palette-pane" id="paletteHistoryPane" data-palette-pane="history" hidden>
+              <div class="ne-palette-pane-head">
+                <span>history</span>
+                <button class="ne-palette-pane-close" type="button" data-palette-close aria-label="Close history">×</button>
+              </div>
+              <div class="ne-agent-history" id="agentHistory">
+                <ul class="ne-agent-history-list" id="agentHistoryList"></ul>
+              </div>
+            </div>
+
+            <div class="ne-palette-pane" id="paletteAgentsPane" data-palette-pane="agents" hidden>
+              <div class="ne-palette-pane-head">
+                <span>agents</span>
+                <button class="ne-palette-pane-action" id="agentCreateBtn" type="button" title="New agent" aria-label="New agent">+</button>
+                <button class="ne-palette-pane-close" type="button" data-palette-close aria-label="Close agents">×</button>
+              </div>
+              <div class="ne-agent-list" id="agentList" role="listbox" aria-label="Agents"></div>
+            </div>
+
+            <div class="ne-palette-pane" id="paletteTabsPane" data-palette-pane="tabs" hidden>
+              <div class="ne-palette-pane-head">
+                <span>tabs</span>
+                <button class="ne-palette-pane-close" type="button" data-palette-close aria-label="Close tabs">×</button>
+              </div>
+              <div class="ne-graph-tabs" id="graphTabs" role="tablist" aria-label="Open graphs"></div>
+            </div>
+          </div>
+
+          <footer class="ne-footer" role="toolbar" aria-label="Graph controls">
+            <div class="ne-run-control" id="graphRunControl" data-state="idle">
+              <button class="btn btn-primary ne-footer-run" id="runGraphBtn" type="button" aria-label="Run graph" title="Run graph">
+                <span class="btn-glyph" aria-hidden="true">▶</span>
+              </button>
+              <button class="btn ne-footer-stop" id="stopGraphBtn" type="button" aria-label="Stop graph" title="Stop graph" hidden>
+                <span class="btn-glyph" aria-hidden="true">■</span>
+              </button>
+              <button class="btn ne-footer-pause" id="pauseGraphBtn" type="button" aria-label="Pause graph" title="Pause graph" hidden>
+                <span class="btn-glyph" aria-hidden="true">Ⅱ</span>
+              </button>
+            </div>
+            <div class="ne-current-tab" id="currentTabRoot">
+              <button class="ne-current-tab-button" id="currentTabButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="paletteTabsPane">
+                <span class="ne-current-tab-label">tab</span>
+                <strong id="currentTabName">Untitled</strong>
+                <span class="ne-current-tab-state" id="currentTabState"></span>
+              </button>
+            </div>
+            <span class="sr-only" id="graphStatus" aria-live="polite">ready</span>
+            <span class="sr-only" id="autosaveDot" aria-live="polite"></span>
+          </footer>
+
+          <div class="ne-palette-resize" id="agentPaletteResize" role="separator" aria-orientation="both" aria-label="Resize palette"></div>
+        </section>
+      </section>
 
       <!-- ============================================================ -->
       <!-- Floating overlays                                             -->
@@ -266,6 +384,26 @@
       <div class="ne-add-menu" id="addMenu" style="display:none" role="dialog" aria-label="Add node" aria-modal="true">
         <input type="search" class="ne-add-menu-search" id="addMenuSearch" placeholder="search node types…" autocomplete="off">
         <div class="ne-add-menu-list" id="addMenuList"></div>
+      </div>
+
+      <div class="ne-app-dialog is-hidden" id="appDialog" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle">
+        <form class="ne-app-dialog-card" id="appDialogForm">
+          <header class="ne-app-dialog-head">
+            <h2 id="appDialogTitle">Save graph</h2>
+          </header>
+          <div class="ne-app-dialog-body">
+            <p id="appDialogMessage"></p>
+            <label class="ne-app-dialog-field" id="appDialogField">
+              <span id="appDialogInputLabel">Name</span>
+              <input id="appDialogInput" type="text" autocomplete="off">
+            </label>
+          </div>
+          <footer class="ne-app-dialog-actions">
+            <button class="btn btn-ghost" id="appDialogCancel" type="button">Cancel</button>
+            <button class="btn btn-ghost" id="appDialogSecondary" type="button" hidden>Discard</button>
+            <button class="btn btn-primary" id="appDialogConfirm" type="submit">Save</button>
+          </footer>
+        </form>
       </div>
 
       <!-- Help / quick-start modal -->

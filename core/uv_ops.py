@@ -3,7 +3,7 @@
 All maps are stored as float32 numpy arrays. Spatial maps are shaped
 ``(H, W, C)`` where ``C`` is 1, 2, 3 or 4. UV maps specifically use
 ``C == 2`` with channel 0 = u, channel 1 = v, both nominally in
-``[0, 1]`` with the origin at the top-left to match PIL's row order.
+``[0, 1]`` with the origin at the bottom-left.
 
 Pixel images are stored as float32 ``(H, W, 4)`` in ``[0, 1]`` RGBA.
 
@@ -135,11 +135,11 @@ def coordinate(width: int, height: int, dpi: int = 72, space: str = "uv") -> np.
     height = max(1, int(height))
     if space == "screen":
         u = np.arange(width, dtype=np.float32)
-        v = np.arange(height, dtype=np.float32)
+        v = np.arange(height - 1, -1, -1, dtype=np.float32)
     else:
         # uv space, +0.5 offset for pixel centers.
         u = (np.arange(width, dtype=np.float32) + 0.5) / float(width)
-        v = (np.arange(height, dtype=np.float32) + 0.5) / float(height)
+        v = 1.0 - ((np.arange(height, dtype=np.float32) + 0.5) / float(height))
     uu, vv = np.meshgrid(u, v)
     out = np.stack([uu, vv], axis=-1).astype(np.float32)
     # dpi is metadata-only for now; preserved for the round-trip but not
@@ -393,14 +393,14 @@ def sample(
 ) -> np.ndarray:
     """Sample ``pixel`` (H_p, W_p, C) at the UV coordinates in ``uv_map``.
 
-    UV coords are in ``[0, 1]`` with origin top-left. Output shape matches
+    UV coords are in ``[0, 1]`` with origin bottom-left. Output shape matches
     ``uv_map``'s spatial shape with the pixel image's channel count.
     """
     if pixel.ndim == 2:
         pixel = pixel[..., None]
     h_p, w_p = pixel.shape[:2]
     u = uv_map[..., 0] * (w_p - 1)
-    v = uv_map[..., 1] * (h_p - 1)
+    v = (1.0 - uv_map[..., 1]) * (h_p - 1)
     u = _apply_extension(u, w_p, extension)
     v = _apply_extension(v, h_p, extension)
 

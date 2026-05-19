@@ -18,6 +18,7 @@ __pycache__/
 .rundeer/agent/
 .rundeer/circuits/
 .rundeer/graphs/
+.rundeer/runs/
 
 .crush/
 .vscode/

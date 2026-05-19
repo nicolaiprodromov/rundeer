@@ -38,7 +38,7 @@ def test_mix_node_is_live_updated_during_preview_refresh():
     assert 'await resolveNode(node.id, cache, {}, resolveOpts);' in source
     assert 'if ((!opts.lite && !opts.liteCommands) || LIVE_UPDATE_TYPES.has(node.type))' in source
     resolve_start = source.index("async function resolveNode(")
-    run_graph_tail = source[source.rindex('setGraphStatus(anyFailed ? "some nodes failed"', 0, resolve_start):resolve_start]
+    run_graph_tail = source[source.rindex('"some nodes failed"', 0, resolve_start):resolve_start]
     assert "schedulePreviewRefresh();" in run_graph_tail
 
 

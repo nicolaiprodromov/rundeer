@@ -164,7 +164,7 @@ In Nodes, command props are also sockets, so wired values override static values
 - **TUI falls back automatically**: in non-TTY environments (CI, pipes) or with `--no-tui`, rundeer prints plain status lines with the same information.
 - **`--dry-run` makes no API calls**: always safe for verifying prompt, refs, and output paths before spending credits.
 - **Default concurrency** is 10 for image, 1 for video. Raise video concurrency cautiously; each clip is expensive.
-- **Web runs are CLI runs**: the node workbench writes a config snapshot to `.rundeer/web/runs/<run-id>/config.json` and calls the same CLI command engine through `/api/plan` or `/api/run`.
+- **Web runs are CLI runs**: the node workbench writes a config snapshot to `.rundeer/runs/<run-id>/config.json` and calls the same CLI command engine through `/api/plan` or `/api/run`.
 
 ## Prompt tips
 

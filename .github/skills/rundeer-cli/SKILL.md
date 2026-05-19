@@ -14,10 +14,10 @@ Use this skill to operate Rundeer accurately and safely. Rundeer is a batch-firs
 - The project root is always the current working directory.
 - The first real command bootstraps `./.rundeer/` with config, outputs, cache, logs, benchmark templates, and a reusable skill template.
 - CLI flags override config files. `--config=<path>` overrides `.rundeer/config.json`.
-- Outputs default to `.rundeer/outputs`; encoded references cache under `.rundeer/cache`; logs and web run state live under `.rundeer/logs` and `.rundeer/web/runs`.
+- Outputs default to `.rundeer/outputs`; encoded references cache under `.rundeer/cache`; graphs live under `.rundeer/graphs`; logs and web run state live under `.rundeer/logs` and `.rundeer/runs`.
 - Style brains live under `brain/<Style>/`. The prompt file is named after the style, and `Reference/` images are selected by numeric filename prefix such as `0003_*.png`.
 - `rundeer web --open` serves the current node workbench at `/`, `/nodes`, and `/explore`; the older form UI is available at `/classic` only as a fallback.
-- Web command nodes call the same CLI engine through `/api/plan` for dry-runs and `/api/run` for live execution. Each web run writes a config snapshot to `.rundeer/web/runs/<run-id>/config.json`.
+- Web command nodes call the same CLI engine through `/api/plan` for dry-runs and `/api/run` for live execution. Each web run writes a config snapshot to `.rundeer/runs/<run-id>/config.json`.
 
 When working inside this repo, prefer `python3 rundeer.py ...` if the `rundeer` executable is not known to be installed. If the user is using an installed copy, `rundeer ...` is fine.
 
@@ -207,11 +207,15 @@ Routes:
 
 Nodes view:
 
-- **Primitives**: String, Number, Image File, Video File, File Path, String Join, Compress Image, Math, String Op.
-- **Prompt**: Prompt Filter, Definition.
+- **Primitives**: String, Number, Boolean, Vector, File, String Join.
+- **Operations**: Compress, Blur, Math, String Op, Random.
+- **Prompt**: Prompt, Prompt Filter, Definition.
 - **Commands**: Image, Video, Edit, Merge, Extend.
+- **Bundle**: Bundle, Create Bundle, Sample Bundle.
 - **Loop**: Loop Decompose and Loop Output. Use matching `loop_id` values to iterate bundles.
-- **Output**: Preview. It displays upstream image, video, text, or bundles inline and can collapse upstream graph chains.
+- **Coordinates**: Coordinate, Mapping.
+- **Vector**: Vector, Mix.
+- **Output**: Preview, Render. Preview displays upstream image, video, text, or bundles inline and can collapse upstream graph chains.
 
 Important graph behavior:
 
@@ -225,7 +229,7 @@ Explore view:
 
 - Split-pane file tree and preview panel.
 - Supports workspace filtering, expand/collapse, open-in-tab, copy path, and previews for supported media and text artifacts.
-- Useful for inspecting `.rundeer/outputs`, `.rundeer/web/runs`, configs, logs, docs, and generated assets.
+- Useful for inspecting `.rundeer/outputs`, `.rundeer/graphs`, configs, logs, docs, and generated assets.
 
 ## Config Rules
 
@@ -286,4 +290,4 @@ For live runs, confirm:
 - Any ignored references, missing start frames, invalid inputs, or API warnings are relayed to the user.
 - The final response includes the command used and the important output paths.
 
-For graph runs, also confirm the run dock reached `done`, terminal command nodes no longer show failed state, produced artifacts appear in Explore or `/api/artifacts`, and the relevant `.rundeer/web/runs/<run-id>/config.json` reflects the graph inputs.
+For graph runs, also confirm the run dock reached `done`, terminal command nodes no longer show failed state, produced artifacts appear in Explore or `/api/artifacts`, and the relevant `.rundeer/runs/<run-id>/config.json` reflects the graph inputs.

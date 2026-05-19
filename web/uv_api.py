@@ -107,12 +107,18 @@ def vector(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     scalar_v: Optional[float] = float(scalar) if scalar is not None and scalar != "" else None
     arr = uv_ops.vector_op(a, b, op, scalar=scalar_v)
     npy, png = uv_ops.save_map(arr, root, f"vec_{op}")
-    return {
+    result: Dict[str, Any] = {
         "path": _relpath(root, npy),
         "preview": _relpath(root, png),
         "image": _relpath(root, png),
         **_shape_meta(arr),
     }
+    # When both inputs are scalar/vector primitives the result is a 1×1 map.
+    # Include the raw value so downstream size/position sockets (which expect
+    # a plain [x, y, ...] array) don't receive an unreadable .npy path.
+    if arr.ndim >= 3 and arr.shape[0] == 1 and arr.shape[1] == 1:
+        result["value"] = arr[0, 0].tolist()
+    return result
 
 
 def mapping(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -170,16 +176,16 @@ def render(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     pixel_in = payload.get("pixel")
     uv_in = payload.get("uv")
     if not pixel_in:
-        raise ValueError("uv-render: 'pixel' input is required")
+        raise ValueError("render: 'pixel' input is required")
     if not uv_in:
-        raise ValueError("uv-render: 'uv' input is required")
+        raise ValueError("render: 'uv' input is required")
     pixel_path = _safe_path(root, str(pixel_in)) if isinstance(pixel_in, str) else _safe_path(root, str(pixel_in.get("path") or ""))
     uv_path = _safe_path(root, str(uv_in)) if isinstance(uv_in, str) else _safe_path(root, str(uv_in.get("path") or ""))
 
     pixel = uv_ops.load_image_rgba(pixel_path)
     uv_map = uv_ops.load_map(uv_path)
     if uv_map.ndim != 3 or uv_map.shape[-1] < 2:
-        raise ValueError("uv-render: 'uv' input must be a 2-channel UV map")
+        raise ValueError("render: 'uv' input must be a 2-channel UV map")
 
     interp = str(payload.get("interp") or "bilinear")
     extension = str(payload.get("extension") or "clamp")
