@@ -1,21 +1,21 @@
-/**
- * CLI entry point: prepare everything needed to enter the live variant poll loop.
- *
- * Does (all in one command):
- *   1. Check .impeccable/live/config.json (returns config_missing if first-ever run)
- *   2. Start the live server in the background (or reuse a running one)
- *   3. Inject the browser script tag into the project's entry file
- *   4. Read PRODUCT.md / DESIGN.md for project context
- *   5. Print a single JSON blob with everything the agent needs
- *
- * After this, the agent's only remaining steps are:
- *   - Open the project's live dev/preview URL in the browser (optional, if browser automation exists)—not `serverPort`; that port is the Impeccable helper for /live.js and /poll
- *   - Enter the poll loop: `node live-poll.mjs`
- *
- * Usage:
- *   node live.mjs                   # Prepare everything, print JSON, exit
- *   node live.mjs --help
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -52,7 +52,7 @@ The agent should then:
     process.exit(0);
   }
 
-  // 1. Check config (fail fast if missing — no point starting anything else)
+  
   const checkOut = runScript('live-inject.mjs', ['--check']);
   const checkResult = safeParse(checkOut);
   if (!checkResult || !checkResult.ok) {
@@ -60,14 +60,14 @@ The agent should then:
     process.exit(0);
   }
 
-  // 2. Start server (or reuse existing)
+  
   const serverInfo = ensureServerRunning();
   if (!serverInfo) {
     console.log(JSON.stringify({ ok: false, error: 'server_start_failed' }));
     process.exit(1);
   }
 
-  // 3. Inject the script tag at the current port
+  
   const injectOut = runScript('live-inject.mjs', ['--port', String(serverInfo.port)]);
   const injectResult = safeParse(injectOut);
   if (!injectResult || !injectResult.ok) {
@@ -80,16 +80,16 @@ The agent should then:
     process.exit(1);
   }
 
-  // 4. Load PRODUCT.md + DESIGN.md context (auto-migrates legacy .impeccable.md)
+  
   const ctx = loadContext(process.cwd());
 
-  // 5. Compute drift-heal: compare resolved inject targets against the
-  //    project's HTML files. Orphans are HTML files not covered by config.
-  //    Warning only — the agent decides whether to act.
+  
+  
+  
   const resolvedFiles = resolveFiles(process.cwd(), checkResult.config);
   const drift = scanForDrift(process.cwd(), resolvedFiles, checkResult.config);
 
-  // 6. Emit everything the agent needs
+  
   console.log(JSON.stringify({
     ok: true,
     serverPort: serverInfo.port,
@@ -106,16 +106,16 @@ The agent should then:
   }, null, 2));
 }
 
-/**
- * Drift-heal scan. Walks the project for HTML files under common
- * page-source directories (public/, src/, app/, pages/) and reports any
- * that aren't covered by the resolved inject targets. This is purely
- * advisory — the agent can ignore it, or suggest the user add the
- * orphans to config.files.
- *
- * Skipped if config.files already contains at least one glob pattern
- * covering everything in practice (signaled by the orphan count being 0).
- */
+
+
+
+
+
+
+
+
+
+
 function scanForDrift(rootDir, resolvedFiles, config) {
   const SCAN_ROOTS = ['public', 'src', 'app', 'pages'];
   const IGNORE_DIRS = new Set([
@@ -125,8 +125,8 @@ function scanForDrift(rootDir, resolvedFiles, config) {
 
   const resolvedSet = new Set(resolvedFiles.map((f) => f.split(path.sep).join('/')));
 
-  // Files matching the user's `exclude` globs are intentional omissions,
-  // not drift. Compile them to regexes so the orphan list stays signal.
+  
+  
   const userExcludeRegexes = (Array.isArray(config.exclude) ? config.exclude : [])
     .map((p) => globToRegex(p));
   const isUserExcluded = (rel) => userExcludeRegexes.some((re) => re.test(rel));
@@ -166,11 +166,11 @@ function scanForDrift(rootDir, resolvedFiles, config) {
   };
 }
 
-/**
- * Same glob-to-regex mapping used by live-inject.mjs. Kept inline here
- * to avoid a circular import (live-inject.mjs already imports nothing
- * from live.mjs). The two must stay in sync.
- */
+
+
+
+
+
 function globToRegex(pattern) {
   let re = '';
   let i = 0;
@@ -198,9 +198,9 @@ function globToRegex(pattern) {
   return new RegExp('^' + re + '$');
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+
+
+
 
 function runScript(name, args) {
   const scriptPath = path.join(__dirname, name);
@@ -208,7 +208,7 @@ function runScript(name, args) {
   try {
     return execSync(cmd, { encoding: 'utf-8', cwd: process.cwd(), timeout: 15_000 });
   } catch (err) {
-    // execSync throws on non-zero exit; return stdout if any
+    
     return err.stdout || err.message || '';
   }
 }
@@ -217,29 +217,29 @@ function safeParse(out) {
   try { return JSON.parse(String(out).trim()); } catch { return null; }
 }
 
-/**
- * Return { pid, port, token } for the running live server, starting one if needed.
- */
+
+
+
 function ensureServerRunning() {
-  // Try to reuse an existing server
+  
   try {
     const existing = readLiveServerInfo(process.cwd())?.info;
     if (existing && existing.pid) {
       try {
-        process.kill(existing.pid, 0); // throws if dead
+        process.kill(existing.pid, 0); 
         return existing;
-      } catch { /* stale PID file — the server script will clean it up */ }
+      } catch {  }
     }
-  } catch { /* no PID file */ }
+  } catch {  }
 
-  // Start a new server
+  
   const out = runScript('live-server.mjs', ['--background']);
   return safeParse(out);
 }
 
-// ---------------------------------------------------------------------------
-// Auto-execute
-// ---------------------------------------------------------------------------
+
+
+
 
 const _running = process.argv[1];
 if (_running?.endsWith('live.mjs') || _running?.endsWith('live.mjs/')) {

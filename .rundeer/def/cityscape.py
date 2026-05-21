@@ -15,7 +15,7 @@ def cityscape():
     urban_concepts = load_words("urban_concepts.txt")
     colors = load_words("colors.txt")
 
-    # Category-specific pools drawn from new specialized urban vocab for high diversity and to avoid repetition
+
     times = ["twilight", "midnight", "dawn", "blue hour", "golden pollution glow", "pouring rain", "humid summer night", "fog shrouded", "heatwave mirage", "witching hour"]
     macro_elements = ["monolithic skyscrapers", "dilapidated high-rises", "brutalist towers piercing the haze", "neon-drenched office blocks", "graffiti-scarred tenements", "crumbling warehouses with rooftop coops"]
     decay_phrases = ["layered palimpsest of peeling posters and murals", "fire escapes tangled with laundry and extension cords", "balconies overflowing with wild plants and rusted grills", "windows patched with cardboard and plastic sheeting", "satellite dishes forming chaotic skyline forests"]
@@ -27,7 +27,7 @@ def cityscape():
     unique_anomalies = ["overturned barricades from last night's protest", "abandoned strollers filled with belongings", "ghost bike memorials wrapped in flowers", "illegal rooftop party remnants with fairy lights", "drone crash sites amid EV scooter graveyards", "AR graffiti overlays hacking billboards", "bitcoin atm with heist damage", "pop-up underground club entrance hidden behind dumpsters", "community mural depicting local legends next to burnt-out cars"]
     sound_smell_pools = ["distant sirens competing with bass thumps", "tinny radios and busker guitars echoing", "acrid grilled meat mixed with diesel and ozone", "garbage stench and wet concrete after rain", "mechanical subway clatter and shouting vendors", "faint burnt rubber and fried food wafting", "rhythmic thump from tinted cars and mechanical hums"]
 
-    # In-depth modular sentence composition: 15 varied templates ensure unique, non-repetitive generations with fractal depth (macro, street, micro, anomalies). Templates designed for smooth substitution from urban vocab.
+
     templates = [
         "A {adj} dirty modern cityscape sprawls under a brooding {color} {time} sky, where {macro} thrust upward like jagged teeth, their {decay} facades telling centuries of urban stories through overlapping {adj} graffiti, torn posters, and intricate street murals.",
         "Upper levels reveal broken windows boarded haphazardly, rooftops cluttered with pigeon coops, tangled antennas, and makeshift gardens gone feral against the {adj} haze.",
@@ -46,11 +46,11 @@ def cityscape():
         "From the monolithic scale of the skyline to the intimate textures of moss-filled cracks and shimmering reflections, the city reveals its {adj} soul—one of unyielding spirit hidden in layers of grime and neon."
     ]
 
-    # Select 8-11 random unique templates for varied length, focus, and uniqueness per generation
+
     selected = random.sample(templates, k=random.randint(8, 11))
     random.shuffle(selected)
 
-    # Generate rich random elements for substitution (pulled from specialized vocab)
+
     parts = {
         "adj": random.choice(urban_adjs),
         "color": random.choice(colors),
@@ -68,7 +68,7 @@ def cityscape():
         "noun": random.choice(urban_nouns)
     }
 
-    # Build the final description by formatting selected templates with dynamic replacement
+
     paragraphs = []
     for template in selected:
         filled = template.format(**parts)

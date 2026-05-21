@@ -65,7 +65,7 @@ export function readLiveServerInfo(cwd = process.cwd()) {
     try {
       return { info: JSON.parse(fs.readFileSync(filePath, 'utf-8')), path: filePath };
     } catch {
-      /* try next */
+      
     }
   }
   return null;

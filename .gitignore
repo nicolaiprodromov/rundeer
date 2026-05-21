@@ -10,17 +10,18 @@ __pycache__/
 !.env.example
 !.env.*.example
 
-.rundeer/cache/
-.rundeer/logs/
-.rundeer/outputs/
-.rundeer/benchmark/
-.rundeer/web/
-.rundeer/agent/
-.rundeer/circuits/
-.rundeer/graphs/
-.rundeer/runs/
+.rundeer/data/cache/
+.rundeer/data/logs/
+.rundeer/data/outputs/
+.rundeer/data/runs/
+.rundeer/data/agent/
+.rundeer/data/graphs/
+.rundeer/data/benchmark/
 
 .crush/
 .vscode/
 .niku/
+
+.repomix/
+repomix-output.*
 

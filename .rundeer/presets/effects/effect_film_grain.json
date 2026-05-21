@@ -6,7 +6,7 @@
   "input": null,
 
   "output": {
-    "dir": ".rundeer/outputs",
+    "dir": ".rundeer/data/outputs",
     "name": "effect_film_grain"
   },
 

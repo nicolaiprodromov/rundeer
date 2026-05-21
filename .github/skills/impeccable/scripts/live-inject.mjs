@@ -1,17 +1,17 @@
-/**
- * CLI helper: insert/remove the live variant mode script tag in the project's
- * main HTML entry point.
- *
- * On first live run, the agent generates `.impeccable/live/config.json`
- * with the project's insertion target (framework-specific). On
- * every subsequent run, this script handles insert/remove deterministically
- * with zero LLM involvement.
- *
- * Usage:
- *   node live-inject.mjs --port PORT   # Insert the live script tag
- *   node live-inject.mjs --remove      # Remove the live script tag
- *   node live-inject.mjs --check       # Check whether live config exists
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,11 +23,11 @@ const CONFIG_PATH = resolveLiveConfigPath({ cwd: process.cwd(), scriptsDir: __di
 const MARKER_OPEN_TEXT = 'impeccable-live-start';
 const MARKER_CLOSE_TEXT = 'impeccable-live-end';
 
-/**
- * Hard-excluded directory patterns. These are NEVER user-facing pages and
- * matching them would silently inject tracking scripts into third-party
- * code. The user cannot turn these off via config — they are the floor.
- */
+
+
+
+
+
 const HARD_EXCLUDES = [
   '**/node_modules/**',
   '**/.git/**',
@@ -74,7 +74,7 @@ Output (JSON):
     return;
   }
 
-  // Load config
+  
   if (!fs.existsSync(CONFIG_PATH)) {
     console.error(JSON.stringify({ ok: false, error: 'config_missing', path: CONFIG_PATH }));
     process.exit(1);
@@ -103,7 +103,7 @@ Output (JSON):
     return;
   }
 
-  // Insert mode — need --port
+  
   const portIdx = args.indexOf('--port');
   const port = portIdx !== -1 ? parseInt(args[portIdx + 1], 10) : NaN;
   if (!Number.isFinite(port)) {
@@ -133,13 +133,13 @@ Output (JSON):
   if (!anyInserted) process.exit(1);
 }
 
-/**
- * Expand config.files (which may contain glob patterns) into a literal list
- * of existing file paths relative to rootDir. Literal entries pass through;
- * glob patterns are expanded via fs.globSync. HARD_EXCLUDES and config.exclude
- * are applied as filters. Duplicates are removed. Order is preserved by
- * first appearance.
- */
+
+
+
+
+
+
+
 export function resolveFiles(rootDir, config) {
   const patterns = config.files;
   const userExcludes = Array.isArray(config.exclude) ? config.exclude : [];
@@ -153,9 +153,9 @@ export function resolveFiles(rootDir, config) {
   const out = [];
   for (const pat of patterns) {
     if (!isGlob(pat)) {
-      // Literal path — include even if it doesn't exist yet; the caller
-      // reports file_not_found per-entry. Exclude list doesn't apply to
-      // explicit literal entries (user named it on purpose).
+      
+      
+      
       if (!seen.has(pat)) {
         seen.add(pat);
         out.push(pat);
@@ -181,13 +181,13 @@ export function resolveFiles(rootDir, config) {
   return out;
 }
 
-/**
- * Convert a glob pattern to a RegExp. Supports:
- *   **  → any number of path segments (including zero)
- *   *   → any chars except `/`
- *   ?   → any single char except `/`
- * Paths are normalized to forward slashes before matching.
- */
+
+
+
+
+
+
+
 function globToRegex(pattern) {
   let re = '';
   let i = 0;
@@ -195,8 +195,8 @@ function globToRegex(pattern) {
     const c = pattern[i];
     if (c === '*') {
       if (pattern[i + 1] === '*') {
-        // ** — any number of segments, including zero. Handle the common
-        // **/ and /** forms so `a/**/b` matches `a/b` as well as `a/x/y/b`.
+        
+        
         if (pattern[i + 2] === '/') {
           re += '(?:.*/)?';
           i += 3;
@@ -222,9 +222,9 @@ function globToRegex(pattern) {
   return new RegExp('^' + re + '$');
 }
 
-// ---------------------------------------------------------------------------
-// Core operations
-// ---------------------------------------------------------------------------
+
+
+
 
 function validateConfig(cfg) {
   if (!cfg || typeof cfg !== 'object') throw new Error('config.json must be an object');
@@ -268,35 +268,35 @@ function buildTagBlock(syntax, port) {
 
 function insertTag(content, config, port) {
   const block = buildTagBlock(config.commentSyntax, port);
-  // insertBefore: match the LAST occurrence. Anchors like `</body>` naturally
-  // belong at the end, and the same literal can appear earlier in code blocks
-  // within rendered documentation pages.
+  
+  
+  
   if (config.insertBefore) {
     const idx = content.lastIndexOf(config.insertBefore);
     if (idx === -1) return content;
     return content.slice(0, idx) + block + content.slice(idx);
   }
-  // insertAfter: match the FIRST occurrence — typical anchors like `<head>` or
-  // `<body>` open near the top of the document.
+  
+  
   const idx = content.indexOf(config.insertAfter);
   if (idx === -1) return content;
   const after = idx + config.insertAfter.length;
-  // Preserve a single trailing newline if the anchor didn't end with one
+  
   const prefix = content[after] === '\n' ? content.slice(0, after + 1) : content.slice(0, after) + '\n';
   return prefix + block + content.slice(prefix.length);
 }
 
-/**
- * Remove the live script block. Matches either HTML or JSX comment markers
- * regardless of config (so stale tags from a wrong config can still be cleaned).
- *
- * Indent-preserving: captures any whitespace immediately preceding the opener
- * marker and re-emits it in place of the removed block. `insertTag` inserted
- * the block *after* the original line's indent and *before* the anchor (e.g.
- * `</body>`), which moved the indent onto the opener line and left the anchor
- * unindented. Replacing the whole block (plus its trailing newline) with just
- * the captured indent hands the indent back to the anchor that follows.
- */
+
+
+
+
+
+
+
+
+
+
+
 function removeTag(content, _syntax) {
   const patterns = [
     /([ \t]*)<!--\s*impeccable-live-start\s*-->[\s\S]*?<!--\s*impeccable-live-end\s*-->[ \t]*\n/,
@@ -309,25 +309,25 @@ function removeTag(content, _syntax) {
   return content;
 }
 
-// ---------------------------------------------------------------------------
-// Content-Security-Policy meta-tag patcher
-//
-// When the user's HTML carries `<meta http-equiv="Content-Security-Policy">`,
-// the cross-origin load of /live.js (and the SSE/POST connection back to
-// localhost:PORT) is blocked unless the CSP explicitly allows that origin.
-//
-// On insert: append `http://localhost:PORT` to `script-src` and `connect-src`,
-// and stash the original `content` value in a `data-impeccable-csp-original`
-// attribute (base64) so revert is exact.
-//
-// On remove: detect the marker attribute, decode it, restore the original
-// content value verbatim, drop the marker.
-//
-// Header-based CSP (Next.js headers, Nuxt routeRules, SvelteKit kit.csp,
-// shared helpers) is NOT patched here — those need framework-specific config
-// edits and are handled via the existing detect-csp.mjs reference output.
-// Only the in-source meta-tag form gets the auto-patch.
-// ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const CSP_MARKER_ATTR = 'data-impeccable-csp-original';
 
@@ -357,9 +357,9 @@ function appendOriginToDirective(csp, directive, origin) {
     if (tokens.includes(origin)) return csp;
     return csp.replace(re, `${m[1]}${m[2]}${m[3]} ${[...tokens, origin].join(' ')}`);
   }
-  // Directive missing — add it. Use 'self' + origin so we don't inadvertently
-  // narrow the policy compared to the default-src fallback (most users with
-  // an explicit CSP have 'self' there).
+  
+  
+  
   return csp.trim().replace(/;?\s*$/, '') + `; ${directive} 'self' ${origin}`;
 }
 
@@ -368,12 +368,12 @@ export function patchCspMeta(content, port) {
   if (tags.length === 0) return content;
   const origin = `http://localhost:${port}`;
 
-  // Walk last-to-first so prior splices don't invalidate later indices.
+  
   let result = content;
   for (let i = tags.length - 1; i >= 0; i--) {
     const tag = tags[i];
     const attrs = tag.attrs;
-    if (getAttr(attrs, CSP_MARKER_ATTR)) continue; // already patched
+    if (getAttr(attrs, CSP_MARKER_ATTR)) continue; 
     const contentAttr = getAttr(attrs, 'content');
     if (!contentAttr) continue;
 
@@ -381,21 +381,21 @@ export function patchCspMeta(content, port) {
     let patched = original;
     patched = appendOriginToDirective(patched, 'script-src', origin);
     patched = appendOriginToDirective(patched, 'connect-src', origin);
-    // The shader overlay during 'generating' creates a screenshot via
-    // URL.createObjectURL, producing a `blob:` URL — img-src 'self' rejects
-    // those. Add `blob:` so the overlay doesn't throw a CSP violation.
+    
+    
+    
     patched = appendOriginToDirective(patched, 'img-src', 'blob:');
     if (patched === original) continue;
 
     const newContentAttr = `content=${contentAttr.quote}${patched}${contentAttr.quote}`;
     const marker = `${CSP_MARKER_ATTR}="${Buffer.from(original, 'utf-8').toString('base64')}"`;
-    // The tagRe captures any whitespace between the last attribute and the
-    // closing `/>` as part of `attrs`. Naively appending ` ${marker}` after
-    // a replace would land it BEFORE that trailing space, leaving a double
-    // space inside attrs and clobbering the space before `/>`. Split off
-    // the trailing whitespace, splice the marker into the attribute body,
-    // and re-append the original trailing whitespace so a self-closing
-    // `<meta … />` round-trips byte-for-byte.
+    
+    
+    
+    
+    
+    
+    
     const trailingWs = (attrs.match(/[ \t]*$/) || [''])[0];
     const attrsBody = attrs.slice(0, attrs.length - trailingWs.length);
     const newAttrs = attrsBody.replace(contentAttr.full, newContentAttr) + ' ' + marker + trailingWs;
@@ -424,7 +424,7 @@ export function revertCspMeta(content) {
 
     const newContentAttr = `content=${contentAttr.quote}${originalValue}${contentAttr.quote}`;
     let newAttrs = tag.attrs.replace(contentAttr.full, newContentAttr);
-    // Drop the marker attribute and any single space immediately preceding it.
+    
     newAttrs = newAttrs.replace(new RegExp(`\\s*${origAttr.full}`), '');
     const newTag = tag.full.replace(tag.attrs, newAttrs);
 
@@ -433,9 +433,9 @@ export function revertCspMeta(content) {
   return result;
 }
 
-// ---------------------------------------------------------------------------
-// Auto-execute
-// ---------------------------------------------------------------------------
+
+
+
 
 const _running = process.argv[1];
 if (_running?.endsWith('live-inject.mjs') || _running?.endsWith('live-inject.mjs/')) {
@@ -443,4 +443,4 @@ if (_running?.endsWith('live-inject.mjs') || _running?.endsWith('live-inject.mjs
 }
 
 export { insertTag, removeTag, validateConfig, buildTagBlock };
-// patchCspMeta + revertCspMeta are exported above where they're defined.
+

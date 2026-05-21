@@ -1,0 +1,64 @@
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "input": {
+    "maxFileSize": 50000000
+  },
+  "output": {
+    "filePath": ".repomix/rundeer-context.xml",
+    "style": "xml",
+    "parsableStyle": false,
+    "compress": true,
+    "headerText": "Rundeer whole-project AI context pack. Source files remain authoritative; generated output is read-only context.",
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true,
+    "removeComments": true,
+    "removeEmptyLines": true,
+    "showLineNumbers": false,
+    "truncateBase64": true,
+    "topFilesLength": 20,
+    "tokenCountTree": 1000,
+    "includeFullDirectoryStructure": false,
+    "git": {
+      "sortByChanges": true,
+      "sortByChangesMaxCommits": 100,
+      "includeDiffs": false,
+      "includeLogs": false,
+      "includeLogsCount": 20
+    }
+  },
+  "include": [
+    "**/*",
+    ".github/**/*.md",
+    ".gitignore",
+    ".repomixignore",
+    ".env.example"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDotIgnore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      ".env",
+      ".env.*",
+      ".rundeer/data/**",
+      ".repomix/**",
+      ".vscode/**",
+      ".crush/**",
+      ".niku/**",
+      "**/__pycache__/**",
+      "**/.pytest_cache/**",
+      "**/.mypy_cache/**",
+      "**/.ruff_cache/**",
+      "**/node_modules/**",
+      "**/Reference/**",
+      "repomix-output.*"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}

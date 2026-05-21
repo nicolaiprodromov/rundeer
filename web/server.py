@@ -1,4 +1,4 @@
-"""Stdlib web server for the rundeer local console."""
+
 from __future__ import annotations
 
 import ast
@@ -22,8 +22,9 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import parse_qs, quote, unquote, urlparse, urlunparse
 
 from rundeer import __version__
+from rundeer.core import paths as rpaths
+from rundeer.core.bootstrap import ensure_rundeer_dir
 from rundeer.core.config import brain_dir, normalize_config, normalize_rate_limits, normalize_web_settings
-from rundeer.scaffold.bootstrap import ensure_rundeer_dir
 from rundeer.web.animator import log_line, run_console
 
 
@@ -47,7 +48,7 @@ SKIP_DIRS = {
 ALLOWED_DOTFILE_ROOTS = {".rundeer"}
 COMMANDS = {"image", "video", "edit", "extend", "merge", "batch", "benchmark"}
 
-LOGO_DIR = Path(__file__).resolve().parent.parent / "cli" / "assets"
+LOGO_DIR = rpaths.package_root() / "cli" / "assets"
 LOGO_FILES = ("logo_frame1.txt", "logo.txt", "logo_frame2.txt")
 _logo_cache: Optional[List[str]] = None
 
@@ -84,7 +85,7 @@ def serve(
     server_thread = threading.Thread(target=httpd.serve_forever, name="rundeer-web", daemon=True)
     server_thread.start()
 
-    # Optional: spin up the agent WebSocket server in a daemon thread.
+
     if enable_agent:
         try:
             from rundeer.web.agent.ws_server import start_agent_ws_server
@@ -103,13 +104,13 @@ def serve(
                 else:
                     log_line(f"agent disabled (settings)", dim=True)
                     _ = effective_port
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log_line(f"agent failed to start: {exc}", dim=True)
 
     if open_browser:
         try:
             webbrowser.open(url)
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
     try:
         run_console(url=url, project_root=root, server=httpd)
@@ -118,7 +119,7 @@ def serve(
             handle = getattr(httpd, "agent_handle", None)
             if handle is not None:
                 handle.stop()
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
         httpd.shutdown()
         httpd.server_close()
@@ -147,7 +148,7 @@ class RundeerWebServer(ThreadingHTTPServer):
         with self.runs_lock:
             self.request_count += 1
             self.last_request = f"{method} {path}"
-        # Skip the chatty static + polling endpoints so the console stays readable.
+
         if path.startswith(("/static/", "/api/logo", "/api/state")):
             return
         if method == "GET" and path.startswith("/api/runs/"):
@@ -167,7 +168,7 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
     def log_request(self, code: Any = "-", size: Any = "-") -> None:
         return
 
-    def do_GET(self) -> None:  # noqa: N802
+    def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
         query = parse_qs(parsed.query)
@@ -176,7 +177,7 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             if path in {"/", "/index.html", "/nodes", "/explore", "/runs", "/graphs", "/settings"}:
                 self._send_static(STATIC_DIR / "node-editor.html")
             elif path == "/classic":
-                # Legacy form-based UI kept under /classic for fallback.
+
                 self._send_static(STATIC_DIR / "index.html")
             elif path.startswith("/static/"):
                 self._send_static(safe_static_path(path.removeprefix("/static/")))
@@ -243,10 +244,10 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             self._send_error(HTTPStatus.FORBIDDEN, str(exc))
         except FileNotFoundError as exc:
             self._send_error(HTTPStatus.NOT_FOUND, str(exc))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             self._send_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
-    def do_POST(self) -> None:  # noqa: N802
+    def do_POST(self) -> None:
         parsed = urlparse(self.path)
         self.server.record_request("POST", parsed.path)
         try:
@@ -308,7 +309,7 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             self._send_error(HTTPStatus.BAD_REQUEST, str(exc))
         except FileNotFoundError as exc:
             self._send_error(HTTPStatus.NOT_FOUND, str(exc))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             self._send_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
     def _read_json(self) -> Dict[str, Any]:
@@ -380,22 +381,23 @@ def relpath(root: Path, path: Path) -> str:
         return str(path)
 
 
-# ── Web persistence (.rundeer/graphs, .rundeer/runs, .rundeer/web-state.json) ──
+
 
 def graphs_dir(root: Path) -> Path:
-    return root / ".rundeer" / "graphs"
+    return rpaths.graphs_dir(root)
 
 
 def runs_dir(root: Path) -> Path:
-    return root / ".rundeer" / "runs"
+    return rpaths.runs_dir(root)
 
 
 def web_state_path(root: Path) -> Path:
-    return root / ".rundeer" / "web-state.json"
+    return rpaths.web_state_path(root)
 
 
 def ensure_web_storage_dirs(root: Path) -> None:
-    (root / ".rundeer").mkdir(parents=True, exist_ok=True)
+    rpaths.rundeer_dir(root).mkdir(parents=True, exist_ok=True)
+    rpaths.data_dir(root).mkdir(parents=True, exist_ok=True)
     graphs_dir(root).mkdir(parents=True, exist_ok=True)
     runs_dir(root).mkdir(parents=True, exist_ok=True)
 
@@ -503,7 +505,7 @@ def list_graphs(root: Path) -> List[Dict[str, Any]]:
             continue
         try:
             records.append(_graph_record(root, path))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             records.append({
                 "id": path.name,
                 "name": path.stem,
@@ -589,12 +591,12 @@ def load_run_records(root: Path) -> Dict[str, Dict[str, Any]]:
                     record["output"] = f"{output}\n[server stopped before this run completed]\n"
                 write_run_record(root, record)
             records[run_id] = record
-        except Exception:  # noqa: BLE001
+        except Exception:
             continue
     return records
 
 
-# ── Agent brain graph endpoints ───────────────────────────────────────────
+
 
 def _brain_graph_payload(root: Path, agent_id: Optional[str] = None) -> Dict[str, Any]:
     from .agent.brain_graph import compile_brain_graph, load_or_seed_brain_graph
@@ -678,7 +680,7 @@ def project_url(rel: str) -> str:
 
 
 def build_state(root: Path, *, light: bool = False) -> Dict[str, Any]:
-    config_path = root / ".rundeer" / "config.json"
+    config_path = rpaths.config_path(root)
     config_error = None
     raw_config = read_project_config(root)
     if config_path.exists() and not raw_config:
@@ -705,7 +707,7 @@ def build_state(root: Path, *, light: bool = False) -> Dict[str, Any]:
 
 
 def config_path(root: Path) -> Path:
-    return root / ".rundeer" / "config.json"
+    return rpaths.config_path(root)
 
 
 def _agent_state(server: "RundeerWebServer") -> Dict[str, Any]:
@@ -721,7 +723,7 @@ def _agent_state(server: "RundeerWebServer") -> Dict[str, Any]:
     if settings is not None:
         try:
             out.update(settings.to_safe_dict())
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
     return out
 
@@ -815,10 +817,10 @@ def filter_prompt_image_urls(root: Path, value: Any) -> List[str]:
     values = _coerce_filter_image_values(value)
     if not values:
         return []
-    from rundeer.core.media import encode_image  # lazy import; PIL-backed
+    from rundeer.core.media import encode_image
 
     image_urls: List[str] = []
-    cache_dir = root / ".rundeer" / "cache" / "filter-prompt"
+    cache_dir = rpaths.cache_dir(root, "filter-prompt")
     for raw in values:
         image_ref = raw
         if image_ref.startswith(("http://", "https://", "data:image/")):
@@ -847,12 +849,12 @@ def filter_prompt_messages(prompt_text: str, instructions: str, image_urls: List
 
 
 def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Call the xAI chat completions API to transform a prompt.
 
-    Reads MODEL_API_KEY and BASE_URL from environment (project .env loaded via
-    subprocess environment). Never logs the key value.
-    """
-    from rundeer.core.config import load_project_env  # lazy import
+
+
+
+
+    from rundeer.core.config import load_project_env
 
     load_project_env(str(root))
 
@@ -870,7 +872,7 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         image_urls = filter_prompt_image_urls(root, payload.get("images") or payload.get("image_urls") or payload.get("input"))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return {"error": f"image input: {exc}", "filtered_prompt": prompt_text}
 
     def _opt_num(key: str) -> Any:
@@ -912,7 +914,7 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     if seed is not None:
         request_body["seed"] = seed
 
-    # presence/frequency/stop are NOT supported on reasoning models per xAI docs.
+
     if not is_reasoning:
         fp = _opt_num("frequency_penalty")
         if fp is not None:
@@ -943,24 +945,24 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310 – local API call
+        with urllib.request.urlopen(req, timeout=120) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         filtered = data["choices"][0]["message"]["content"]
         return {"filtered_prompt": filtered}
     except urllib.error.HTTPError as exc:
         body_err = exc.read().decode("utf-8", errors="replace")[:300]
         return {"error": f"HTTP {exc.code}: {body_err}", "filtered_prompt": prompt_text}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return {"error": str(exc), "filtered_prompt": prompt_text}
 
 
 def compress_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Compress an image to reduce file size for chained edit/merge calls.
 
-    Inputs: path (project-relative), quality (0-100), max_dimension (optional).
-    Output: writes to .rundeer/cache/compressed/ and returns {path, bytes, originalBytes}.
-    """
-    from PIL import Image  # lazy import
+
+
+
+
+    from PIL import Image
 
     rel = str(payload.get("path") or "").strip()
     if not rel:
@@ -974,7 +976,7 @@ def compress_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     if not src.is_file():
         raise FileNotFoundError(rel)
 
-    cache_dir = root / ".rundeer" / "cache" / "compressed"
+    cache_dir = rpaths.cache_dir(root, "compressed")
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     suffix = ".jpg" if quality < 95 else src.suffix.lower()
@@ -998,7 +1000,7 @@ def compress_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         elif suffix == ".webp":
             save_kwargs = {"quality": quality, "method": 6}
             fmt = "WEBP"
-        else:  # PNG
+        else:
             save_kwargs = {"optimize": True}
             fmt = "PNG"
         im.save(dest, format=fmt, **save_kwargs)
@@ -1015,13 +1017,13 @@ VIDEO_COMPRESS_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
 
 
 def blur_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Gaussian-blur an image and return the cached output path.
 
-    Inputs: path (project-relative), radius (float, pixels).
-    Output: writes to .rundeer/cache/blurred/ and returns {path, bytes, radius}.
-    Preserves the source format (PNG stays PNG, JPEG stays JPEG, etc.).
-    """
-    from PIL import Image, ImageFilter  # lazy import — Pillow is already a Compress dep
+
+
+
+
+
+    from PIL import Image, ImageFilter
 
     rel = str(payload.get("path") or "").strip()
     if not rel:
@@ -1032,7 +1034,7 @@ def blur_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError(f"radius must be a number: {exc}") from exc
     if radius < 0:
         radius = 0.0
-    # Cap to a reasonable upper bound to keep PIL responsive on big inputs.
+
     radius = min(radius, 500.0)
 
     src = safe_project_path(root, rel)
@@ -1043,23 +1045,23 @@ def blur_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     if ext not in IMAGE_COMPRESS_EXTS:
         raise ValueError(f"unsupported image extension: {ext or '(none)'}")
 
-    cache_dir = root / ".rundeer" / "cache" / "blurred"
+    cache_dir = rpaths.cache_dir(root, "blurred")
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    # Tag the cached filename with the radius so distinct settings don't
-    # collide. Use a stable, filesystem-safe stringification.
+
+
     r_tag = f"{radius:.2f}".rstrip("0").rstrip(".") or "0"
     r_tag = r_tag.replace(".", "p")
-    # Normalise the output extension: PIL's GaussianBlur can't preserve
-    # animated GIF frames; collapse those to PNG so we always emit a
-    # single-frame, fully-blurred raster.
+
+
+
     out_ext = ext if ext in (".png", ".jpg", ".jpeg", ".webp") else ".png"
     dest = cache_dir / f"{src.stem}_blur{r_tag}{out_ext}"
 
     with Image.open(src) as im:
         im.load()
-        # Preserve alpha where possible. Gaussian blur on "P"/"LA" modes
-        # is undefined in PIL — coerce to RGBA/RGB first.
+
+
         if im.mode in ("P", "LA"):
             im = im.convert("RGBA")
         blurred = im.filter(ImageFilter.GaussianBlur(radius=radius))
@@ -1199,10 +1201,10 @@ def canvas_media_node(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def compress_dispatch(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Dispatch compression by input kind: image / video / bundle.
 
-    Text compression is handled client-side via /api/filter-prompt.
-    """
+
+
+
     kind = str(payload.get("kind") or "auto").strip().lower()
     if kind == "bundle":
         return _compress_bundle(root, payload)
@@ -1215,7 +1217,7 @@ def compress_dispatch(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
             return compress_image(root, payload)
         if ext in VIDEO_COMPRESS_EXTS:
             return _compress_video(root, payload)
-        # Fall back: try image compression first; if it fails, surface error.
+
         return compress_image(root, payload)
     if kind == "image":
         return compress_image(root, payload)
@@ -1233,11 +1235,11 @@ def _compress_video(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         raise FileNotFoundError(rel)
     quality = int(payload.get("quality") or 75)
     quality = max(1, min(100, quality))
-    # Map 1..100 quality → CRF 51..18 (lower CRF = higher quality).
+
     crf = int(round(51 - (quality / 100.0) * 33))
     max_dim = int(payload.get("max_dimension") or 0)
 
-    cache_dir = root / ".rundeer" / "cache" / "compressed"
+    cache_dir = rpaths.cache_dir(root, "compressed")
     cache_dir.mkdir(parents=True, exist_ok=True)
     dest_name = f"{src.stem}_q{quality}{('_' + str(max_dim)) if max_dim else ''}.mp4"
     dest = cache_dir / dest_name
@@ -1252,7 +1254,7 @@ def _compress_video(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         "-movflags", "+faststart",
     ]
     if max_dim:
-        # Scale longest side to max_dim, preserving aspect, force even dims.
+
         cmd[-1:-1] = ["-vf", f"scale='if(gt(iw,ih),min({max_dim},iw),-2)':'if(gt(iw,ih),-2,min({max_dim},ih))'"]
     cmd.append(str(dest))
     try:
@@ -1269,12 +1271,12 @@ def _compress_video(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _compress_bundle(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    import zipfile  # lazy
+    import zipfile
     paths = payload.get("paths") or []
     if not isinstance(paths, list) or not paths:
         raise ValueError("paths is required (non-empty list)")
-    out_dir_rel = str(payload.get("output_dir") or ".rundeer/cache/compressed").strip()
-    out_dir = safe_project_path(root, out_dir_rel) if out_dir_rel else root / ".rundeer" / "cache" / "compressed"
+    out_dir_rel = str(payload.get("output_dir") or ".rundeer/data/cache/compressed").strip()
+    out_dir = safe_project_path(root, out_dir_rel) if out_dir_rel else rpaths.cache_dir(root, "compressed")
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
     name = str(payload.get("name") or f"bundle_{stamp}.zip").strip()
@@ -1357,7 +1359,7 @@ def reference_id(name: str) -> Optional[int]:
 
 
 def list_definitions(root: Path) -> List[Dict[str, Any]]:
-    base = root / ".rundeer" / "def"
+    base = rpaths.definitions_dir(root)
     if not base.exists():
         return []
     return [
@@ -1376,17 +1378,17 @@ def python_functions(path: Path) -> List[str]:
 
 
 def list_presets(root: Path) -> List[Dict[str, Any]]:
-    base = root / ".rundeer" / "presets"
+    base = rpaths.presets_dir(root)
     if not base.exists():
         return []
     return [file_payload(root, path) for path in iter_files(base, root)][:400]
 
 
 def list_artifacts(root: Path, extra_dirs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
-    roots = [root / ".rundeer" / "outputs", root / ".rundeer" / "benchmark" / "position" / "outputs", root / "docs"]
-    # Caller-supplied directories let runs that write outside the default
-    # roots (e.g. a user-specified output_dir like "hurl_test/") still be
-    # discoverable by findArtifactsForRun on the client.
+    roots = [rpaths.default_output_dir(root), rpaths.benchmark_dir(root, "position", "outputs"), root / "docs"]
+
+
+
     for rel in (extra_dirs or []):
         if not rel:
             continue
@@ -1455,7 +1457,7 @@ def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
     if not target.exists():
         return {"paths": [], "error": f"path not found: {rel}"}
 
-    # Single animated file → extract frames.
+
     if target.is_file() and target.suffix.lower() in ANIMATED_EXTS:
         try:
             fps = float((query.get("fps") or [""])[0] or 0) or None
@@ -1466,7 +1468,7 @@ def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
         except ValueError:
             modulo = 1
         modulo = max(1, modulo)
-        # start/end are 1-based, inclusive frame indices (0 = unset).
+
         try:
             start = int((query.get("start") or [""])[0] or 0) or 0
         except ValueError:
@@ -1500,7 +1502,7 @@ def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
             continue
         out.append(relpath(root, path))
     out.sort(key=str.lower)
-    # start/end are 1-based, inclusive item indices.
+
     try:
         start_i = int((query.get("start") or [""])[0] or 0) or 0
     except ValueError:
@@ -1536,8 +1538,8 @@ def extract_frames(
     if shutil.which("ffmpeg") is None:
         return {"paths": [], "error": "ffmpeg not found on PATH; install ffmpeg to extract frames"}
 
-    # Cache key based on source mtime + extraction params so re-running the
-    # same node is fast and idempotent.
+
+
     try:
         stat = video.stat()
     except OSError as exc:
@@ -1546,7 +1548,7 @@ def extract_frames(
     modulo = max(1, int(modulo or 1))
     key_src = f"{video.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{fps}|{start}|{end}|{fmt}|{modulo}"
     key = hashlib.sha1(key_src.encode("utf-8")).hexdigest()[:16]
-    cache_root = root / ".rundeer" / "cache" / "frames"
+    cache_root = rpaths.cache_dir(root, "frames")
     out_dir = cache_root / f"{video.stem}-{key}"
     manifest = out_dir / "frames.json"
 
@@ -1560,7 +1562,7 @@ def extract_frames(
             pass
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    # Wipe any stale partial files.
+
     for child in out_dir.iterdir():
         try:
             child.unlink()
@@ -1568,9 +1570,9 @@ def extract_frames(
             pass
 
     pattern = out_dir / f"frame_%06d.{fmt}"
-    # start/end are 1-based inclusive frame indices on the OUTPUT stream
-    # (after any optional fps resample). Translate to 0-based for ffmpeg's
-    # `select` filter and use -frames:v to cap output count.
+
+
+
     start_idx = max(1, start) if start > 0 else 1
     end_idx = end if (end and end >= start_idx) else 0
     count = ((end_idx - start_idx) // modulo + 1) if end_idx > 0 else 0
@@ -1614,11 +1616,11 @@ def extract_frames(
 
 
 def ensure_thumbnail(root: Path, rel: str, size: int) -> Path:
-    """Return a path to a cached thumbnail for an image or video.
 
-    Caches under `.rundeer/cache/thumbs/<sha1>_<size>.jpg`. Key includes the
-    source mtime + size so edits invalidate the cache automatically.
-    """
+
+
+
+
     if not rel:
         raise FileNotFoundError("no path")
     src = safe_project_path(root, rel)
@@ -1628,20 +1630,20 @@ def ensure_thumbnail(root: Path, rel: str, size: int) -> Path:
     import hashlib
     key_src = f"{src.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{size}"
     key = hashlib.sha1(key_src.encode("utf-8")).hexdigest()[:16]
-    cache_dir = root / ".rundeer" / "cache" / "thumbs"
+    cache_dir = rpaths.cache_dir(root, "thumbs")
     cache_dir.mkdir(parents=True, exist_ok=True)
     dest = cache_dir / f"{key}_{size}.jpg"
     if dest.exists() and dest.stat().st_size > 0:
         return dest
 
-    # Cap concurrent heavy decode work so a flood of tile requests doesn't
-    # melt the CPU and starve regular API requests.
+
+
     with _THUMB_SEM:
         if dest.exists() and dest.stat().st_size > 0:
             return dest
-        # Coalesce duplicate concurrent requests for the same thumbnail:
-        # while one worker generates `dest`, others block on a per-key lock
-        # and then read the freshly produced file from disk.
+
+
+
         lock = _thumb_lock_for(key)
         with lock:
             if dest.exists() and dest.stat().st_size > 0:
@@ -1724,7 +1726,7 @@ def skip_dir(path: Path, root: Path) -> bool:
         rel_parts = path.resolve().relative_to(root.resolve()).parts
     except ValueError:
         return False
-    blocked = ((".rundeer", "cache"), (".rundeer", "runs"), (".rundeer", "web", "runs"))
+    blocked = ((".rundeer", "data", "cache"), (".rundeer", "data", "runs"), (".rundeer", "web", "runs"))
     return any(rel_parts[: len(prefix)] == prefix for prefix in blocked)
 
 
@@ -1767,11 +1769,11 @@ def file_payload(root: Path, path: Path, *, reference_id: Optional[int] = None) 
 
 
 def build_file_tree(root: Path, rel: str = "") -> Dict[str, Any]:
-    """Return one lazy-loaded directory node scoped to *root* (the CWD).
 
-    The frontend asks for children when a directory is opened. This keeps large
-    workspaces responsive while preserving a normal file-explorer hierarchy.
-    """
+
+
+
+
     root = root.resolve()
     base = safe_project_path(root, rel)
     if not base.is_dir():
@@ -1832,9 +1834,9 @@ def _sort_tree(node: Dict[str, Any]) -> None:
 
 
 def list_style_references(root: Path, style: str) -> List[Dict[str, Any]]:
-    """List all reference images for a given style, with their numeric ids."""
+
     if not style:
-        # Return references for every style, grouped flat with style label.
+
         out: List[Dict[str, Any]] = []
         base = brain_dir()
         if not base.exists():
@@ -1862,30 +1864,30 @@ def list_style_references(root: Path, style: str) -> List[Dict[str, Any]]:
 
 
 def collect_mentions(root: Path, query: str) -> List[Dict[str, Any]]:
-    """Lightweight @-mention completion source: definitions + project files.
 
-    Definitions are surfaced as ``@name`` items; files are surfaced as path
-    items so users can paste them into the subject as context references.
-    """
+
+
+
+
     q = (query or "").strip().lower().lstrip("@")
     max_items = 60
     max_file_scan = 1200
     items: List[Dict[str, Any]] = []
-    # Definitions (functions in .rundeer/def/*.py)
+
     for d in list_definitions(root):
         for fn in d.get("functions", []) or []:
             label = fn
             if not q or q in label.lower():
                 items.append({"kind": "definition", "label": f"@{label}", "value": f"@{label}", "detail": d.get("path", "")})
-    # Files are strictly from the CWD-backed project root. Prefer rg so large
-    # workspaces stay responsive; fall back to a bounded stdlib walk.
+
+
     for rel, path in iter_mention_files(root, q, limit=max_file_scan):
         if len(items) >= max_items:
             break
         if q and q not in rel.lower() and q not in path.name.lower():
             continue
         items.append({"kind": "file", "label": rel, "value": rel, "detail": path.suffix.lstrip(".") or "file"})
-    # Definitions first, then files; cap results for snappy UI.
+
     items.sort(key=lambda i: (0 if i["kind"] == "definition" else 1, i["label"].lower()))
     return items[:max_items]
 
@@ -1965,7 +1967,7 @@ def skip_mention_rel(rel: str) -> bool:
 
 
 def artifact_meta(root: Path, rel: str) -> Dict[str, Any]:
-    """Return rich metadata for an artifact (size, mtime, dimensions when image)."""
+
     path = safe_project_path(root, rel)
     if not path.is_file():
         raise FileNotFoundError(rel)
@@ -1990,7 +1992,7 @@ def artifact_meta(root: Path, rel: str) -> Dict[str, Any]:
         info["kind"] = "json"
         try:
             info["preview"] = json.dumps(json.loads(path.read_text(encoding="utf-8")), indent=2)[:4000]
-        except Exception:  # noqa: BLE001
+        except Exception:
             info["preview"] = path.read_text(encoding="utf-8", errors="ignore")[:4000]
     else:
         info["kind"] = "file"
@@ -1998,7 +2000,7 @@ def artifact_meta(root: Path, rel: str) -> Dict[str, Any]:
 
 
 def _image_dimensions(path: Path) -> Optional[Tuple[int, int]]:
-    """Best-effort dimension parser for PNG/JPEG/WEBP/GIF without Pillow."""
+
     try:
         with path.open("rb") as fh:
             head = fh.read(32)
@@ -2006,9 +2008,9 @@ def _image_dimensions(path: Path) -> Optional[Tuple[int, int]]:
                 width = int.from_bytes(head[16:20], "big")
                 height = int.from_bytes(head[20:24], "big")
                 return width, height
-            if head[:3] == b"\xff\xd8\xff":  # JPEG
+            if head[:3] == b"\xff\xd8\xff":
                 fh.seek(0)
-                fh.read(2)  # SOI
+                fh.read(2)
                 while True:
                     byte = fh.read(1)
                     while byte and byte != b"\xff":
@@ -2030,19 +2032,19 @@ def _image_dimensions(path: Path) -> Optional[Tuple[int, int]]:
                 height = int.from_bytes(head[8:10], "little")
                 return width, height
             if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
-                # VP8X chunk gives canvas size; VP8/VP8L parsing is best-effort.
+
                 if head[12:16] == b"VP8X":
                     fh.seek(24)
                     w = int.from_bytes(fh.read(3), "little") + 1
                     h = int.from_bytes(fh.read(3), "little") + 1
                     return w, h
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
     return None
 
 
 def batch_summary(root: Path) -> Dict[str, Any]:
-    path = root / ".rundeer" / "batch.json"
+    path = rpaths.batch_path(root)
     if not path.exists():
         return {"path": relpath(root, path), "entries": 0, "sleep": 0}
     try:
@@ -2113,10 +2115,10 @@ def _terminate_process(proc: subprocess.Popen[Any]) -> None:
         return
     try:
         os.killpg(proc.pid, signal.SIGTERM)
-    except Exception:  # noqa: BLE001
+    except Exception:
         try:
             proc.terminate()
-        except Exception:  # noqa: BLE001
+        except Exception:
             return
 
 
@@ -2223,7 +2225,7 @@ def save_run_display_log(server: RundeerWebServer, run_id: str, payload: Dict[st
 
 
 def list_runs(server: RundeerWebServer) -> List[Dict[str, Any]]:
-    """Return summaries of recent runs (newest first)."""
+
     disk_runs = load_run_records(server.project_root)
     with server.runs_lock:
         for run_id, record in disk_runs.items():
@@ -2233,7 +2235,7 @@ def list_runs(server: RundeerWebServer) -> List[Dict[str, Any]]:
     summaries: List[Dict[str, Any]] = []
     for r in runs[:50]:
         cmd = r.get("command") or []
-        # Skip the python -c bootstrap; show what comes after
+
         if cmd[:2] == [sys.executable, "-c"]:
             display = " ".join(cmd[3:])
         else:
@@ -2266,12 +2268,12 @@ _BOOTSTRAP = (
 
 
 def rundeer_invoker() -> List[str]:
-    """Return argv prefix that invokes the rundeer CLI regardless of CWD.
 
-    Web runs use the currently loaded Python package instead of a `rundeer`
-    console script from PATH. That keeps web-triggered jobs on the same code
-    as the server, including local edits such as rate-limit enforcement.
-    """
+
+
+
+
+
     return [sys.executable, "-c", _BOOTSTRAP]
 
 
@@ -2280,7 +2282,7 @@ def build_cli_command(root: Path, payload: Dict[str, Any], run_id: str, *, dry_r
     if command_name not in COMMANDS:
         raise ValueError(f"unknown command: {command_name}")
     inputs_block = _section(payload, "inputs")
-    run_dir = root / ".rundeer" / "runs" / run_id
+    run_dir = rpaths.runs_dir(root) / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     config_path: Optional[Path] = None
     command = rundeer_invoker() + [command_name]
@@ -2319,17 +2321,17 @@ def build_cli_command(root: Path, payload: Dict[str, Any], run_id: str, *, dry_r
 
 
 def _section(payload: Dict[str, Any], key: str) -> Dict[str, Any]:
-    """Return ``payload[key]`` when it is a dict, else an empty dict.
 
-    Lets the helpers transparently accept both nested objects (from the web UI)
-    and legacy flat keys.
-    """
+
+
+
+
     value = payload.get(key)
     return value if isinstance(value, dict) else {}
 
 
 def _pick(payload: Dict[str, Any], section_key: str, sub_key: str, *flat_keys: str) -> Any:
-    """Read a value from a nested section first, then from any flat fallback keys."""
+
     section = _section(payload, section_key)
     if sub_key in section and section[sub_key] not in (None, ""):
         return section[sub_key]
@@ -2359,7 +2361,7 @@ def build_run_config(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     if ref_ids is None and "references" in payload and not isinstance(payload.get("references"), dict):
         ref_ids = payload.get("references")
 
-    output_dir = clean_str(output.get("dir")) or clean_str(payload.get("outputDir")) or ".rundeer/outputs"
+    output_dir = clean_str(output.get("dir")) or clean_str(payload.get("outputDir")) or rpaths.DEFAULT_OUTPUT_DIR_STR
     output_name = clean_str(output.get("name")) or clean_str(payload.get("outputName")) or "output"
 
     config: Dict[str, Any] = {
@@ -2463,12 +2465,12 @@ def build_run_config(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _coerce_bool(*candidates: Any, default: bool) -> bool:
-    """Return the first non-None candidate as a bool, otherwise *default*.
 
-    Treats the strings ``"true"``/``"false"``/``"1"``/``"0"`` sensibly and
-    skips ``None`` so a nested ``{"enabled": false}`` flag is honoured even
-    when a dict is also present at the same key.
-    """
+
+
+
+
+
     for value in candidates:
         if value is None:
             continue

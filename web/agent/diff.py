@@ -1,9 +1,3 @@
-"""Helpers for computing a terse user-edit diff between graph snapshots.
-
-The agent stays oriented when the user manually edits the graph mid-conversation:
-on the next turn the server diffs (last_snapshot_from_agent_perspective vs.
-new_snapshot) and injects a brief system note describing what changed.
-"""
 from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
@@ -31,11 +25,11 @@ def _edges_set(graph: Dict[str, Any]) -> set:
 
 
 def diff_graphs(prev: Any, curr: Any) -> Dict[str, Any]:
-    """Return a structural diff between two graph snapshots.
 
-    Result keys: ``added_nodes``, ``removed_nodes``, ``modified_nodes``,
-    ``added_edges``, ``removed_edges``.
-    """
+
+
+
+
     p_nodes = (prev or {}).get("nodes") if isinstance(prev, dict) else {}
     c_nodes = (curr or {}).get("nodes") if isinstance(curr, dict) else {}
     p_nodes = p_nodes if isinstance(p_nodes, dict) else {}
@@ -50,7 +44,7 @@ def diff_graphs(prev: Any, curr: Any) -> Dict[str, Any]:
     for nid in sorted(p_ids & c_ids):
         ps, cs = _node_signature(p_nodes[nid]), _node_signature(c_nodes[nid])
         if ps != cs:
-            # Pinpoint what changed
+
             changes: List[str] = []
             if (p_nodes[nid].get("type") != c_nodes[nid].get("type")):
                 changes.append("type")
@@ -90,7 +84,7 @@ def has_changes(diff: Dict[str, Any]) -> bool:
 
 
 def format_diff_note(diff: Dict[str, Any]) -> str:
-    """Produce a terse system-style note describing user edits."""
+
     lines: List[str] = ["[user edited graph between turns]"]
     if diff["added_nodes"]:
         lines.append("  added: " + ", ".join(f"{n['id']}({n['type']})" for n in diff["added_nodes"][:8]))

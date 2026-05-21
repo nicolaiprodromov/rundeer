@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-/**
- * Live variant mode server (self-contained, zero dependencies).
- *
- * Serves the browser script (/live.js), the detection overlay (/detect.js),
- * uses Server-Sent Events (SSE) for server→browser push, and HTTP POST for
- * browser→server events. Agent communicates via HTTP long-poll (/poll).
- *
- * Usage:
- *   node <scripts_path>/live-server.mjs              # start
- *   node <scripts_path>/live-server.mjs stop         # stop + remove injected live.js tag
- *   node <scripts_path>/live-server.mjs stop --keep-inject   # stop only
- *   node <scripts_path>/live-server.mjs --help
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
@@ -33,16 +33,16 @@ import {
 } from './impeccable-paths.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// PRODUCT.md / DESIGN.md live wherever load-context.mjs resolves. The generated
-// DESIGN sidecar is project-local at .impeccable/design.json, with legacy
-// DESIGN.json fallback for existing projects.
-const CONTEXT_DIR = resolveContextDir(process.cwd());
-const DEFAULT_POLL_TIMEOUT = 600_000;   // 10 min — agent re-polls on timeout anyway
-const SSE_HEARTBEAT_INTERVAL = 30_000;  // keepalive ping every 30s
 
-// ---------------------------------------------------------------------------
-// Port detection
-// ---------------------------------------------------------------------------
+
+
+const CONTEXT_DIR = resolveContextDir(process.cwd());
+const DEFAULT_POLL_TIMEOUT = 600_000;   
+const SSE_HEARTBEAT_INTERVAL = 30_000;  
+
+
+
+
 
 async function findOpenPort(start = 8400) {
   return new Promise((resolve) => {
@@ -55,24 +55,24 @@ async function findOpenPort(start = 8400) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Session state
-// ---------------------------------------------------------------------------
+
+
+
 
 const state = {
   token: null,
   port: null,
-  sseClients: new Set(),   // SSE response objects (server→browser push)
-  pendingEvents: [],        // browser events waiting for agent ack ({ event, leaseUntil })
-  pendingPolls: [],         // agent poll callbacks waiting for browser events
+  sseClients: new Set(),   
+  pendingEvents: [],        
+  pendingPolls: [],         
   exitTimer: null,
-  sessionDir: null,         // per-session tmp dir for annotation screenshots
+  sessionDir: null,         
   sessionStore: null,
   leaseTimer: null,
 };
 
-// Cap per-annotation upload size. A full 1920×1080 PNG is typically <1 MB;
-// cap at 10 MB to guard against runaway writes from a misbehaving client.
+
+
 const MAX_ANNOTATION_BYTES = 10 * 1024 * 1024;
 
 function enqueueEvent(event) {
@@ -142,34 +142,34 @@ function flushPendingPolls() {
   scheduleLeaseFlush();
 }
 
-/** Push a message to all connected SSE clients. */
+
 function broadcast(msg) {
   const data = 'data: ' + JSON.stringify(msg) + '\n\n';
   for (const res of state.sseClients) {
-    try { res.write(data); } catch { /* client gone */ }
+    try { res.write(data); } catch {  }
   }
 }
 
-// ---------------------------------------------------------------------------
-// Load scripts
-// ---------------------------------------------------------------------------
+
+
+
 
 function loadBrowserScripts() {
-  // Detection script: look relative to the skill scripts dir, then fall back
-  // to the npm package location (cli/engine/detect-antipatterns-browser.js).
-  // This one IS cached — detect.js rarely changes during a session.
+  
+  
+  
   const detectPaths = [
     path.join(__dirname, '..', '..', '..', '..', 'cli', 'engine', 'detect-antipatterns-browser.js'),
     path.join(process.cwd(), 'node_modules', 'impeccable', 'cli', 'engine', 'detect-antipatterns-browser.js'),
   ];
   let detectScript = '';
   for (const p of detectPaths) {
-    try { detectScript = fs.readFileSync(p, 'utf-8'); break; } catch { /* try next */ }
+    try { detectScript = fs.readFileSync(p, 'utf-8'); break; } catch {  }
   }
 
-  // live-browser.js: DO NOT cache. Return the path so the /live.js handler
-  // can re-read on every request. Editing the browser script during iteration
-  // should land on the next tab reload, not require a server restart.
+  
+  
+  
   const sessionPath = path.join(__dirname, 'live-browser-session.js');
   const livePath = path.join(__dirname, 'live-browser.js');
   for (const p of [sessionPath, livePath]) {
@@ -183,10 +183,10 @@ function loadBrowserScripts() {
 }
 
 function hasProjectContext() {
-  // PRODUCT.md carries brand voice / anti-references — that's what determines
-  // whether variants are brand-aware. DESIGN.md (visual tokens) is a separate
-  // concern, surfaced by the design panel's own empty state. Legacy
-  // .impeccable.md is auto-migrated to PRODUCT.md by load-context.mjs.
+  
+  
+  
+  
   try {
     fs.accessSync(path.join(CONTEXT_DIR, 'PRODUCT.md'), fs.constants.R_OK);
     return true;
@@ -197,19 +197,19 @@ function statOrNull(filePath) {
   try { return fs.statSync(filePath); } catch { return null; }
 }
 
-// ---------------------------------------------------------------------------
-// Validation (inline — no external import needed for self-contained script)
-// ---------------------------------------------------------------------------
+
+
+
 
 const VISUAL_ACTIONS = [
   'impeccable', 'bolder', 'quieter', 'distill', 'polish', 'typeset',
   'colorize', 'layout', 'adapt', 'animate', 'delight', 'overdrive',
 ];
 
-// Browser generates ids via crypto.randomUUID().slice(0, 8) (8 hex chars)
-// and variantIds via String(small integer). Restrict to those shapes so
-// any value that reaches a downstream child_process or DOM selector is
-// inert by construction.
+
+
+
+
 const ID_PATTERN = /^[0-9a-f]{8}$/;
 const VARIANT_ID_PATTERN = /^[0-9]{1,3}$/;
 
@@ -224,7 +224,7 @@ function validateEvent(msg) {
       if (!msg.action || !VISUAL_ACTIONS.includes(msg.action)) return 'generate: invalid action';
       if (!Number.isInteger(msg.count) || msg.count < 1 || msg.count > 8) return 'generate: count must be 1-8';
       if (!msg.element || !msg.element.outerHTML) return 'generate: missing element context';
-      // Optional annotation fields (all-or-nothing: if any present, all must be well-formed).
+      
       if (msg.screenshotPath !== undefined && typeof msg.screenshotPath !== 'string') return 'generate: screenshotPath must be string';
       if (msg.comments !== undefined && !Array.isArray(msg.comments)) return 'generate: comments must be array';
       if (msg.strokes !== undefined && !Array.isArray(msg.strokes)) return 'generate: strokes must be array';
@@ -257,9 +257,9 @@ function validateEvent(msg) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// HTTP request handler
-// ---------------------------------------------------------------------------
+
+
+
 
 function createRequestHandler({ detectScript, sessionPath, livePath }) {
   return (req, res) => {
@@ -271,12 +271,12 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
 
     const p = url.pathname;
 
-    // --- Scripts ---
+    
     if (p === '/live.js') {
-      // Re-read from disk each request so edits to live-browser.js land on
-      // the next tab reload. No-store headers prevent browser caching across
-      // sessions — during iteration, a cached old script silently breaks
-      // every subsequent session.
+      
+      
+      
+      
       let sessionScript;
       let liveScript;
       try {
@@ -307,9 +307,9 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- Vendored modern-screenshot (UMD build) ---
-    // Lazy-loaded by live.js when the user clicks Go; exposes
-    // window.modernScreenshot.domToBlob(...) for capture.
+    
+    
+    
     if (p === '/modern-screenshot.js') {
       const vendorPath = path.join(__dirname, 'modern-screenshot.umd.js');
       try {
@@ -324,10 +324,10 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- Annotation upload (browser → server, raw PNG body) ---
-    // Client generates the eventId, POSTs the PNG, then POSTs the generate
-    // event with screenshotPath already set. Keeps bytes out of the SSE/poll
-    // bridge and preserves the "one shot from the user's POV" UX.
+    
+    
+    
+    
     if (p === '/annotation' && req.method === 'POST') {
       const token = url.searchParams.get('token');
       if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
@@ -384,7 +384,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- Health ---
+    
     if (p === '/status') {
       const token = url.searchParams.get('token');
       if (token !== state.token) { res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Unauthorized' })); return; }
@@ -415,17 +415,17 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- Design system (unified v2 response) + raw ---
-    //   /design-system.json    returns both parsed DESIGN.md and .impeccable/design.json
-    //                          sidecar when present. Panel merges them:
-    //                            { present, parsed, sidecar, hasMd, hasSidecar,
-    //                              mdNewerThanJson, parseError?, sidecarError? }
-    //                          - parsed: output of parseDesignMd (frontmatter
-    //                            + six canonical sections) when DESIGN.md exists.
-    //                          - sidecar: .impeccable/design.json contents when present.
-    //                            Expected shape: schemaVersion 2, carrying
-    //                            extensions + components + narrative.
-    //   /design-system/raw     returns DESIGN.md markdown verbatim
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (p === '/design-system.json' || p === '/design-system/raw') {
       const token = url.searchParams.get('token');
       if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
@@ -476,7 +476,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- Source file (no-HMR fallback) ---
+    
     if (p === '/source') {
       const token = url.searchParams.get('token');
       if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
@@ -492,7 +492,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- SSE: server→browser push (replaces WebSocket) ---
+    
     if (p === '/events' && req.method === 'GET') {
       const token = url.searchParams.get('token');
       if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
@@ -509,7 +509,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       state.sseClients.add(res);
       clearTimeout(state.exitTimer);
 
-      // Keepalive: SSE comment every 30s prevents silent connection drops.
+      
       const heartbeat = setInterval(() => {
         try { res.write(': keepalive\n\n'); } catch { clearInterval(heartbeat); }
       }, SSE_HEARTBEAT_INTERVAL);
@@ -527,7 +527,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- Browser→server events (replaces WebSocket messages) ---
+    
     if (p === '/events' && req.method === 'POST') {
       let body = '';
       req.on('data', (c) => { body += c; });
@@ -565,7 +565,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- Stop ---
+    
     if (p === '/stop') {
       const token = url.searchParams.get('token');
       if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
@@ -575,7 +575,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       return;
     }
 
-    // --- Agent poll ---
+    
     if (p === '/poll' && req.method === 'GET') {
       handlePollGet(req, res, url);
       return;
@@ -589,9 +589,9 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Agent poll endpoints (unchanged from WS version)
-// ---------------------------------------------------------------------------
+
+
+
 
 function handlePollGet(req, res, url) {
   const token = url.searchParams.get('token');
@@ -661,19 +661,19 @@ function handlePollPost(req, res) {
           message: msg.message,
           carbonize: msg.data?.carbonize === true,
         });
-      } catch { /* keep reply path best-effort; browser still needs SSE */ }
+      } catch {  }
     }
     flushPendingPolls();
-    // Forward the reply to the browser via SSE
+    
     broadcast({ type: msg.type || 'done', id: msg.id, message: msg.message, file: msg.file, data: msg.data });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true }));
   });
 }
 
-// ---------------------------------------------------------------------------
-// Lifecycle
-// ---------------------------------------------------------------------------
+
+
+
 
 let httpServer = null;
 
@@ -692,9 +692,9 @@ function shutdown() {
   process.exit(0);
 }
 
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
+
+
+
 
 const args = process.argv.slice(2);
 
@@ -751,7 +751,7 @@ if (args.includes('stop')) {
             console.log(`Removed live script tag from ${j.file}.`);
           }
         } catch {
-          /* ignore non-JSON lines */
+          
         }
       }
     } catch (err) {
@@ -765,9 +765,9 @@ if (args.includes('stop')) {
   process.exit(0);
 }
 
-// --background: spawn a detached child server, wait for it to be ready,
-// print the connection JSON, then exit.  This keeps the startup command
-// simple (no shell backgrounding or chained commands).
+
+
+
 if (args.includes('--background')) {
   const childArgs = args.filter(a => a !== '--background');
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), ...childArgs], {
@@ -777,24 +777,24 @@ if (args.includes('--background')) {
   });
   child.unref();
 
-  // Poll for the PID file (the child writes it once the HTTP server is listening).
+  
   const deadline = Date.now() + 10_000;
   while (Date.now() < deadline) {
     try {
       const { info } = readLiveServerInfo(process.cwd()) || {};
       if (info.pid !== process.pid) {
-        // Output JSON so the agent can read port + token from stdout.
+        
         console.log(JSON.stringify(info));
         process.exit(0);
       }
-    } catch { /* not ready yet */ }
+    } catch {  }
     await new Promise(r => setTimeout(r, 200));
   }
   console.error('Timed out waiting for live server to start.');
   process.exit(1);
 }
 
-// Check for existing session
+
 const existingRecord = readLiveServerInfo(process.cwd());
 if (existingRecord?.info) {
   const existing = existingRecord.info;
@@ -813,9 +813,9 @@ state.sessionStore = createLiveSessionStore({ cwd: process.cwd() });
 restorePendingEventsFromStore();
 const portArg = args.find(a => a.startsWith('--port='));
 state.port = portArg ? parseInt(portArg.split('=')[1], 10) : await findOpenPort();
-// Annotation screenshots live in the project root so the agent's Read tool
-// doesn't trip a per-file permission prompt. Sessioned by token so concurrent
-// projects (or quick restarts) don't collide.
+
+
+
 const annotRoot = getLiveAnnotationsDir(process.cwd());
 fs.mkdirSync(annotRoot, { recursive: true });
 state.sessionDir = fs.mkdtempSync(path.join(annotRoot, 'session-'));

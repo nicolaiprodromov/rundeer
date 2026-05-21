@@ -1,4 +1,4 @@
-"""Documentation, brain, and reference inspection tools."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -94,7 +94,7 @@ def get_brain_md_tool(root: Path, *, name: str, max_bytes: int = 200_000) -> Dic
     bd = brain_dir()
     target_dir = bd / name
     if not target_dir.is_dir():
-        # Case-insensitive fallback.
+
         for child in bd.iterdir() if bd.is_dir() else []:
             if child.is_dir() and child.name.lower() == name.lower():
                 target_dir = child
@@ -108,8 +108,8 @@ def get_brain_md_tool(root: Path, *, name: str, max_bytes: int = 200_000) -> Dic
             md = next((p for p in target_dir.glob("*.md")), None)
     if md is None or not md.is_file():
         return {"error": f"brain markdown not found for: {name}"}
-    # Brains live inside the package, possibly outside the project root.
-    # Read directly here (no sandbox check) since this is a curated catalog.
+
+
     size = md.stat().st_size
     cap = max(1024, min(int(max_bytes), 400_000))
     text = md.read_text(encoding="utf-8", errors="replace")[:cap]

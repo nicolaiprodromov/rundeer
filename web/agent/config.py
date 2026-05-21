@@ -1,4 +1,3 @@
-"""Agent runtime settings sourced from .env + .rundeer/config.json."""
 from __future__ import annotations
 
 import json
@@ -8,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from rundeer.core.config import load_project_env
+from rundeer.core.paths import config_path
 
 
 DEFAULT_AGENT_PORT_OFFSET = 1
@@ -20,7 +20,7 @@ class AgentSettings:
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     ws_host: str = "127.0.0.1"
-    ws_port: int = 0  # 0 → derived from web port
+    ws_port: int = 0
     max_tool_iterations: int = 32
     max_file_bytes: int = 200_000
     max_list_entries: int = 200
@@ -44,7 +44,7 @@ class AgentSettings:
 
 
 def _read_config_json(root: Path) -> Dict[str, Any]:
-    path = root / ".rundeer" / "config.json"
+    path = config_path(root)
     if not path.is_file():
         return {}
     try:
@@ -55,15 +55,15 @@ def _read_config_json(root: Path) -> Dict[str, Any]:
 
 
 def get_agent_settings(root: Path) -> AgentSettings:
-    """Resolve agent settings for a project root.
 
-    Precedence: env > .rundeer/config.json["agent"] > defaults.
-    """
+
+
+
     load_project_env(root)
     cfg = _read_config_json(root)
     agent_cfg = cfg.get("agent") if isinstance(cfg.get("agent"), dict) else {}
 
-    # Strict, no fallbacks: .env is the single source of truth.
+
     api_key = os.environ.get("MODEL_API_KEY") or ""
     base_url = os.environ.get("BASE_URL") or None
     model = (os.environ.get("MODEL_NAME") or "").strip()

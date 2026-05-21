@@ -1,10 +1,3 @@
-/* rundeer node editor — Blender-style node graph UI
- * Inherits: styles.css (CSS custom properties, fonts, base component styles)
- * Layout:   full-viewport 3-panel (palette · canvas · properties)
- */
-
-/* === Layout overrides for node editor shell === */
-
 .ne-shell {
   height: 100vh;
   position: relative;
@@ -33,8 +26,8 @@
   overflow: hidden;
 }
 
-/* Pin each workbench child to a fixed column so hiding the palette or props
- * panel can't cause neighbouring children to slide into the wrong slot. */
+
+
 .ne-workbench > .ne-palette       { grid-column: 1; }
 .ne-workbench > #paletteResizer   { grid-column: 2; }
 .ne-workbench > .ne-canvas-wrap   { grid-column: 3; }
@@ -55,7 +48,7 @@
 .ne-side-resizer:hover,
 .ne-side-resizer.is-active { background: var(--gold-soft); }
 
-/* Run-trigger node action button, rectangular product control. */
+
 .ne-shell .ne-node[data-node-type="run-trigger"] .ne-node-body {
   display: flex;
   flex-direction: column;
@@ -151,7 +144,7 @@
   outline-offset: 2px;
 }
 
-/* === Node Palette (left panel) === */
+
 
 .ne-palette {
   border-right: 1px solid var(--line);
@@ -279,7 +272,7 @@
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--node-accent, var(--muted)) 22%, transparent);
 }
 
-/* === Canvas === */
+
 
 .ne-canvas-wrap {
   position: relative;
@@ -298,7 +291,7 @@
 }
 .ne-canvas-wrap.is-panning { cursor: grabbing; }
 
-/* Infinite grid: positioned from JS so it tracks pan + zoom exactly. */
+
 .ne-canvas-wrap::before {
   content: "";
   position: absolute;
@@ -350,7 +343,7 @@
   color: var(--quiet);
 }
 
-/* Temp wire being drawn */
+
 .ne-wire-temp {
   vector-effect: non-scaling-stroke;
   stroke: var(--gold);
@@ -365,7 +358,7 @@
   to { stroke-dashoffset: -7; }
 }
 
-/* Box selection overlay */
+
 .ne-box-select {
   position: absolute;
   border: 1px solid var(--gold-soft);
@@ -373,7 +366,7 @@
   pointer-events: none;
 }
 
-/* === Nodes === */
+
 
 .ne-node {
   position: absolute;
@@ -526,13 +519,13 @@
   color: color-mix(in oklch, var(--gold) 72%, var(--text));
 }
 
-/* Node body: sockets + inline props */
+
 
 .ne-node-body {
   padding: 8px 0 10px;
 }
 
-/* Socket rows */
+
 
 .ne-socket-row {
   position: relative;
@@ -603,7 +596,7 @@
 .ne-socket-row.is-input .ne-socket-label { margin-left: 16px; }
 .ne-socket-row.is-output .ne-socket-label { margin-right: 16px; }
 
-/* Inline default value widget */
+
 
 .ne-socket-default {
   flex: 1;
@@ -625,7 +618,7 @@
 }
 .ne-inline-input:focus { border-color: var(--gold-soft); }
 
-/* Generated inline node fields */
+
 .ne-node-fields {
   display: flex;
   flex-direction: column;
@@ -749,7 +742,7 @@
   accent-color: var(--gold);
 }
 
-/* Node separators */
+
 
 .ne-node-props-divider {
   height: 1px;
@@ -757,7 +750,7 @@
   margin: var(--space-2) 0;
 }
 
-/* === Properties Panel (right side) === */
+
 
 .ne-props {
   border-left: 1px solid var(--line);
@@ -986,7 +979,7 @@
   appearance: none;
 }
 
-/* === Toolbar (bottom of canvas) === */
+
 
 .ne-toolbar {
   border-top: 1px solid var(--line);
@@ -1029,7 +1022,7 @@
   text-align: center;
 }
 
-/* === Add node menu (Shift+A floating) === */
+
 
 .ne-add-menu {
   position: fixed;
@@ -1113,7 +1106,7 @@
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--node-accent, var(--muted)) 22%, transparent);
 }
 
-/* === Run output log === */
+
 
 .ne-run-log {
   position: fixed;
@@ -1173,7 +1166,7 @@
   word-break: break-all;
 }
 
-/* === Node category accent colors === */
+
 
 .ne-node[data-category="Primitives"] .ne-node-header { background: color-mix(in oklch, oklch(83% 0.130 88) 6%, var(--surface-3)); }
 .ne-node[data-category="Operations"] .ne-node-header { background: color-mix(in oklch, oklch(78% 0.150 190) 8%, var(--surface-3)); }
@@ -1181,7 +1174,7 @@
 .ne-node[data-category="Commands"] .ne-node-header { background: color-mix(in oklch, oklch(72% 0.10 220) 8%, var(--surface-3)); }
 .ne-node[data-category="Coordinates"] .ne-node-header { background: color-mix(in oklch, oklch(74% 0.16 340) 9%, var(--surface-3)); }
 
-/* === Masthead mode toggle === */
+
 
 .mode-toggle {
   display: inline-flex;
@@ -1211,7 +1204,7 @@
   border-color: var(--gold-soft);
 }
 
-/* === Responsive / collapsed states === */
+
 
 @media (max-width: 900px) {
   .ne-workbench { grid-template-columns: var(--palette-w, 180px) 6px minmax(0, 1fr) 0 0; }
@@ -1219,9 +1212,9 @@
   #propsResizer { display: none; }
 }
 
-/* ============================================================== */
-/* Preview content — must always be CONTAINED, never stretched.   */
-/* ============================================================== */
+
+
+
 .ne-preview-content {
   flex: 1 1 auto;
   width: 100%;
@@ -1273,7 +1266,7 @@
   opacity: 0.7;
 }
 
-/* Bundle preview — grid + slider */
+
 .ne-bundle-toolbar {
   display: flex;
   align-items: center;
@@ -1325,7 +1318,7 @@
   border: 1px solid var(--line);
 }
 
-/* Virtualized bundle grid — scrollable, fixed tile size, batch-optimized. */
+
 .ne-bundle-vgrid {
   flex: 1 1 auto;
   min-height: 0;
@@ -1522,9 +1515,9 @@
   background: var(--gold);
 }
 
-/* ============================================================== */
-/* Smaller, subtler toolbar (status bar)                          */
-/* ============================================================== */
+
+
+
 .ne-toolbar {
   padding: 4px 12px;
   gap: 6px;
@@ -1541,9 +1534,9 @@
 .ne-status { font-size: 10.5px; }
 .ne-zoom-display { font-size: 10.5px; }
 
-/* ============================================================== */
-/* Panel toggles (T/P/R)                                          */
-/* ============================================================== */
+
+
+
 .ne-shell.hide-palette .ne-workbench { grid-template-columns: 0 0 minmax(0, 1fr) 6px var(--props-w, 300px); }
 .ne-shell.hide-palette .ne-palette,
 .ne-shell.hide-palette #paletteResizer { display: none; }
@@ -1555,14 +1548,14 @@
 .ne-shell.hide-props   .ne-props,
 .ne-shell.hide-props   #propsResizer { display: none; }
 
-/* Legacy runs-panel overlay rules — kept inert; runs is now a full view. */
+
 .ne-runs-panel { display: none !important; }
 
-/* ============================================================== */
-/* Multi-socket rows: one row per edge + a placeholder            */
-/* ============================================================== */
-/* Override the older single-row tall multi style — now we have
-   discrete rows per connection so each row is normal height.    */
+
+
+
+
+
 .ne-socket-row[data-multi="true"] {
   min-height: 26px;
   align-items: center;
@@ -1595,8 +1588,8 @@
 }
 .ne-socket-row.is-input .ne-socket-index + .ne-socket-label { margin-left: 2px; }
 
-/* Prop-socket rows — render compact and dim to differentiate from
-   the node's "real" inputs while still being functional. */
+
+
 .ne-socket-row[data-prop-socket="true"] {
   min-height: 22px;
   opacity: 0.85;
@@ -1613,7 +1606,7 @@
   opacity: 0.85;
 }
 
-/* Disabled prop control (incoming socket overrides it) */
+
 .ne-prop.is-disabled {
   opacity: 0.5;
   pointer-events: none;
@@ -1631,18 +1624,18 @@
   opacity: 0.7;
 }
 
-/* Lazy-connect target highlight (Alt+RMB drag) */
+
 .ne-node.is-lazy-target {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 
-/* Loop nodes get a subtle accent */
+
 .ne-node[data-category="Loop"] .ne-node-header {
   background: color-mix(in oklch, oklch(70% 0.12 200) 14%, var(--surface-3));
 }
 
-/* Runs panel layout (overlay on right of canvas) */
+
 .ne-runs-panel {
   position: absolute;
   top: 12px;
@@ -1683,11 +1676,11 @@
   padding: 16px 8px;
 }
 
-/* ============================================================== */
-/* Bundle output sockets — visually distinct from scalar sockets. */
-/* Using a square inner block + outer ring so it's obvious at a   */
-/* glance which links carry many items.                           */
-/* ============================================================== */
+
+
+
+
+
 .ne-socket[data-bundle="1"] {
   border-radius: 3px;
   box-shadow:
@@ -1705,7 +1698,7 @@
   pointer-events: none;
 }
 
-/* Loop region (background highlight between paired Decompose/Output) */
+
 .ne-loop-region {
   fill: color-mix(in oklch, oklch(70% 0.12 200) 8%, transparent);
   stroke: color-mix(in oklch, oklch(70% 0.12 200) 55%, transparent);
@@ -1723,9 +1716,9 @@
   user-select: none;
 }
 
-/* ============================================================== */
-/* Help / quick-start modal                                       */
-/* ============================================================== */
+
+
+
 .ne-app-dialog {
   position: fixed;
   inset: 0;
@@ -1886,9 +1879,9 @@
 }
 .ne-help-body strong { color: var(--text); }
 
-/* ============================================================== */
-/* Compact masthead + view tabs                                   */
-/* ============================================================== */
+
+
+
 .masthead-compact {
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: var(--space-5);
@@ -1979,7 +1972,7 @@
   font-weight: 500;
 }
 
-/* View tabs (Tree / Runs / Graphs / Explore / Settings / Help) */
+
 .view-tabs {
   display: flex;
   gap: 1px;
@@ -2017,7 +2010,7 @@
 }
 .view-tab-help:hover { color: var(--gold); }
 
-/* Focused footer: run plus current tab selector. */
+
 .ne-footer {
   position: absolute;
   left: 50%;
@@ -2180,7 +2173,7 @@
   display: block;
 }
 
-/* Graph tabs in the footer drop-up. */
+
 .ne-graph-tabs {
   display: flex;
   flex-direction: column;
@@ -2250,7 +2243,7 @@
 }
 .ne-graph-tab-close:hover { color: var(--gold); background: var(--surface); }
 
-/* Saved graphs list (Graphs page). */
+
 .ne-graphs-list {
   list-style: none;
   margin: 0;
@@ -2313,12 +2306,12 @@
   font-size: 10px;
 }
 
-/* Hide the giant ascii deer if it survives anywhere. */
+
 .ascii-deer { display: none !important; }
 
-/* ============================================================== */
-/* SPA shell: views                                               */
-/* ============================================================== */
+
+
+
 .ne-shell {
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -2332,9 +2325,9 @@
 
 #view-explore { grid-template-rows: minmax(0, 1fr); }
 
-/* ============================================================== */
-/* Work pages: Runs, Graphs, Settings                            */
-/* ============================================================== */
+
+
+
 .work-page {
   min-height: 0;
   min-width: 0;
@@ -2552,9 +2545,9 @@
   min-width: 54px;
 }
 
-/* ============================================================== */
-/* Explore view — split panes                                     */
-/* ============================================================== */
+
+
+
 .ex-shell {
   display: grid;
   grid-template-columns: var(--ex-split, 60%) 6px minmax(0, 1fr);
@@ -2656,7 +2649,7 @@
   text-align: center;
 }
 
-/* Explore tree hierarchy: keep depth readable without connector lines. */
+
 #exFileTree {
   background: var(--surface);
 }
@@ -2683,9 +2676,9 @@
   color: color-mix(in oklch, var(--text-soft) 86%, var(--quiet));
 }
 
-/* ============================================================== */
-/* Run dock — edge-locked inside the node viewport                */
-/* ============================================================== */
+
+
+
 .run-dock {
   position: absolute;
   z-index: 45;
@@ -2797,9 +2790,9 @@
   background: var(--bg-deep);
 }
 
-/* ============================================================== */
-/* Modal hint / shortcut notice                                   */
-/* ============================================================== */
+
+
+
 .ne-modal-hint {
   position: absolute;
   bottom: 12px;
@@ -2819,9 +2812,9 @@
   backdrop-filter: blur(8px);
 }
 
-/* ============================================================== */
-/* Runs panel — list items                                        */
-/* ============================================================== */
+
+
+
 .ne-runs-head {
   display: flex;
   align-items: center;
@@ -2905,16 +2898,16 @@
   white-space: nowrap;
 }
 
-/* Selected file row in the Explore tree */
+
 .tree-row.tree-file.is-selected {
   background: color-mix(in oklch, var(--gold) 12%, var(--surface));
   color: var(--text);
   border-left: 2px solid var(--gold-soft);
 }
 
-/* ============================================================== */
-/* Cut tool path — Node-Wrangler style red dotted slash           */
-/* ============================================================== */
+
+
+
 .ne-cut-path {
   fill: none;
   stroke: oklch(68% 0.20 25);
@@ -2931,9 +2924,9 @@
   to { stroke-dashoffset: -7; }
 }
 
-/* ============================================================== */
-/* @-mention autocomplete popup (re-introduced)                   */
-/* ============================================================== */
+
+
+
 .ne-mention-popup {
   position: fixed;
   z-index: 220;
@@ -2995,11 +2988,11 @@
   white-space: nowrap;
 }
 
-/* ============================================================== */
-/* Refined node visual polish                                     */
-/* — tighter typography, layered surfaces, accent-tinted header   */
-/* — keeps existing structure; adds subtle craft details          */
-/* ============================================================== */
+
+
+
+
+
 .ne-node {
   --node-accent: var(--line-strong);
   background:
@@ -3032,7 +3025,7 @@
   border-radius: 6px 6px 0 0;
 }
 .ne-node-header::after {
-  /* subtle hairline under the header that picks up the accent */
+  
   content: "";
   position: absolute;
   left: 8px;
@@ -3062,7 +3055,7 @@
   color: var(--text);
 }
 
-/* Per-category accent — drives header tint and border via --node-accent */
+
 .ne-node[data-category="Primitives"] { --node-accent: oklch(72% 0.180 235); }
 .ne-node[data-category="Operations"] { --node-accent: oklch(78% 0.150 190); }
 .ne-node[data-category="Prompt"]     { --node-accent: oklch(72% 0.210 315); }
@@ -3070,7 +3063,7 @@
 .ne-node[data-category="Loop"]       { --node-accent: oklch(76% 0.180 165); }
 .ne-node[data-category="Output"]     { --node-accent: oklch(74% 0.180 35); }
 
-/* Category color override for the header background (replaces older rules) */
+
 .ne-node[data-category="Primitives"] .ne-node-header,
 .ne-node[data-category="Operations"] .ne-node-header,
 .ne-node[data-category="Prompt"] .ne-node-header,
@@ -3080,7 +3073,7 @@
   background: color-mix(in oklch, var(--node-accent) 18%, var(--surface-3));
 }
 
-/* Socket: slightly more refined ring */
+
 .ne-socket {
   width: 11px;
   height: 11px;
@@ -3109,7 +3102,7 @@
   border-radius: 3px;
 }
 
-/* Inline field controls: a touch quieter to keep titles dominant */
+
 .ne-node input.ne-node-field-control,
 .ne-node select.ne-node-field-control,
 .ne-node textarea.ne-node-field-control {
@@ -3125,9 +3118,9 @@
   color: var(--text-soft);
 }
 
-/* ============================================================== */
-/* Advanced String node — markdown preview + editor               */
-/* ============================================================== */
+
+
+
 .ne-string-editor {
   display: flex;
   flex-direction: column;
@@ -3338,7 +3331,7 @@
   color: var(--whisper);
   font-style: italic;
 }
-/* Markdown bits inside the preview */
+
 .ne-string-preview p           { margin: 0 0 6px; }
 .ne-string-preview p:last-child{ margin-bottom: 0; }
 .ne-string-preview h1,
@@ -3418,7 +3411,7 @@
   cursor: text;
 }
 
-/* Reference chips — `@something` mentions in the preview */
+
 .ne-ref {
   display: inline-flex;
   align-items: center;
@@ -3451,9 +3444,9 @@
 .ne-ref-text       { color: oklch(72% 0.10 220); }
 .ne-ref-unknown    { color: var(--quiet); border-style: dashed; }
 
-/* ============================================================== */
-/* Universal node sizing + collapse motion                        */
-/* ============================================================== */
+
+
+
 .ne-node {
   display: flex;
   flex-direction: column;
@@ -3616,7 +3609,7 @@ body.is-resizing .ne-node-resize {
 }
 .ne-node.is-preview.is-selected { z-index: 12; }
 
-/* Preview nodes use the full resized body for media/text content. */
+
 .ne-node.is-preview .ne-node-body {
   display: flex;
   flex-direction: column;
@@ -3640,7 +3633,7 @@ body.is-resizing .ne-node-resize {
   min-height: 0;
 }
 
-/* String primitive: keep the socket, but let the editor occupy a full row. */
+
 .ne-inline-prop-row.has-md-editor {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -3718,7 +3711,7 @@ body.is-resizing .ne-node-resize {
   min-height: 0;
 }
 
-/* === Night Studio Nodes redesign === */
+
 
 .ne-palette,
 .ne-props {
@@ -4244,14 +4237,14 @@ body.is-wiring .ne-node-compact-socket.is-compatible {
   flex-direction: column;
 }
 
-/* String primitive editor: one node-owned surface for edit and preview. */
+
 .ne-node[data-node-type="text-input"] .ne-node-body,
 .ne-node[data-node-type="text-input"] .ne-node-fields {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  /* Keep sockets that sit half-outside the body visible while the editor
-     surface inside still owns its own vertical clipping/scroll. */
+  
+
   overflow: visible;
 }
 .ne-node[data-node-type="text-input"] .ne-node-panel.is-settings {
@@ -4445,7 +4438,7 @@ body.is-wiring .ne-node-compact-socket.is-compatible {
 }
 
 
-/* ─── AGENT CHAT (N panel) ─────────────────────────────────────────────── */
+
 .ne-agent {
   display: flex;
   flex-direction: column;
@@ -4886,7 +4879,7 @@ body.is-wiring .ne-node-compact-socket.is-compatible {
   white-space: pre-wrap;
 }
 
-/* ─── Agent Brain self-modify confirm ──────────────────────────────────── */
+
 
 .ne-graph-tab[data-tab-kind="brain"] .ne-graph-tab-name::before {
   content: "🧠 ";
@@ -4931,7 +4924,7 @@ body.is-wiring .ne-node-compact-socket.is-compatible {
   background: #b53b3b;
 }
 
-/* ─── Floating Palette ─────────────────────────────────────────────────── */
+
 
 .ne-agent-palette {
   --agent-palette-w: 350px;

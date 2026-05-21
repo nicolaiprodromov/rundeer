@@ -1,4 +1,3 @@
-"""Per-project conversation persistence under .rundeer/agent/."""
 from __future__ import annotations
 
 import json
@@ -9,13 +8,15 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from rundeer.core.paths import agent_dir as project_agent_dir
+
 
 SCHEMA_VERSION = 1
 DEFAULT_AGENT_ID = "default"
 
 
 def agent_dir(root: Path) -> Path:
-    return (root / ".rundeer" / "agent").resolve()
+    return project_agent_dir(root).resolve()
 
 
 def _index_path(root: Path) -> Path:
@@ -61,8 +62,8 @@ def new_conversation(root: Path, *, model: str, title: str = "New conversation",
         "model": model,
         "created_at": now,
         "updated_at": now,
-        "messages": [],   # raw model messages (role, content, tool_calls, tool_call_id)
-        "events": [],     # tool calls + results, for UI replay
+        "messages": [],
+        "events": [],
     }
     save_conversation(root, record)
     return record

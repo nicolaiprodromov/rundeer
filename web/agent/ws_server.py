@@ -1,27 +1,3 @@
-"""WebSocket server for the rundeer agent.
-
-Runs in a dedicated thread with its own asyncio loop. Shares state with the
-HTTP server (project root + runs registry) by holding a reference.
-
-Protocol (JSON messages):
-  client → server:
-    { "type": "hello" }
-    { "type": "list_conversations" }
-    { "type": "new_conversation", "title"?: str }
-    { "type": "load_conversation", "id": str }
-    { "type": "delete_conversation", "id": str }
-    { "type": "graph_snapshot", "graph": {...} }   # sent on changes / before user_message
-    { "type": "user_message", "text": str, "images"?: [data_url, ...], "graph"?: {...} }
-    { "type": "confirm_response", "approved": bool, "call_id"?: str }
-    { "type": "cancel" }
-    { "type": "ping" }
-
-  server → client:
-    { "type": "ready", "settings": {...}, "conversation": {...} }
-    { "type": "conversation_list", "items": [...] }
-    { "type": "conversation_loaded", "conversation": {...}, "events_replay": [...] }
-    + every event produced by Conversation.run_turn (token, tool_call, tool_result, graph_patch, confirm_request, graph_diff_note, done, error, cancelled, message_start, message_end)
-"""
 from __future__ import annotations
 
 import asyncio
@@ -69,7 +45,7 @@ class AgentWSServer:
         self._ws_server = None
         self._shutdown_evt: Optional[asyncio.Event] = None
 
-    # ── Public lifecycle ──────────────────────────────────────────────────
+
     def start(self) -> int:
         ready = threading.Event()
         err_box: Dict[str, Any] = {}
@@ -81,13 +57,13 @@ class AgentWSServer:
             self._shutdown_evt = asyncio.Event()
             try:
                 loop.run_until_complete(self._serve(ready, err_box))
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 err_box["error"] = exc
                 ready.set()
             finally:
                 try:
                     loop.run_until_complete(loop.shutdown_asyncgens())
-                except Exception:  # noqa: BLE001
+                except Exception:
                     pass
                 loop.close()
 
@@ -103,32 +79,32 @@ class AgentWSServer:
             return
         try:
             self.loop.call_soon_threadsafe(self._shutdown_evt.set)
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=2)
 
-    # ── Internals ─────────────────────────────────────────────────────────
+
     async def _serve(self, ready: threading.Event, err_box: Dict[str, Any]) -> None:
         try:
             self._ws_server = await websockets.serve(
                 self._handler,
                 self.host,
                 self.ws_port,
-                max_size=8 * 1024 * 1024,  # allow image data URLs up to ~8 MB
+                max_size=8 * 1024 * 1024,
                 ping_interval=20,
                 ping_timeout=20,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             err_box["error"] = exc
             ready.set()
             return
-        # If port was 0, capture the actual one
+
         try:
             for sock in self._ws_server.sockets or []:
                 self.ws_port = sock.getsockname()[1]
                 break
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
         ready.set()
         try:
@@ -142,11 +118,11 @@ class AgentWSServer:
             await self._session(ws)
         except ConnectionClosed:
             pass
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.error("agent ws session crashed: %s\n%s", exc, traceback.format_exc())
             try:
                 await ws.send(json.dumps(evt("error", message=f"server error: {exc}")))
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
     async def _session(self, ws) -> None:
@@ -165,7 +141,7 @@ class AgentWSServer:
             except (ConnectionClosed, RuntimeError):
                 raise
 
-        # Greet
+
         await send(evt(
             "ready",
             settings=self.settings.to_safe_dict(),
@@ -292,7 +268,7 @@ class AgentWSServer:
                 if conv is None:
                     continue
                 conv.update_snapshot(msg.get("graph") or {})
-                # Don't mark as seen — only mark seen when actually injected.
+
                 continue
 
             if kind == "brain_graph_snapshot":
@@ -300,12 +276,12 @@ class AgentWSServer:
                     continue
                 graph = msg.get("graph") or {}
                 conv.update_brain_snapshot(graph)
-                # Persist + recompile so the next turn sees the changes.
+
                 if msg.get("persist", True):
                     try:
                         from .brain_graph import save_brain_graph
                         save_brain_graph(root, graph, agent_id=current_agent_id)
-                    except Exception as exc:  # noqa: BLE001
+                    except Exception as exc:
                         await send(evt("brain_error", message=str(exc)))
                 continue
 
@@ -327,9 +303,9 @@ class AgentWSServer:
 
             if kind == "user_message":
                 if turn_task is not None and not turn_task.done():
-                    # Give the previous task a brief grace period to finish
-                    # — the `done` event is yielded just before the task
-                    # actually returns, so a fast client can race here.
+
+
+
                     try:
                         await asyncio.wait_for(asyncio.shield(turn_task), timeout=0.2)
                     except (asyncio.TimeoutError, asyncio.CancelledError):
@@ -355,7 +331,7 @@ class AgentWSServer:
                             await send(event)
                     except asyncio.CancelledError:
                         await send(evt("cancelled"))
-                    except Exception as exc:  # noqa: BLE001
+                    except Exception as exc:
                         log.error("turn crashed: %s\n%s", exc, traceback.format_exc())
                         await send(evt("error", message=f"turn crashed: {exc}"))
 
@@ -378,7 +354,7 @@ def _conv_summary(rec: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _replay_events(rec: Dict[str, Any]) -> list:
-    """Reconstruct a minimal event stream for UI replay when reopening a conversation."""
+
     out = []
     for m in rec.get("messages") or []:
         role = m.get("role")
@@ -407,7 +383,7 @@ def _replay_events(rec: Dict[str, Any]) -> list:
 
 
 def start_agent_ws_server(server: Any, *, web_port: int, settings: Optional[AgentSettings] = None) -> Optional[AgentWSServer]:
-    """Resolve settings, start the WS server, return the handle (or None if disabled)."""
+
     from .config import get_agent_settings
     settings = settings or get_agent_settings(server.project_root)
     if not settings.enabled:

@@ -1,4 +1,4 @@
-"""Lightweight web search via DuckDuckGo HTML endpoint (no API key)."""
+
 from __future__ import annotations
 
 import html
@@ -24,7 +24,7 @@ def _clean(text: str) -> str:
 
 
 def _decode_redirect(url: str) -> str:
-    # DDG returns //duckduckgo.com/l/?uddg=ENCODED — unwrap when possible.
+
     parsed = urllib.parse.urlparse(url if url.startswith("http") else f"https:{url}")
     if "duckduckgo.com" in parsed.netloc and parsed.path.startswith("/l"):
         qs = urllib.parse.parse_qs(parsed.query)
@@ -48,7 +48,7 @@ def web_search_tool(*, query: str, max_results: int = 6) -> Dict[str, Any]:
     try:
         with urllib.request.urlopen(req, timeout=12) as resp:
             body = resp.read().decode("utf-8", errors="replace")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return {"error": f"web search failed: {exc}"}
     results: List[Dict[str, Any]] = []
     for match in _RESULT_RE.finditer(body):

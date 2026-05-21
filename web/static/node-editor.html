@@ -13,7 +13,7 @@
   <body>
     <div class="ne-shell" data-active-view="nodes">
 
-      <!-- Compact masthead — slim, footer-aligned style -->
+      
       <header class="masthead masthead-compact" role="banner">
         <div class="masthead-left">
           <div class="wordmark wordmark-compact">
@@ -57,13 +57,13 @@
         </div>
       </header>
 
-      <!-- ============================================================ -->
-      <!-- VIEW: NODES (existing node graph editor)                      -->
-      <!-- ============================================================ -->
+      
+      
+      
       <div class="ne-view" id="view-nodes" data-view="nodes">
         <div class="ne-workbench">
 
-          <!-- Left: Node palette -->
+          
           <aside class="ne-palette" aria-label="Node palette">
             <div class="ne-palette-head">
               <p class="ne-palette-title">add node</p>
@@ -72,10 +72,10 @@
             <div id="paletteCategories"></div>
           </aside>
 
-          <!-- Palette resizer -->
+          
           <div class="ne-side-resizer ne-side-resizer-left" id="paletteResizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize node palette"></div>
 
-          <!-- Center: Canvas -->
+          
           <div class="ne-canvas-wrap" id="canvasWrap" aria-label="Node graph canvas">
             <div class="ne-canvas" id="nodeCanvas">
               <svg class="ne-connections" id="nodeConnections" aria-hidden="true">
@@ -95,10 +95,10 @@
             <div class="ne-modal-hint" id="modalHint" style="display:none"></div>
           </div>
 
-          <!-- Properties resizer -->
+          
           <div class="ne-side-resizer ne-side-resizer-right" id="propsResizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize properties panel"></div>
 
-          <!-- Right: Properties panel -->
+          
           <aside class="ne-props" id="propsPanel" aria-label="Node properties">
             <div class="ne-props-head">
               <p class="ne-props-eyebrow">properties</p>
@@ -115,12 +115,12 @@
         </div>
       </div>
 
-      <!-- ============================================================ -->
-      <!-- VIEW: EXPLORE (file browser + preview, split pane)            -->
-      <!-- ============================================================ -->
+      
+      
+      
       <div class="ne-view" id="view-explore" data-view="explore" hidden>
         <div class="ex-shell" id="exShell">
-          <!-- Left: Explorer -->
+          
           <section class="ex-panel ex-explorer" aria-label="Explorer">
             <header class="ex-panel-head">
               <p class="ex-eyebrow">explorer</p>
@@ -135,10 +135,10 @@
             <div id="exFileTree" class="file-tree"></div>
           </section>
 
-          <!-- Drag handle -->
+          
           <div class="ex-resizer" id="exResizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize explorer/preview"></div>
 
-          <!-- Right: Preview -->
+          
           <section class="ex-panel ex-preview" aria-label="Preview">
             <header class="ex-panel-head">
               <p class="ex-eyebrow">preview</p>
@@ -155,9 +155,9 @@
         </div>
       </div>
 
-      <!-- ============================================================ -->
-      <!-- VIEW: RUNS (past runs list as a full page)                    -->
-      <!-- ============================================================ -->
+      
+      
+      
       <div class="ne-view" id="view-runs" data-view="runs" hidden>
         <section class="work-page runs-page" aria-label="Past runs">
           <header class="work-page-head runs-page-head">
@@ -192,9 +192,9 @@
         </section>
       </div>
 
-      <!-- ============================================================ -->
-      <!-- VIEW: GRAPHS (saved graphs library)                           -->
-      <!-- ============================================================ -->
+      
+      
+      
       <div class="ne-view" id="view-graphs" data-view="graphs" hidden>
         <section class="work-page graphs-page" aria-label="Saved graphs">
           <header class="work-page-head graphs-page-head">
@@ -216,9 +216,9 @@
         </section>
       </div>
 
-      <!-- ============================================================ -->
-      <!-- VIEW: SETTINGS (shortcut editor)                             -->
-      <!-- ============================================================ -->
+      
+      
+      
       <div class="ne-view" id="view-settings" data-view="settings" hidden>
         <section class="work-page shortcut-settings-page" aria-label="Settings">
           <header class="work-page-head shortcut-settings-head">
@@ -226,7 +226,7 @@
               <p class="ex-eyebrow">settings</p>
               <h2>Shortcuts</h2>
             </div>
-            <span class="ex-panel-meta" id="settingsPageMeta">saved in .rundeer/web-state.json</span>
+            <span class="ex-panel-meta" id="settingsPageMeta">saved in .rundeer/data/web-state.json</span>
             <div class="ex-panel-actions">
               <button class="btn btn-ghost btn-tiny" id="resetShortcutsBtn" type="button">Reset All</button>
             </div>
@@ -239,9 +239,9 @@
         </section>
       </div>
 
-      <!-- ============================================================ -->
-      <!-- Floating Palette: agent, graph run controls, graph tabs       -->
-      <!-- ============================================================ -->
+      
+      
+      
       <section class="ne-agent-palette" id="agentPalette" role="region" aria-label="Palette">
         <section class="ne-agent-conversation" id="agentConversation" aria-label="Agent conversation">
           <div class="ne-agent" id="agentRoot" hidden>
@@ -376,11 +376,11 @@
         </section>
       </section>
 
-      <!-- ============================================================ -->
-      <!-- Floating overlays                                             -->
-      <!-- ============================================================ -->
+      
+      
+      
 
-      <!-- Floating add-node menu (Shift+A) -->
+      
       <div class="ne-add-menu" id="addMenu" style="display:none" role="dialog" aria-label="Add node" aria-modal="true">
         <input type="search" class="ne-add-menu-search" id="addMenuSearch" placeholder="search node types…" autocomplete="off">
         <div class="ne-add-menu-list" id="addMenuList"></div>
@@ -406,7 +406,7 @@
         </form>
       </div>
 
-      <!-- Help / quick-start modal -->
+      
       <div class="ne-help-modal is-hidden" id="helpModal" role="dialog" aria-label="Quick start">
         <div class="ne-help-card">
           <header class="ne-help-head">

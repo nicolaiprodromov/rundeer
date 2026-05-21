@@ -1,10 +1,10 @@
-"""Graph mutation tools.
 
-These do NOT mutate server state directly. Each function returns a list of
-patch ops the client will apply against its own graph state. The conversation
-loop forwards the patch ops to the client as a `graph_patch` event before
-returning the tool result to the model.
-"""
+
+
+
+
+
+
 from __future__ import annotations
 
 import re
@@ -222,7 +222,7 @@ def connect_nodes_tool(
     resolved_from, resolved_to, error = _resolve_connection(graph, from_node, from_socket, to_node, to_socket)
     if error:
         return error
-    # NOTE: op name must match web/static/node-editor.js `applyAgentPatchOp`.
+
     return {
         "patch": [_patch("add_edge", fromNode=from_node, fromSocket=resolved_from, toNode=to_node, toSocket=resolved_to)],
         "summary": f"connect {from_node}.{resolved_from} → {to_node}.{resolved_to}",
@@ -233,8 +233,8 @@ def disconnect_nodes_tool(*, edge_id: Optional[str] = None, from_node: Optional[
     if edge_id:
         return {"patch": [_patch("remove_edge", id=edge_id)], "summary": f"disconnect {edge_id}", "destructive": True}
     if to_node and to_socket:
-        # Client handler currently keys remove_edge off `id`; without an edge id
-        # we surface a clear error rather than silently dropping the op.
+
+
         return {"error": "disconnect by socket requires an edge_id; call list_edges first"}
     return {"error": "provide edge_id"}
 
@@ -255,8 +255,8 @@ def move_node_tool(*, node_id: str, x: float, y: float) -> Dict[str, Any]:
 
 
 def layout_auto_tool(*, mode: str = "tidy") -> Dict[str, Any]:
-    # No client-side handler yet; surface as a no-op summary so the model
-    # doesn't think layout silently succeeded.
+
+
     return {"patch": [], "summary": f"auto-layout requested ({mode}) — not yet supported client-side"}
 
 

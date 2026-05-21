@@ -57,7 +57,7 @@ rundeer web --open
 rundeer image --subject="a quiet station at sunrise" --dry-run --no-tui
 ```
 
-The first CLI or web command creates `.rundeer/` in the current directory. Outputs default to `.rundeer/outputs`, encoded references are cached in `.rundeer/cache`, node graphs live under `.rundeer/graphs`, web-triggered run records and configs are written to `.rundeer/runs/<run-id>/`, and logs live under `.rundeer/logs`.
+The first CLI or web command creates `.rundeer/` in the current directory. Outputs default to `.rundeer/data/outputs`, encoded references are cached in `.rundeer/data/cache`, node graphs live under `.rundeer/data/graphs`, web-triggered run records and configs are written to `.rundeer/data/runs/<run-id>/`, and logs live under `.rundeer/data/logs`.
 
 Use `--dry-run` whenever you want to inspect the resolved prompt, job count, output paths, references, and definitions without spending API credits:
 
@@ -98,7 +98,7 @@ The **Nodes** view is a Blender-style graph editor. The palette includes:
 
 Command nodes expose their props as sockets, so graph edges can override static fields like subject, style, iterations, output name, or reference ids. Prompt nodes accept multiple context images, letting a language model answer directly or rewrite a prompt using visual information from upstream image files or generated outputs. Runs with more than one iteration produce bundles; Loop · Decompose and Loop · Output let you fan out a bundle, process each item, and collect the results again. Preview nodes display upstream image, video, or text values inline and can collapse their upstream chain for a cleaner graph.
 
-Graph execution resolves terminal command and preview nodes, calls `/api/plan` for dry-runs or `/api/run` for live runs, then polls the run record until it finishes. Web-triggered runs use the same Python CLI code as terminal commands and keep each generated config under `.rundeer/runs/`. Saved node graphs are regular JSON files under `.rundeer/graphs`, and webapp layout/tab state is stored in `.rundeer/web-state.json`.
+Graph execution resolves terminal command and preview nodes, calls `/api/plan` for dry-runs or `/api/run` for live runs, then polls the run record until it finishes. Web-triggered runs use the same Python CLI code as terminal commands and keep each generated config under `.rundeer/data/runs/`. Saved node graphs are regular JSON files under `.rundeer/data/graphs`, and webapp layout/tab state is stored in `.rundeer/data/web-state.json`.
 
 The **Explore** view is a split-pane file browser and previewer for the current project. It can filter the workspace tree, open files in a separate tab, copy paths, and preview supported images, videos, JSON, text, Markdown, logs, CSV, and Python files. The Runs panel shows recent in-memory web runs and their output tails.
 
@@ -185,7 +185,7 @@ CLI flags win over config files. If no config path is provided, rundeer reads `.
     "motion": "slow cinematic pan",
     "input": null,
     "output": {
-        "dir": ".rundeer/outputs",
+        "dir": ".rundeer/data/outputs",
         "name": "output"
     },
     "batch": {
@@ -294,7 +294,7 @@ Set `batch.chain` to `true` to feed each edit result into the next iteration. Fo
 
 ## Benchmark
 
-`rundeer benchmark position` renders deterministic reference images, asks the configured image model to reproduce them from a prompt template, then scores the result with SSIM, centroid position error, size ratio, IoU, and color fidelity. Per-iteration JSON logs and CSV summaries are written under `.rundeer/logs/benchmark/position/`.
+`rundeer benchmark position` renders deterministic reference images, asks the configured image model to reproduce them from a prompt template, then scores the result with SSIM, centroid position error, size ratio, IoU, and color fidelity. Per-iteration JSON logs and CSV summaries are written under `.rundeer/data/logs/benchmark/position/`.
 
 ```bash
 python3 rundeer.py benchmark position --dry-run

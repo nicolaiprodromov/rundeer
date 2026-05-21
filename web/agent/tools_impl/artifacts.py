@@ -1,4 +1,4 @@
-"""Artifact, run, and execution tools (wrap web/server helpers)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 
 def list_artifacts_tool(root: Path, *, extra_dirs: Optional[List[str]] = None, max_results: int = 60) -> Dict[str, Any]:
-    # Import lazily to avoid circular load when server.py imports agent.
+
     from rundeer.web.server import list_artifacts
 
     cap = max(5, min(int(max_results), 200))
@@ -20,7 +20,7 @@ def artifact_meta_tool(root: Path, *, path: str) -> Dict[str, Any]:
         return {"error": "missing path"}
     try:
         return artifact_meta(root, path)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return {"error": str(exc), "path": path}
 
 

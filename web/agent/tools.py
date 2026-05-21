@@ -1,13 +1,3 @@
-"""Tool registry: JSON schemas + dispatch for the agent loop.
-
-Each entry declares:
-  * schema: OpenAI/function-calling spec (litellm normalizes across providers)
-  * category: 'read' | 'mutate' | 'execute' | 'vision'
-  * destructive: bool — gated by inline confirm in the UI
-  * needs_graph: bool — receives latest client graph snapshot
-  * needs_server: bool — receives the live RundeerWebServer
-  * impl: callable(**kwargs) → dict
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -32,13 +22,13 @@ class ToolSpec:
     name: str
     description: str
     parameters: Dict[str, Any]
-    category: str  # 'read' | 'mutate' | 'execute' | 'vision'
+    category: str
     impl: Callable[..., Dict[str, Any]]
     destructive: bool = False
     needs_root: bool = False
     needs_graph: bool = False
     needs_server: bool = False
-    needs_snapshot_after: bool = False  # if true, conversation re-requests a snapshot after running
+    needs_snapshot_after: bool = False
 
     def schema(self) -> Dict[str, Any]:
         return {
@@ -60,7 +50,7 @@ def _obj(properties: Dict[str, Any], required: Optional[List[str]] = None) -> Di
     }
 
 
-# ── File / code reads ──────────────────────────────────────────────────────
+
 READ_FILE = ToolSpec(
     name="read_file",
     description=(
@@ -117,7 +107,7 @@ GREP = ToolSpec(
     needs_root=True,
 )
 
-# ── Docs / brain ──────────────────────────────────────────────────────────
+
 LIST_DOCS = ToolSpec(
     name="list_docs",
     description="List all project documentation files (README, DESIGN, PRODUCT, docs/, brain/, skills).",
@@ -172,10 +162,10 @@ LIST_REFERENCES = ToolSpec(
     needs_root=True,
 )
 
-# ── Artifacts / runs ──────────────────────────────────────────────────────
+
 LIST_ARTIFACTS = ToolSpec(
     name="list_artifacts",
-    description="List recently produced images/videos under .rundeer/outputs and benchmark outputs.",
+    description="List recently produced images/videos under .rundeer/data/outputs and benchmark outputs.",
     parameters=_obj({
         "extra_dirs": {"type": "array", "items": {"type": "string"}},
         "max_results": {"type": "integer"},
@@ -212,7 +202,7 @@ GET_RUN = ToolSpec(
     needs_server=True,
 )
 
-# ── Graph inspect ─────────────────────────────────────────────────────────
+
 LIST_NODES = ToolSpec(
     name="list_nodes",
     description="List nodes currently in the user's graph (from latest snapshot).",
@@ -263,7 +253,7 @@ VALIDATE_GRAPH = ToolSpec(
     needs_graph=True,
 )
 
-# ── Graph mutate (patch-emitting) ─────────────────────────────────────────
+
 ADD_NODE = ToolSpec(
     name="add_node",
     description=(
@@ -386,7 +376,7 @@ CLEAR_GRAPH = ToolSpec(
     needs_snapshot_after=True,
 )
 
-# ── Execution ─────────────────────────────────────────────────────────────
+
 PLAN_GRAPH = ToolSpec(
     name="plan_graph",
     description=(
@@ -417,12 +407,12 @@ RUN_GRAPH = ToolSpec(
     }),
     category="execute",
     impl=ti_exec.run_graph_tool,
-    destructive=True,  # gate behind confirm (expensive)
+    destructive=True,
     needs_server=True,
     needs_graph=True,
 )
 
-# ── Vision ────────────────────────────────────────────────────────────────
+
 VIEW_IMAGE = ToolSpec(
     name="view_image",
     description=(
@@ -440,7 +430,7 @@ VIEW_IMAGE = ToolSpec(
     needs_root=True,
 )
 
-# ── Web search ────────────────────────────────────────────────────────────
+
 WEB_SEARCH = ToolSpec(
     name="web_search",
     description="Search the public web for prompt research, references, or docs.",
@@ -453,12 +443,12 @@ WEB_SEARCH = ToolSpec(
 )
 
 
-# ── Self-modify (brain graph) ─────────────────────────────────────────────
-# These tools let the agent edit its own system prompt, tool list, settings,
-# and brain markdown by emitting patches against the brain graph. The host
-# routes brain patches to the brain canvas and persists them via the WS
-# snapshot pipeline. Every self-modify tool is destructive so the user must
-# click the (red) confirm card before it applies.
+
+
+
+
+
+
 
 READ_BRAIN_GRAPH = ToolSpec(
     name="read_brain_graph",
@@ -566,7 +556,7 @@ ALL_TOOLS: List[ToolSpec] = [
     MOVE_NODE, LAYOUT_AUTO, SELECT_NODES, CLEAR_GRAPH,
     PLAN_GRAPH, RUN_GRAPH,
     VIEW_IMAGE, WEB_SEARCH,
-    # Self-modify: agent edits its own brain graph. All destructive + gated.
+
     READ_BRAIN_GRAPH, SET_SYSTEM_PROMPT_SECTION, ADD_SYSTEM_PROMPT_SECTION,
     REMOVE_SYSTEM_PROMPT_SECTION, SET_TOOL_FLAG, SET_AGENT_SETTING,
 ]
@@ -575,7 +565,7 @@ TOOLS_BY_NAME: Dict[str, ToolSpec] = {t.name: t for t in ALL_TOOLS}
 
 
 def _resolve_overrides(overrides: Any) -> Dict[str, Any]:
-    """Coerce a tool_overrides mapping (typed or raw dict) to plain dicts."""
+
     out: Dict[str, Any] = {}
     if not overrides:
         return out
@@ -596,7 +586,7 @@ def _resolve_overrides(overrides: Any) -> Dict[str, Any]:
 
 
 def effective_specs(overrides: Any = None) -> List[ToolSpec]:
-    """Return tool specs with overrides applied; disabled tools dropped."""
+
     ovs = _resolve_overrides(overrides)
     out: List[ToolSpec] = []
     for spec in ALL_TOOLS:
@@ -675,5 +665,5 @@ def invoke_tool(
         return {"error": f"bad arguments to {name}: {exc}"}
     except PermissionError as exc:
         return {"error": str(exc)}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return {"error": f"{type(exc).__name__}: {exc}"}

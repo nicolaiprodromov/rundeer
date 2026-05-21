@@ -1,4 +1,4 @@
-"""Graph inspection tools (read-only against the latest client snapshot)."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -51,7 +51,7 @@ def get_node_tool(graph: Any, *, node_id: str, include_result: bool = False) -> 
     }
     if include_result:
         out["lastResult"] = node.get("lastResult")
-    # Incoming/outgoing edges
+
     incoming, outgoing = [], []
     for edge in g["edges"]:
         if edge.get("toNode") == node_id:
@@ -79,11 +79,11 @@ def validate_graph_tool(graph: Any) -> Dict[str, Any]:
     g = _ensure_graph(graph)
     issues: List[Dict[str, Any]] = []
     node_ids = set(g["nodes"].keys())
-    # Orphan edges
+
     for edge in g["edges"]:
         if edge.get("fromNode") not in node_ids or edge.get("toNode") not in node_ids:
             issues.append({"severity": "error", "kind": "orphan-edge", "edge": edge.get("id")})
-    # Trigger present?
+
     has_trigger = any(n.get("type") == "run-trigger" for n in g["nodes"].values())
     if g["nodes"] and not has_trigger:
         issues.append({"severity": "warning", "kind": "no-trigger", "message": "graph has nodes but no run-trigger"})

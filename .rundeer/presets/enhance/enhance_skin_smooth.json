@@ -6,7 +6,7 @@
   "input": null,
 
   "output": {
-    "dir": ".rundeer/outputs",
+    "dir": ".rundeer/data/outputs",
     "name": "enhance_skin_smooth"
   },
 

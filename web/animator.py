@@ -1,11 +1,11 @@
-"""Foreground console for ``rundeer web``.
 
-Matches the look of the other rundeer CLI commands: a gradient deer banner,
-a ``=== rundeer · web ===`` header, then streaming log lines for incoming
-requests and runs. No full-screen redraws, no curses takeover, no fancy
-pulse bars — just plain stdout writes that cohabit cleanly with anything
-the server prints from worker threads.
-"""
+
+
+
+
+
+
+
 from __future__ import annotations
 
 import os
@@ -16,10 +16,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Tuple
 
-# Same gradient endpoints the curses TUI uses for the rundeer logo
-# (cli/tui.py: CRUSH_LOGO_GRADIENT_FROM/TO).
-_GRADIENT_FROM = (0xFF, 0x60, 0xFF)  # charmtone.Dolly  (pink)
-_GRADIENT_TO = (0x6B, 0x50, 0xFF)    # charmtone.Charple (violet)
+
+
+_GRADIENT_FROM = (0xFF, 0x60, 0xFF)
+_GRADIENT_TO = (0x6B, 0x50, 0xFF)
 
 _RESET = "\x1b[0m"
 _BOLD = "\x1b[1m"
@@ -74,7 +74,7 @@ def _now() -> str:
 
 
 def log_line(text: str, *, dim: bool = False) -> None:
-    """Thread-safe log line, formatted like the other rundeer commands."""
+
     fancy = _supports_ansi()
     stamp = _now()
     if fancy and dim:
@@ -105,17 +105,17 @@ def print_banner(*, url: str, project_root: Path) -> None:
 
 
 def run_console(*, url: str, project_root: Path, server: Any) -> None:
-    """Block in the foreground until SIGINT.
 
-    The server runs in its own daemon thread and emits log lines via
-    :func:`log_line`. This call simply prints the banner and idles, leaving
-    stdout free for the server's streaming output. Returns on Ctrl-C.
-    """
+
+
+
+
+
     print_banner(url=url, project_root=project_root)
 
     stop = threading.Event()
 
-    def _handle_sigint(signum, frame):  # noqa: ARG001
+    def _handle_sigint(signum, frame):
         stop.set()
 
     previous = signal.signal(signal.SIGINT, _handle_sigint)

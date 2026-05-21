@@ -1,30 +1,3 @@
-"""Brain graph: the user-editable representation of the agent's "brain".
-
-A *brain graph* is a regular rundeer-style node graph (same `{nodes, edges}`
-shape the node-editor uses). Three node types are special, everything else
-on the canvas is just the standard palette (string, bundle, preview…):
-
-  • node `agent` (singleton) — the agent itself. Its `brain` input takes
-    the compiled brain text; props carry runtime settings (model,
-    iteration caps, vision, temperature).
-  • node `brain` (singleton) — composes the agent's brain. Its `sections`
-    input accepts any number of strings (typically `text-input` nodes
-    or `create-bundle`s of them), concatenated in graph order into the
-    system prompt. Its `tools` input accepts `tool-flag` nodes (directly
-    or via bundles) describing which tools to enable / override.
-  • node `tool-flag` — props: tool_name (str), enabled (bool), description
-    (override), category (override), destructive (override bool).
-
-On save we *compile* the graph into an `AgentRuntimeConfig` and persist it
-next to the graph. The conversation loop reads the runtime config at the
-start of every turn, so edits take effect on the next reply without
-restarting anything. Style brains (`brain/<Name>/<name>.md`) are
-completely independent of this graph — they're a separate concept used by
-image commands, not by the chat agent.
-
-Ordering of section / tool children: by the source node's `y` coordinate
-(top-to-bottom), then `x`.
-"""
 from __future__ import annotations
 
 import json
@@ -35,6 +8,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from rundeer.core.paths import agent_dir
+
 from .profiles import DEFAULT_AGENT_ID, normalize_agent_id
 
 
@@ -44,17 +19,17 @@ RUNTIME_FILENAME = "runtime.json"
 AUDIT_LOG_FILENAME = "brain.log"
 
 
-# Node types the brain graph compiler understands directly. Generic nodes
-# (`text-input`, `create-bundle`, …) are traversed via edges rather than by
-# type, so they don't need to be listed here.
+
+
+
 BRAIN_NODE_TYPES = {
     "agent",
     "brain",
     "tool-flag",
 }
 
-# Generic palette node types we recognise when walking the section / tools
-# inputs of the brain node.
+
+
 TEXT_SOURCE_TYPES = {"text-input"}
 BUNDLE_PASSTHROUGH_TYPES = {"create-bundle", "folder-bundle", "sample-bundle"}
 LEGACY_BRAIN_NODE_TYPES = {
@@ -71,13 +46,13 @@ LEGACY_BRAIN_NODE_TYPES = {
 class ToolOverride:
     enabled: bool = True
     description: Optional[str] = None
-    category: Optional[str] = None  # "read" | "mutate" | "execute" | "vision" | "self_modify"
+    category: Optional[str] = None
     destructive: Optional[bool] = None
 
 
 @dataclass
 class AgentRuntimeConfig:
-    """Compiled output of a brain graph. Layered on top of AgentSettings."""
+
 
     system_prompt: str = ""
     settings: Dict[str, Any] = field(default_factory=dict)
@@ -103,7 +78,7 @@ class AgentRuntimeConfig:
         }
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
+
 
 def _as_bool(value: Any, default: bool = False) -> bool:
     if isinstance(value, bool):
@@ -172,7 +147,7 @@ def _sorted_by_position(nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def _connected_inputs(graph: Dict[str, Any], target_id: str, target_socket: str) -> List[str]:
-    """Return source node ids whose edges land on (target_id, target_socket)."""
+
     if _node_id_is_muted(graph, target_id):
         return []
     out = []
@@ -186,26 +161,26 @@ def _connected_inputs(graph: Dict[str, Any], target_id: str, target_socket: str)
     return out
 
 
-# ── Default seed ───────────────────────────────────────────────────────────
+
 
 def seed_default_graph(
     *,
     core_prompt: str,
     all_tools: List[Any],
 ) -> Dict[str, Any]:
-    """Build a default brain graph from the current Python-level defaults.
 
-    Layout:
 
-        text-input sections   ─┐
-                               ├──► (create-bundle "sections") ──► brain.sections
-        text-input sections   ─┘
-                                                                  brain.out ──► agent.brain
-        tool-flag tool 1      ─┐
-        tool-flag tool 2      ─┤
-        \u2026                     ├──► (create-bundle "tools")    ──► brain.tools
-        tool-flag tool N      ─┘
-    """
+
+
+
+
+
+
+
+
+
+
+
     nodes: Dict[str, Dict[str, Any]] = {}
     edges: List[Dict[str, Any]] = []
     nid = 1
@@ -216,14 +191,14 @@ def seed_default_graph(
         nid += 1
         return out
 
-    # Column X positions
+
     X_SOURCES = 0.0
     X_BUNDLE = 380.0
     X_BRAIN = 760.0
     X_AGENT = 1140.0
     X_PREVIEW = 1140.0
 
-    # Brain (singleton)
+
     brain_id = next_id()
     nodes[brain_id] = {
         "id": brain_id,
@@ -233,7 +208,7 @@ def seed_default_graph(
         "props": {},
     }
 
-    # Agent (singleton)
+
     agent_id = next_id()
     nodes[agent_id] = {
         "id": agent_id,
@@ -241,13 +216,13 @@ def seed_default_graph(
         "x": X_AGENT,
         "y": 0.0,
         "props": {
-            "model": "",                 # empty → keep MODEL_NAME from .env
+            "model": "",
             "max_tool_iterations": 32,
             "max_file_bytes": 200000,
             "max_list_entries": 200,
             "max_web_search_per_turn": 8,
             "vision_enabled": True,
-            "temperature": "",            # empty \u2192 provider default
+            "temperature": "",
         },
     }
     edges.append({
@@ -256,7 +231,7 @@ def seed_default_graph(
         "toNode": agent_id, "toSocket": "brain",
     })
 
-    # Preview (standard palette node) showing the compiled brain text.
+
     preview_id = next_id()
     nodes[preview_id] = {
         "id": preview_id,
@@ -273,7 +248,7 @@ def seed_default_graph(
         "toNode": preview_id, "toSocket": "in",
     })
 
-    # Sections bundle: one text-input per section, all gathered by a create-bundle.
+
     sections = _split_prompt_into_sections(core_prompt)
     sections_bundle_id = next_id()
     nodes[sections_bundle_id] = {
@@ -307,7 +282,7 @@ def seed_default_graph(
         })
         sy += 220.0
 
-    # Tools bundle: one tool-flag per tool, gathered by a create-bundle.
+
     tools_bundle_id = next_id()
     nodes[tools_bundle_id] = {
         "id": tools_bundle_id,
@@ -333,9 +308,9 @@ def seed_default_graph(
             "props": {
                 "tool_name": spec.name,
                 "enabled": True,
-                "description": "",       # empty \u2192 use built-in
-                "category": "",          # empty \u2192 use built-in
-                "destructive": "",       # empty \u2192 use built-in (tri-state: "", "true", "false")
+                "description": "",
+                "category": "",
+                "destructive": "",
             },
         }
         edges.append({
@@ -365,10 +340,10 @@ def _slug(text: str) -> str:
 
 
 def _split_prompt_into_sections(prompt: str) -> List[Tuple[str, str]]:
-    """Split a markdown prompt into `(title, body)` chunks by `# heading` lines.
 
-    Content before the first heading becomes a section titled "Intro".
-    """
+
+
+
     lines = (prompt or "").splitlines()
     sections: List[Tuple[str, List[str]]] = []
     current_title = "Intro"
@@ -394,7 +369,7 @@ def _split_prompt_into_sections(prompt: str) -> List[Tuple[str, str]]:
     return out
 
 
-# ── Compilation ────────────────────────────────────────────────────────────
+
 
 def _collect_text_sources(
     graph: Dict[str, Any],
@@ -402,11 +377,11 @@ def _collect_text_sources(
     target_socket: str,
     visited: Optional[set] = None,
 ) -> List[Dict[str, Any]]:
-    """Walk back from `(target_id, target_socket)` collecting upstream
-    text-producing nodes. Bundles (`create-bundle` / `folder-bundle` /
-    `sample-bundle`) are transparently flattened so a Bundle of strings
-    behaves the same as connecting the strings directly.
-    """
+
+
+
+
+
     if visited is None:
         visited = set()
     out: List[Dict[str, Any]] = []
@@ -424,7 +399,7 @@ def _collect_text_sources(
         visited.add(nid)
         t = node.get("type")
         if t in BUNDLE_PASSTHROUGH_TYPES:
-            # Recurse through every incoming edge into the bundle.
+
             for edge in graph.get("edges") or []:
                 if not isinstance(edge, dict):
                     continue
@@ -438,16 +413,16 @@ def _collect_text_sources(
 
 
 def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
-    """Turn a brain graph into a runtime config.
 
-    Robust against missing/extra nodes; emits warnings rather than failing.
-    """
+
+
+
     cfg = AgentRuntimeConfig()
     if not isinstance(graph, dict):
         cfg.warnings.append("brain graph is empty")
         return cfg
 
-    # Agent (settings) singleton
+
     agent_nodes = _nodes_of(graph, "agent")
     if agent_nodes:
         if len(agent_nodes) > 1:
@@ -467,25 +442,25 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
             merged["temperature"] = temp
         cfg.settings = merged
 
-    # Brain singleton
+
     brain_nodes = _nodes_of(graph, "brain")
     if not brain_nodes:
-        # No brain wired \u2192 system_prompt stays empty (Conversation falls back
-        # to the built-in CORE_PROMPT) and every tool keeps its built-in
-        # behaviour. Done.
+
+
+
         return cfg
     if len(brain_nodes) > 1:
         cfg.warnings.append(f"{len(brain_nodes)} brain nodes found; using the first")
     brain_id = brain_nodes[0].get("id")
 
-    # System prompt: gather text-input nodes wired into brain.sections
-    # (transparently flattening any bundles in between).
+
+
     section_nodes = _collect_text_sources(graph, brain_id, "sections")
     chunks: List[str] = []
     for node in section_nodes:
         props = node.get("props") or {}
-        # Most string-producing nodes (`text-input`, file paths\u2026) keep their
-        # raw text in `value`. Fall back to `body`/`text` for forward compat.
+
+
         text = props.get("value")
         if text is None:
             text = props.get("body")
@@ -496,8 +471,8 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
             chunks.append(text)
     cfg.system_prompt = ("\n\n".join(chunks)).strip()
 
-    # Tool overrides: gather tool-flag nodes wired (transitively, through
-    # bundles) into brain.tools.
+
+
     tool_source_nodes = _collect_text_sources(graph, brain_id, "tools")
     seen_names: set = set()
     for node in tool_source_nodes:
@@ -526,9 +501,9 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
             destructive=destructive,
         )
 
-    # Any tool-flag node present in the graph but NOT wired (transitively)
-    # into brain.tools is treated as explicitly disabled \u2014 letting users
-    # drop a tool simply by detaching its flag.
+
+
+
     wired_ids = {n.get("id") for n in tool_source_nodes if n.get("type") == "tool-flag"}
     for tf in _nodes_of(graph, "tool-flag"):
         if tf.get("id") in wired_ids:
@@ -542,10 +517,10 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
     return cfg
 
 
-# ── Persistence ────────────────────────────────────────────────────────────
+
 
 def brain_dir(root: Path) -> Path:
-    return (root / ".rundeer" / "agent").resolve()
+    return agent_dir(root).resolve()
 
 
 def _agent_brain_dir(root: Path, agent_id: Optional[str] = None) -> Path:
@@ -592,7 +567,7 @@ def _read_json(path: Path) -> Optional[Any]:
 
 
 def load_brain_graph(root: Path, agent_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    """Load the saved brain graph for this project, or None if not saved yet."""
+
     data = _read_json(brain_graph_path(root, agent_id))
     if isinstance(data, dict) and isinstance(data.get("nodes"), dict):
         return data
@@ -608,11 +583,11 @@ def _requires_reseed(graph: Dict[str, Any]) -> bool:
 
 
 def save_brain_graph(root: Path, graph: Dict[str, Any], agent_id: Optional[str] = None) -> AgentRuntimeConfig:
-    """Persist the brain graph and its compiled runtime config.
 
-    Returns the compiled `AgentRuntimeConfig` so callers can hand it back
-    in the HTTP response without recompiling.
-    """
+
+
+
+
     if not isinstance(graph, dict):
         raise ValueError("brain graph must be an object")
     resolved_agent_id = normalize_agent_id(agent_id)
@@ -635,11 +610,11 @@ def save_brain_graph(root: Path, graph: Dict[str, Any], agent_id: Optional[str] 
 
 
 def load_runtime_config(root: Path, agent_id: Optional[str] = None) -> AgentRuntimeConfig:
-    """Read the compiled runtime config, recompiling on the fly if missing."""
+
     data = _read_json(runtime_path(root, agent_id))
     if isinstance(data, dict):
         return _runtime_from_dict(data)
-    # Fallback: try compiling from the saved graph.
+
     graph = load_brain_graph(root, agent_id)
     if graph is not None:
         return compile_brain_graph(graph)
@@ -664,10 +639,10 @@ def _runtime_from_dict(data: Dict[str, Any]) -> AgentRuntimeConfig:
     return cfg
 
 
-# ── Seeding helper (uses the live code as input) ──────────────────────────
+
 
 def build_default_graph(root: Path) -> Dict[str, Any]:
-    """Build a seeded brain graph from current code defaults."""
+
     from .system_prompt import CORE_PROMPT
     from .tools import ALL_TOOLS
 

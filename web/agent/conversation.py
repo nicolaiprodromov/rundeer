@@ -1,19 +1,3 @@
-"""Async conversation loop powering the rundeer agent.
-
-Design:
-  - One `Conversation` per WS connection.
-  - Tools call into `web.agent.tools` (sandboxed).
-  - Graph mutations are emitted as `graph_patch` events; the client applies
-    them and echoes back a fresh snapshot so the next turn sees reality.
-  - Destructive / expensive tools require a `confirm_response` from the client
-    before executing.
-  - Vision: when `view_image` returns a data URL, we attach it as a vision
-    input on the *next* user-role message so the model can actually see it.
-  - User edits between turns are diffed and injected as a terse system note.
-
-This file uses an `asyncio.Queue[Event]` per turn so events stream out to the
-WebSocket in order; the WS server drains the queue while the loop pushes.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -41,11 +25,11 @@ from .tools import (
 )
 
 
-# Tools the client is expected to apply (patch ops) before continuing.
+
 PATCH_EMITTING_CATEGORIES = {"mutate"}
 
 
-# ── Event helpers ─────────────────────────────────────────────────────────
+
 def evt(kind: str, **fields: Any) -> Dict[str, Any]:
     return {"type": kind, "ts": time.time(), **fields}
 
@@ -61,8 +45,8 @@ class PendingConfirm:
 class Conversation:
     settings: AgentSettings
     root: Path
-    server: Any  # RundeerWebServer
-    record: Dict[str, Any]  # persisted record (see persistence.py)
+    server: Any
+    record: Dict[str, Any]
     agent_id: str = DEFAULT_AGENT_ID
     messages: List[Dict[str, Any]] = field(default_factory=list)
     snapshot: Dict[str, Any] = field(default_factory=lambda: {"nodes": {}, "edges": []})
@@ -77,10 +61,10 @@ class Conversation:
     _brain_snapshot_version: int = 0
     _brain_snapshot_waiters: List[asyncio.Future] = field(default_factory=list)
     _persist_task: Optional[asyncio.Task] = None
-    _runtime: Any = None  # AgentRuntimeConfig — lazily loaded each turn
+    _runtime: Any = None
     _effective_settings: Optional[AgentSettings] = None
 
-    # ── Lifecycle ─────────────────────────────────────────────────────────
+
     @classmethod
     def from_record(cls, settings: AgentSettings, root: Path, server: Any, record: Dict[str, Any], agent_id: Optional[str] = None) -> "Conversation":
         resolved_agent_id = normalize_agent_id(agent_id or record.get("agent_id"))
@@ -90,12 +74,12 @@ class Conversation:
         return conv
 
     def update_snapshot(self, snapshot: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-        """Replace the snapshot. Returns a diff *if* the user appears to have edited.
 
-        The diff is only injected when there are changes since the last
-        snapshot the model already saw (`last_seen_snapshot`). Returns None
-        if no meaningful change.
-        """
+
+
+
+
+
         if not isinstance(snapshot, dict):
             return None
         self.snapshot = {
@@ -113,7 +97,7 @@ class Conversation:
         return diff if has_changes(diff) else None
 
     def mark_snapshot_seen(self) -> None:
-        # Deep-ish copy of just the parts we diff on.
+
         self.last_seen_snapshot = {
             "nodes": dict(self.snapshot.get("nodes") or {}),
             "edges": list(self.snapshot.get("edges") or []),
@@ -131,7 +115,7 @@ class Conversation:
         pc.fut.set_result(payload or {"approved": False})
         return True
 
-    # ── Brain graph snapshot (parallel pipeline to workflow graph) ────────
+
     def update_brain_snapshot(self, snapshot: Optional[Dict[str, Any]]) -> None:
         if not isinstance(snapshot, dict):
             return
@@ -145,7 +129,7 @@ class Conversation:
         for fut in waiters:
             if not fut.done():
                 fut.set_result(self._brain_snapshot_version)
-        # Clear cached runtime so the next turn reloads it.
+
         self._runtime = None
         self._effective_settings = None
 
@@ -164,18 +148,18 @@ class Conversation:
             return False
         return True
 
-    # ── Runtime config (compiled brain graph) ─────────────────────────────
+
     def _load_runtime(self) -> None:
-        """Refresh the cached runtime config + effective settings from disk."""
+
         from .brain_graph import AgentRuntimeConfig, load_runtime_config
         try:
             self._runtime = load_runtime_config(self.root, agent_id=self.agent_id)
-        except Exception:  # noqa: BLE001
+        except Exception:
             self._runtime = AgentRuntimeConfig()
         self._effective_settings = self._merge_settings(self._runtime)
 
     def _merge_settings(self, runtime: Any) -> AgentSettings:
-        """Layer brain-graph settings on top of the base AgentSettings."""
+
         if runtime is None:
             return self.settings
         overrides: Dict[str, Any] = dict(getattr(runtime, "settings", {}) or {})
@@ -214,27 +198,27 @@ class Conversation:
     def effective_settings(self) -> AgentSettings:
         return self._effective_settings or self.settings
 
-    # ── Persistence helpers ───────────────────────────────────────────────
-    def _persist(self) -> None:
-        """Snapshot the record and write it to disk.
 
-        We hop to a default executor when an event loop is running so the
-        JSON serialize + atomic rename never blocks token forwarding on the
-        asyncio loop thread. When called outside a running loop (tests,
-        sync paths) we fall back to a direct write.
-        """
+    def _persist(self) -> None:
+
+
+
+
+
+
+
         self.record["messages"] = self.messages
         self.record["agent_id"] = self.agent_id
         from .persistence import save_conversation
-        # Take a shallow copy of the record so concurrent mutations during
-        # the executor write don't trip serialization mid-flight.
+
+
         snapshot = dict(self.record)
         snapshot["messages"] = list(self.messages)
 
         def _do_write() -> None:
             try:
                 save_conversation(self.root, snapshot)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
         try:
@@ -248,7 +232,7 @@ class Conversation:
             if previous is not None:
                 try:
                     await previous
-                except Exception:  # noqa: BLE001
+                except Exception:
                     pass
             await loop.run_in_executor(None, _do_write)
 
@@ -260,7 +244,7 @@ class Conversation:
             return
         try:
             await task
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
 
     async def _wait_for_snapshot_after(self, version: int, *, timeout: float = 0.6) -> bool:
@@ -280,16 +264,16 @@ class Conversation:
         self.mark_snapshot_seen()
         return True
 
-    # ── Main turn ─────────────────────────────────────────────────────────
+
     async def run_turn(self, user_text: str, attached_images: Optional[List[str]] = None) -> AsyncIterator[Dict[str, Any]]:
-        """Run one user turn. Yields events for the WS to forward."""
+
         self.cancel_event.clear()
         self.web_search_count = 0
-        # Refresh compiled brain-graph config so edits take effect next turn.
+
         self._load_runtime()
 
-        # Build user message — optionally include an injected user-edit diff,
-        # client-attached images, and the latest snapshot summary.
+
+
         diff = self.update_snapshot(self.snapshot)
         user_content: List[Dict[str, Any]] = []
         if diff is not None:
@@ -299,12 +283,12 @@ class Conversation:
         if snap_note:
             user_content.append({"type": "text", "text": snap_note})
         user_content.append({"type": "text", "text": user_text or ""})
-        # Attach images the user sent with this message.
+
         for url in attached_images or []:
             user_content.append({"type": "image_url", "image_url": {"url": url}})
 
-        # When there are no images and no extra blocks, collapse to a plain string
-        # so providers without multimodal parts (none currently) stay happy.
+
+
         if all(b.get("type") == "text" for b in user_content):
             self.messages.append({"role": "user", "content": "\n\n".join(b["text"] for b in user_content if b.get("text"))})
         else:
@@ -316,7 +300,7 @@ class Conversation:
 
         yield evt("message_start", role="user")
 
-        # System prompt (regenerated per turn to reflect current brains)
+
         system_msg = {"role": "system", "content": build_system_prompt(
             self.root,
             project_name=self.root.name,
@@ -335,20 +319,20 @@ class Conversation:
             except CancelledTurn:
                 yield evt("cancelled")
                 return
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 yield evt("error", message=f"{type(exc).__name__}: {exc}")
                 return
 
             last = self.messages[-1]
             tool_calls = last.get("tool_calls") if isinstance(last, dict) else None
             if not tool_calls:
-                # Finished. _llm_step already persisted the final assistant
-                # message; no need to write again.
+
+
                 await self._flush_persist()
                 yield evt("done", iteration=iteration)
                 return
 
-            # Execute each tool call.
+
             for tc in tool_calls:
                 if self.cancel_event.is_set():
                     yield evt("cancelled")
@@ -358,7 +342,7 @@ class Conversation:
 
         yield evt("error", message=f"agent exceeded {self.effective_settings.max_tool_iterations} tool iterations")
 
-    # ── LLM step (streaming) ──────────────────────────────────────────────
+
     async def _llm_step(self, system_msg: Dict[str, Any]) -> AsyncIterator[Dict[str, Any]]:
         msg_id = uuid.uuid4().hex[:10]
         yield evt("message_start", role="assistant", id=msg_id)
@@ -378,10 +362,10 @@ class Conversation:
             call_kwargs["api_key"] = settings.api_key
         if settings.base_url:
             call_kwargs["api_base"] = settings.base_url
-        # When MODEL_NAME has no provider prefix (e.g. `grok-4.3`), route
-        # through the OpenAI-compatible path against the user's BASE_URL.
-        # litellm requires *some* provider hint; this is not a fallback —
-        # it's the routing implied by BASE_URL being set in .env.
+
+
+
+
         if "/" not in settings.model and settings.base_url:
             call_kwargs["custom_llm_provider"] = "openai"
         temp = settings.extra.get("temperature") if settings.extra else None
@@ -390,17 +374,17 @@ class Conversation:
 
         try:
             stream = await litellm.acompletion(**call_kwargs)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             yield evt("error", message=f"llm call failed: {exc}")
             raise
 
         accumulated_text = ""
         accumulated_reasoning = ""
-        # Tool calls assembled across deltas: index → {id, name, arguments_str}
+
         tool_calls_acc: Dict[int, Dict[str, Any]] = {}
         finish_reason: Optional[str] = None
 
-        # acompletion(stream=True) returns an async iterator (CustomStreamWrapper).
+
         try:
             async for chunk in stream:
                 if self.cancel_event.is_set():
@@ -410,7 +394,7 @@ class Conversation:
                             res = close()
                             if asyncio.iscoroutine(res):
                                 await res
-                    except Exception:  # noqa: BLE001
+                    except Exception:
                         pass
                     raise CancelledTurn()
                 try:
@@ -420,18 +404,18 @@ class Conversation:
                 delta = getattr(choice, "delta", None)
                 if delta is None:
                     continue
-                # Reasoning / thinking delta. Grok reasoning models stream this
-                # separately from visible assistant content.
+
+
                 reasoning = _delta_text(delta, "reasoning_content", "reasoning", "thinking")
                 if reasoning:
                     accumulated_reasoning += reasoning
                     yield evt("reasoning", id=msg_id, delta=reasoning)
-                # Text delta
+
                 text = _delta_text(delta, "content")
                 if text:
                     accumulated_text += text
                     yield evt("token", id=msg_id, delta=text)
-                # Tool-call deltas
+
                 tcs = _delta_field(delta, "tool_calls")
                 if tcs:
                     for tc in tcs:
@@ -448,15 +432,15 @@ class Conversation:
                 finish_reason = getattr(choice, "finish_reason", finish_reason)
         except CancelledTurn:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             yield evt("error", message=f"stream error: {exc}")
-            # Persist whatever we accumulated so the convo isn't lost.
+
             if accumulated_text or tool_calls_acc:
                 pass
             else:
                 raise
 
-        # Build assistant message
+
         tool_calls_final = []
         for idx in sorted(tool_calls_acc.keys()):
             tc = tool_calls_acc[idx]
@@ -478,7 +462,7 @@ class Conversation:
 
         yield evt("message_end", role="assistant", id=msg_id, finish_reason=finish_reason, tool_call_count=len(tool_calls_final))
 
-    # ── Tool dispatch ─────────────────────────────────────────────────────
+
     async def _handle_tool_call(self, tc: Dict[str, Any]) -> AsyncIterator[Dict[str, Any]]:
         call_id = tc.get("id")
         fn = tc.get("function") or {}
@@ -491,8 +475,8 @@ class Conversation:
         except json.JSONDecodeError:
             args = {}
 
-        # Resolve overrides on top of the registered spec. Disabled tools
-        # produce an immediate error so the model learns they're unavailable.
+
+
         base = TOOLS_BY_NAME.get(name)
         spec = effective_spec(name, self.tool_overrides) if base is not None else None
         disabled = base is not None and spec is None
@@ -513,11 +497,11 @@ class Conversation:
             self._append_tool_result(call_id, name, result)
             return
         else:
-            # Confirm gate for destructive / expensive tools.
+
             if spec.destructive:
-                # Create the future BEFORE yielding so a fast client that
-                # replies synchronously after seeing the confirm_request can
-                # resolve it without racing.
+
+
+
                 fut: asyncio.Future = asyncio.get_running_loop().create_future()
                 self.pending_confirm = PendingConfirm(fut=fut, tool_name=name, arguments=args)
                 yield evt("confirm_request", id=call_id, tool=name, arguments=args, summary=_confirm_summary(name, args), category=spec.category)
@@ -533,7 +517,7 @@ class Conversation:
                     self._append_tool_result(call_id, name, result)
                     return
 
-            # Rate-limit web search.
+
             if name == "web_search":
                 if self.web_search_count >= self.effective_settings.max_web_search_per_turn:
                     result = {"error": f"web_search rate limit exceeded ({self.effective_settings.max_web_search_per_turn}/turn)"}
@@ -548,9 +532,9 @@ class Conversation:
                 lambda: invoke_tool(name, args, root=self.root, server=self.server, graph=self.snapshot, agent_id=self.agent_id),
             )
 
-        # If the tool emitted a graph patch, forward it to the client.
-        # Brain-graph patches (self-modify tools) are routed to a dedicated
-        # event so the frontend applies them to the brain canvas.
+
+
+
         if isinstance(result, dict) and isinstance(result.get("patch"), list):
             patch_target = result.get("patch_target") or ("brain" if (spec and spec.category == "self_modify") else "workflow")
             if patch_target == "brain":
@@ -562,8 +546,8 @@ class Conversation:
                 )
                 if result["patch"]:
                     await self._wait_for_brain_snapshot_after(before)
-                # Force a fresh runtime read so subsequent steps in this turn
-                # see the model's own edits.
+
+
                 self._load_runtime()
                 yield evt("brain_compiled", summary=_brain_compiled_summary(self._runtime))
             else:
@@ -572,39 +556,39 @@ class Conversation:
                 if result["patch"]:
                     await self._wait_for_snapshot_after(before_patch_snapshot)
 
-        # Vision attachment: when view_image returns a data URL, queue it for
-        # the next user-role injection so the model actually sees the image.
+
+
         if isinstance(result, dict) and result.get("_attach_vision") and result.get("data_url"):
             self._pending_vision.append({
                 "type": "image_url",
                 "image_url": {"url": result["data_url"]},
             })
-            # Inject as a follow-up user message so the next assistant turn
-            # has the image in context. We don't put the giant data URL into
-            # tool_result that comes back to the model.
+
+
+
             light = {k: v for k, v in result.items() if k not in {"data_url", "_attach_vision"}}
             light["vision_attached"] = True
             result = light
-            # Queue a user-role injection right after the tool result.
+
             self._queue_vision_inject()
 
-        # Truncate huge tool results for transport / token economy.
+
         result_for_model = _truncate_for_model(result)
         yield evt("tool_result", id=call_id, name=name, status="ok" if not result.get("error") else "error", result=result_for_model)
         self._append_tool_result(call_id, name, result_for_model)
 
     def _queue_vision_inject(self) -> None:
-        """Push the queued image into the message history so the next LLM step sees it."""
+
         if not self._pending_vision:
             return
-        # We add a *user* message AFTER the upcoming tool result so the model
-        # alternation stays valid. We do this lazily right before the next
-        # llm_step by appending here — but that would put images before the
-        # tool result. So instead we defer: append now as 'user' with the
-        # image content; the next llm call will include it.
-        # However: the next item to be appended is the tool_result. Order
-        # in messages becomes: ..., assistant(tool_calls), tool(result), user(image+note).
-        # The model treats the user image as a fresh signal. This is OK.
+
+
+
+
+
+
+
+
         content = list(self._pending_vision)
         content.insert(0, {"type": "text", "text": "(image attached from view_image — please use it to inform your next response)"})
         self.messages.append({"role": "user", "content": content})
@@ -617,17 +601,17 @@ class Conversation:
             "name": name,
             "content": json.dumps(result, ensure_ascii=False, default=str)[:32_000],
         })
-        # If we queued a vision injection during this tool call, append it after the tool result.
+
         if self._pending_vision:
             self._queue_vision_inject()
-        # Intentionally no _persist() here: tool results land on disk together
-        # with the next assistant message at the end of the next _llm_step.
-        # Persisting per tool result added one synchronous JSON write per
-        # tool call on the asyncio loop thread, blocking token forwarding
-        # and making the agent feel sluggish.
+
+
+
+
+
 
     def _snapshot_note(self) -> Optional[str]:
-        """Short summary of the current graph attached to user turns."""
+
         g = self.snapshot or {}
         nodes = g.get("nodes") or {}
         edges = g.get("edges") or []
@@ -643,7 +627,7 @@ class Conversation:
         return f"[graph snapshot: {len(nodes)} nodes ({type_summary}), {len(edges)} edges]{sel_note}"
 
     def _messages_for_llm(self) -> List[Dict[str, Any]]:
-        # Drop any malformed messages defensively.
+
         out = []
         for m in self.messages:
             if not isinstance(m, dict) or not m.get("role"):
@@ -700,7 +684,7 @@ def _confirm_summary(tool: str, args: Dict[str, Any]) -> str:
         return "run the full graph (will spend API quota)"
     if tool == "disconnect_nodes":
         return f"disconnect edge {args.get('edge_id') or args.get('to_node', '?')}.{args.get('to_socket', '?')}"
-    # Self-modify tools (brain graph mutations).
+
     if tool == "set_tool_flag":
         return f"change tool '{args.get('tool_name')}' (enabled={args.get('enabled')})"
     if tool == "set_agent_setting":

@@ -1,31 +1,16 @@
-/* Rundeer agent chat — WebSocket client + UI for the N panel.
- *
- * Boot is triggered from node-editor.js once /api/state confirms the agent
- * is enabled. We don't render anything if it isn't.
- *
- * Responsibilities:
- *   - Maintain a single WS connection with auto-reconnect (exp backoff).
- *   - Render streaming assistant tokens into bubbles.
- *   - Render tool calls / results as collapsible cards.
- *   - Render destructive-tool confirm cards (Approve / Deny).
- *   - Apply server-emitted graph patches via host's applyGraphPatch().
- *   - Echo graph snapshots back to the server after edits and on demand.
- *   - @-mentions via /api/mentions.
- *   - Image attachments (drag/drop, file input) → sent inline with user_message.
- */
 (function () {
   const AgentChat = (window.AgentChat = window.AgentChat || {});
 
-  // ── State ──────────────────────────────────────────────────────────────
+  
   let cfg = null;
   let ws = null;
   let wsBackoff = 500;
   let connected = false;
-  let streamingMsg = null; // current assistant bubble being filled
+  let streamingMsg = null; 
   let toolCardById = {};
   let confirmCardById = {};
-  let attachments = []; // [{url, name}]
-  let mentionState = null; // { anchor, query, items, index }
+  let attachments = []; 
+  let mentionState = null; 
   let snapshotTimer = null;
   let lastSentSnapshot = null;
   let history = [];
@@ -37,7 +22,7 @@
   let composerEl, sendBtnEl, cancelBtnEl, newBtnEl, historyBtnEl, historyEl, historyListEl;
   let attachmentsEl, mentionPopEl, agentRootEl, agentDisabledEl, agentListEl, agentCreateBtnEl;
 
-  // ── Boot ───────────────────────────────────────────────────────────────
+  
   AgentChat.init = function (options) {
     cfg = Object.assign({
       wsUrl: "",
@@ -105,7 +90,7 @@
     connect();
   };
 
-  // ── WebSocket ──────────────────────────────────────────────────────────
+  
   function connect() {
     try {
       ws = new WebSocket(cfg.wsUrl);
@@ -146,7 +131,7 @@
     try { ws.send(JSON.stringify(payload)); return true; } catch { return false; }
   }
 
-  // ── Event handling ─────────────────────────────────────────────────────
+  
   function handleEvent(ev) {
     switch (ev.type) {
       case "ready":
@@ -186,10 +171,10 @@
           const prevId = currentConv && currentConv.id;
           currentConv = ev.conversation;
           const replay = ev.events_replay || [];
-          // Only wipe the stream when we're switching to a different
-          // conversation OR replaying history. A fresh conversation
-          // auto-created during user_message must preserve the bubble
-          // the user just typed.
+          
+          
+          
+          
           if (replay.length || (prevId && prevId !== (currentConv && currentConv.id))) {
             clearStream();
             for (const re of replay) replayEvent(re);
@@ -289,7 +274,7 @@
     }
   }
 
-  // ── Rendering helpers ──────────────────────────────────────────────────
+  
   function setStatus(state) {
     void state;
   }
@@ -673,7 +658,7 @@
     try { return JSON.parse(s || "{}"); } catch { return {}; }
   }
 
-  // ── Composer ───────────────────────────────────────────────────────────
+  
   function onSend(e) {
     if (e) e.preventDefault();
     const text = (inputEl.value || "").trim();
@@ -728,7 +713,7 @@
     inputEl.style.height = Math.min(160, inputEl.scrollHeight) + "px";
   }
 
-  // ── Attachments ────────────────────────────────────────────────────────
+  
   function onFilesPicked(e) {
     const files = [...(e.target.files || [])];
     for (const f of files) ingestFile(f);
@@ -771,7 +756,7 @@
     });
   }
 
-  // ── @ Mentions ─────────────────────────────────────────────────────────
+  
   function createMentionPop() {
     const el = document.createElement("div");
     el.className = "ne-agent-mention-pop";
@@ -825,7 +810,7 @@
     return escHtml(s).replace(/'/g, "&#39;");
   }
 
-  // ── Snapshot push (debounced) ──────────────────────────────────────────
+  
   function scheduleSnapshotPush() {
     if (snapshotTimer) clearTimeout(snapshotTimer);
     snapshotTimer = setTimeout(() => pushSnapshot(false), 250);
@@ -851,10 +836,10 @@
     sendWS({ type: "brain_graph_snapshot", graph: snap, persist: true });
   }
 
-  // Public bridge so node-editor.js can push a freshly-edited brain graph
-  // straight to the agent process (which persists + recompiles it).
-  // Pass persist=false when the caller has already persisted via HTTP so
-  // the agent only updates its in-memory snapshot/runtime.
+  
+  
+  
+  
   AgentChat.sendBrainSnapshot = function (snap, opts) {
     if (!snap || !connected) return;
     lastSentBrainSnapshot = JSON.stringify(snap);
@@ -862,7 +847,7 @@
     sendWS({ type: "brain_graph_snapshot", graph: snap, persist });
   };
 
-  // ── History ────────────────────────────────────────────────────────────
+  
   function toggleHistory() {
     const palette = window.RundeerPalette;
     const wasOpen = palette && typeof palette.isPaneOpen === "function" ? palette.isPaneOpen("history") : !historyEl.hidden;
@@ -911,7 +896,7 @@
     if (typeof window.openAppDialog === "function") {
       const result = await window.openAppDialog({
         title: title || "Agent name",
-        message: "Saved under .rundeer/agent.",
+        message: "Saved under .rundeer/data/agent.",
         inputLabel: "Agent name",
         defaultValue: defaultName || "New agent",
         confirmText: "Save",

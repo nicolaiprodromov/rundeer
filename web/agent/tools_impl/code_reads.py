@@ -1,4 +1,4 @@
-"""Read-only file & directory tools (sandboxed to project root)."""
+
 from __future__ import annotations
 
 import os
@@ -33,14 +33,14 @@ def read_file_tool(
     max_bytes: int = 200_000,
     offset: int = 0,
 ) -> Dict[str, Any]:
-    """Read a text file from the project (sandboxed, size-capped)."""
+
     target = resolve_within(root, path)
     assert_readable(root, target)
     if not target.is_file():
         return {"error": f"not a file: {path}"}
     suffix = target.suffix.lower()
     if suffix and suffix not in TEXTUAL_EXTS:
-        # Allow extensionless files (LICENSE, AGENTS, etc.) but not binaries.
+
         return {
             "error": f"refusing to read binary/unknown file type: {suffix}",
             "hint": "use view_image for images or list_artifacts for media",
@@ -74,7 +74,7 @@ def list_dir_tool(
     path: str = "",
     max_entries: int = 200,
 ) -> Dict[str, Any]:
-    """List directory contents (single level)."""
+
     target = resolve_within(root, path or ".")
     if not target.is_dir():
         return {"error": f"not a directory: {path}"}
@@ -108,7 +108,7 @@ def search_files_tool(
     kind: str = "all",
     max_results: int = 80,
 ) -> Dict[str, Any]:
-    """Search project files by substring of relative path."""
+
     q = (query or "").strip().lower()
     if not q:
         return {"error": "empty query"}
@@ -156,7 +156,7 @@ def grep_tool(
     max_matches: int = 60,
     case_sensitive: bool = False,
 ) -> Dict[str, Any]:
-    """Plain-substring grep across project files (line-level)."""
+
     needle = pattern or ""
     if not needle:
         return {"error": "empty pattern"}

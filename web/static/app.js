@@ -1,7 +1,3 @@
-// rundeer console — frontend controller.
-// Talks to /api/state, /api/plan, /api/run, /api/runs/:id, /api/artifacts,
-// /api/files, /api/tree, /api/references, /api/mentions, /api/artifact-meta.
-
 const $ = (id) => document.getElementById(id);
 
 const COMMAND_TAGLINE = {
@@ -44,11 +40,11 @@ const state = {
   data: null,
   command: "image",
   references: new Set(),
-  refTreeOpen: new Set(),    // collapse state for reference tree dirs
+  refTreeOpen: new Set(),    
   fileTreeOpen: new Set(["/"]),
   fileTreeRoot: null,
   fileFilter: "",
-  artifactView: "grid",      // grid | tree
+  artifactView: "grid",      
   artifactSize: "md",
   artifactSearch: "",
   artifacts: [],
@@ -68,7 +64,7 @@ const state = {
   dockExpanded: false,
 };
 
-// --- Boot ---------------------------------------------------------------
+
 
 document.addEventListener("DOMContentLoaded", () => {
   bindStaticHandlers();
@@ -118,7 +114,7 @@ function bindStaticHandlers() {
   $("outputCollapseButton").addEventListener("click", () => togglePanel("output"));
   $("filesCollapseButton").addEventListener("click", () => togglePanel("files"));
 
-  // Artifact dock controls
+  
   $("artifactSearch").addEventListener("input", debounce((e) => {
     state.artifactSearch = e.target.value.trim().toLowerCase();
     renderArtifacts();
@@ -203,7 +199,7 @@ function updateAsideLayout() {
   else aside.style.gridTemplateRows = "auto auto";
 }
 
-// --- State load ---------------------------------------------------------
+
 
 async function loadState() {
   try {
@@ -299,15 +295,15 @@ async function loadReferenceTree() {
   }
 }
 
-// --- Masthead -----------------------------------------------------------
+
 
 function hydrateMasthead(data) {
   $("versionTag").textContent = data.version || "?";
   $("projectRoot").textContent = data.projectRoot || "?";
   const env = data.env || {};
-  // Prefer the agent's authoritative check (covers AGENT_API_KEY / MODEL_API_KEY /
-  // XAI_API_KEY / VISION_API_KEY) and fall back to the env summary when the
-  // agent block is absent.
+  
+  
+  
   const keysOk = data.agent && typeof data.agent.api_key_present === "boolean"
     ? Boolean(data.agent.api_key_present)
     : Boolean(env.VISION_API_KEY || env.MODEL_API_KEY);
@@ -324,7 +320,7 @@ function setStat(id, value, mod) {
   if (mod) el.classList.add(mod);
 }
 
-// --- Options ------------------------------------------------------------
+
 
 function hydrateOptions(data) {
   const opt = data.options || {};
@@ -362,7 +358,7 @@ function hydrateOptions(data) {
     setIfEmpty("videoResolution", norm.video.resolution);
     setIfEmpty("duration", norm.video.duration);
   }
-  if (norm.batch) setIfEmpty("outputDir", norm.batch.output_dir || ".rundeer/outputs");
+  if (norm.batch) setIfEmpty("outputDir", norm.batch.output_dir || ".rundeer/data/outputs");
   if (typeof norm.subject === "string") setIfEmpty("subject", norm.subject);
   if (typeof norm.style === "string") setIfEmpty("style", norm.style);
 }
@@ -392,7 +388,7 @@ function setIfEmpty(id, value) {
   }
 }
 
-// --- Command rail ------------------------------------------------------
+
 
 function setCommand(name) {
   state.command = name;
@@ -410,7 +406,7 @@ function setCommand(name) {
   });
 }
 
-// --- Reference tree -----------------------------------------------------
+
 
 function renderReferenceTree() {
   const host = $("referenceTree");
@@ -424,7 +420,7 @@ function renderReferenceTree() {
   const q = ($("refSearch").value || "").trim().toLowerCase();
   const expandAll = state.refTreeOpen.has("__all__");
 
-  // Group by style, then by referenceId-bucket of 25 for readability
+  
   const byStyle = {};
   for (const it of items) {
     if (q && !(`${it.referenceId ?? ""}`.includes(q) || it.name.toLowerCase().includes(q) || (it.style || "").toLowerCase().includes(q))) continue;
@@ -477,7 +473,7 @@ function toggleReference(id, el) {
   $("references").value = Array.from(state.references).join(",");
 }
 
-// --- Definitions --------------------------------------------------------
+
 
 function addDefinitionRow(initial = {}) {
   const row = document.createElement("div");
@@ -499,7 +495,7 @@ function collectDefinitions() {
   return out;
 }
 
-// --- File tree ----------------------------------------------------------
+
 
 function walkSetOpen(node, open, set) {
   if (!node) return;
@@ -553,7 +549,7 @@ function renderFileTree() {
     host.innerHTML = `<div class="file-empty">no matches in workspace tree</div>`;
     return;
   }
-  // Render the root's children directly (skip the synthetic root chrome).
+  
   (filtered.children || []).forEach((c) => host.appendChild(renderTreeNode(c, 0)));
 }
 
@@ -620,7 +616,7 @@ function fileGlyph(n) {
   }
 }
 
-// --- Artifacts ----------------------------------------------------------
+
 
 function hydrateArtifacts(artifacts) {
   state.artifacts = artifacts;
@@ -693,7 +689,7 @@ function buildArtifactCard(a) {
 
 function renderArtifactTree(host, items) {
   host.innerHTML = "";
-  // Build tree by directory.
+  
   const root = { name: "/", path: "", kind: "dir", children: [] };
   const dirs = new Map([["", root]]);
   for (const a of items) {
@@ -717,7 +713,7 @@ function renderArtifactTree(host, items) {
     host.innerHTML = `<div class="file-empty">no artifacts</div>`;
     return;
   }
-  // Sort and render
+  
   (function sort(n) {
     if (!n.children) return;
     n.children.sort((x, y) => (x.children ? 0 : 1) - (y.children ? 0 : 1) || x.name.localeCompare(y.name));
@@ -759,7 +755,7 @@ function renderArtifactTreeNode(node, depth) {
   return row;
 }
 
-// --- Lightbox / artifact viewer ----------------------------------------
+
 
 function bindLightbox() {
   $("lightboxClose").addEventListener("click", closeLightbox);
@@ -808,7 +804,7 @@ async function openLightbox(item) {
     try { pre.textContent = await (await fetch(item.url)).text(); } catch { pre.textContent = "(cannot preview)"; }
     body.appendChild(pre);
   }
-  // Side metadata
+  
   try {
     const meta = await fetchJSON(`/api/artifact-meta?path=${encodeURIComponent(item.path)}`);
     renderLightboxSide(meta);
@@ -892,7 +888,7 @@ function applyZoom(img) {
   $("lightboxZoom").textContent = `${Math.round(state.zoom.scale * 100)}%`;
 }
 
-// --- Mentions / @-popover ----------------------------------------------
+
 
 function buildMentionIndex() {
   const items = [];
@@ -1174,7 +1170,7 @@ function insertAtCursor(ta, text) {
   closeMentions();
 }
 
-// --- Settings -----------------------------------------------------------
+
 
 async function openSettings() {
   $("settingsPage").hidden = false;
@@ -1287,7 +1283,7 @@ function optionalNumber(id) {
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
 }
 
-// --- Submit -------------------------------------------------------------
+
 
 async function submit({ dryRun }) {
   const payload = collectPayload(dryRun);
@@ -1399,7 +1395,7 @@ function resetOutput() {
 
 function appendOutput(text, cls) {
   const term = $("terminalOutput");
-  // Drop the empty placeholder once we have real content.
+  
   const placeholder = term.querySelector(".terminal-empty");
   if (placeholder) placeholder.remove();
   const span = document.createElement("span");
@@ -1409,14 +1405,14 @@ function appendOutput(text, cls) {
   term.scrollTop = term.scrollHeight;
 }
 
-// Stream new bytes from the latest poll in a token-by-token feel.
+
 function streamOutput(full) {
   state.outputBuffer = full;
   if (!state.outputTimer) {
     state.outputTimer = setInterval(() => {
       const remaining = state.outputBuffer.length - state.outputRendered;
       if (remaining <= 0) return;
-      // Render in 80-char chunks for a smooth-but-fast feel.
+      
       const chunkSize = Math.max(40, Math.min(remaining, Math.ceil(remaining / 6)));
       const slice = state.outputBuffer.slice(state.outputRendered, state.outputRendered + chunkSize);
       state.outputRendered += slice.length;
@@ -1445,7 +1441,7 @@ function formatPlan(result) {
   return lines.join("\n");
 }
 
-// --- Deer animation -----------------------------------------------------
+
 
 function startDeerAnimation() {
   const target = $("asciiDeer");
@@ -1461,7 +1457,7 @@ function startDeerAnimation() {
   }).catch(() => {});
 }
 
-// --- Helpers ------------------------------------------------------------
+
 
 async function fetchJSON(url, opts = {}) {
   const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...opts });

@@ -1,36 +1,30 @@
-"""Path sandboxing for agent tools.
-
-All file/dir access goes through these helpers so the agent never escapes
-the project root and never reads sensitive files (`.env`, `.git/`, agent
-chat history, the rate-limit state file, etc.).
-"""
 from __future__ import annotations
 
 import os
 from pathlib import Path
 from typing import Iterable
 
-# Always denied (relative-to-root prefixes / exact names).
+
 SENSITIVE_NAMES = {".env"}
 SENSITIVE_PREFIXES = (
     ".git/",
-    ".rundeer/agent/",
+    ".rundeer/data/agent/",
     ".rundeer/.rate_limit_state",
 )
-# Files matching these suffix patterns are denied even if under root.
+
 SENSITIVE_NAME_PREFIXES = (".env.",)
 
 
 class SandboxError(PermissionError):
-    """Raised when a tool attempts to access a forbidden path."""
+    pass
 
 
 def resolve_within(root: Path, rel: str) -> Path:
-    """Resolve *rel* against *root* and ensure it stays inside.
 
-    *rel* may be absolute (must still resolve inside root), relative,
-    or contain ``..``. Symlinks are resolved before the check.
-    """
+
+
+
+
     if rel is None or str(rel).strip() == "":
         raise SandboxError("empty path")
     root_resolved = root.resolve()
@@ -44,7 +38,7 @@ def resolve_within(root: Path, rel: str) -> Path:
 
 
 def assert_readable(root: Path, path: Path) -> None:
-    """Raise SandboxError if *path* is sensitive."""
+
     root_resolved = root.resolve()
     try:
         rel = path.resolve().relative_to(root_resolved).as_posix()
@@ -70,7 +64,7 @@ def safe_rel(root: Path, path: Path) -> str:
 
 
 def iter_dir_filtered(path: Path, *, skip_dirs: Iterable[str] = ()) -> Iterable[Path]:
-    """Yield children of *path* skipping noisy directories."""
+
     skips = set(skip_dirs)
     try:
         entries = sorted(path.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))

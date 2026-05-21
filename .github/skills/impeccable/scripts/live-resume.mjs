@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-/**
- * Recover the next agent action from the durable live-session journal.
- */
+
+
+
 
 import { createLiveSessionStore } from './live-session-store.mjs';
 

@@ -1,10 +1,3 @@
-"""Per-project agent profiles.
-
-Profiles give the web app multiple named chat agents while keeping each
-agent's editable brain graph/runtime in the existing `.rundeer/agent` area.
-The legacy single-agent files remain the storage location for the default
-agent so existing projects continue to load unchanged.
-"""
 from __future__ import annotations
 
 import json
@@ -17,6 +10,8 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from rundeer.core.paths import agent_dir
+
 
 SCHEMA_VERSION = 1
 DEFAULT_AGENT_ID = "default"
@@ -24,7 +19,7 @@ REGISTRY_FILENAME = "agents.json"
 
 
 def _agent_root(root: Path) -> Path:
-    return (root / ".rundeer" / "agent").resolve()
+    return agent_dir(root).resolve()
 
 
 def _registry_path(root: Path) -> Path:

@@ -1,9 +1,3 @@
-"""System prompt assembly for the rundeer agent.
-
-Pulls from project docs at call time so the agent always sees the current
-brand voice + node catalog + brain list. Keeps the static portion short
-and lets tools fill in details on demand.
-"""
 from __future__ import annotations
 
 from functools import lru_cache
@@ -115,7 +109,7 @@ def _tool_summary_cached() -> str:
 
 
 def _build_tool_summary(allowed_names: List[str]) -> str:
-    from .tools import TOOLS_BY_NAME  # local import to avoid cycles at import time
+    from .tools import TOOLS_BY_NAME
     allow = set(allowed_names)
     by_cat: Dict[str, List[str]] = {}
     for name in allowed_names:
@@ -138,7 +132,7 @@ def _build_tool_summary(allowed_names: List[str]) -> str:
         if cat not in by_cat:
             continue
         parts.append(f"  • {labels.get(cat, cat)}: {', '.join(sorted(by_cat[cat]))}")
-    # Any remaining custom categories.
+
     for cat in sorted(by_cat):
         if cat in order:
             continue
@@ -159,13 +153,13 @@ def build_system_prompt(
     runtime: Any = None,
     enabled_tool_names: Optional[List[str]] = None,
 ) -> str:
-    """Assemble the system prompt for the next LLM step.
 
-    When `runtime` is provided and carries a non-empty `system_prompt`, that
-    text replaces the static CORE_PROMPT. The brain inventory and tool
-    summary (filtered to `enabled_tool_names` when given) are always appended
-    fresh so the model sees current state.
-    """
+
+
+
+
+
+
     base = ""
     if runtime is not None:
         base = str(getattr(runtime, "system_prompt", "") or "").strip()

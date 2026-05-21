@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-/**
- * Print durable recovery status for Impeccable live sessions.
- */
+
+
+
 
 import { createLiveSessionStore } from './live-session-store.mjs';
 import { readLiveServerInfo } from './impeccable-paths.mjs';

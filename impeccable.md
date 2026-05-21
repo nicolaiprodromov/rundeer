@@ -37,7 +37,7 @@ The first value moment is a safe resolved graph plan, a visible artifact, or a c
 1. Launch `rundeer web --open`, land on the Nodes workbench, add an Image or Video command node, enable Dry Run, and run the graph.
 2. Use Explore to preview config, outputs, references, logs, and generated files without leaving the webapp.
 3. Run `rundeer image --subject="..." --dry-run --no-tui` and understand the CLI plan.
-4. Select a style brain, pick references by id, run a small batch, and inspect outputs under `.rundeer/outputs`.
+4. Select a style brain, pick references by id, run a small batch, and inspect outputs under `.rundeer/data/outputs`.
 
 Avoid standalone tours that block the product. Use graph defaults, node labels, sockets, inline previews, dry-run output, Explore empty states, and artifact browsing as the teaching surface.
 

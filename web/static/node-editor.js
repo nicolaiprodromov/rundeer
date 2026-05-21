@@ -1,10 +1,10 @@
-// rundeer node editor — Blender-style node graph controller.
-// Features: modal G/R/S transforms, preview nodes, collapse-under-preview,
-// autosave to .rundeer, Node-Wrangler shortcuts, past-runs panel.
+
+
+
 
 "use strict";
 
-// ─── Socket type registry ────────────────────────────────────────────────────
+
 
 const SOCKET_TYPES = {
   text:         { color: "oklch(74% 0.180 235)", label: "String" },
@@ -32,20 +32,20 @@ function baseType(t) {
 function canConnect(typeA, typeB) {
   if (!typeA || !typeB) return false;
   if (typeA === typeB) return true;
-  // Run trigger wires are isolated from the data graph — they only match
-  // other "run" sockets, never the generic "any" passthrough.
+  
+  
   if (typeA === "run" || typeB === "run") return false;
   if (typeA === "any" || typeB === "any") return true;
-  // bundle  <->  scalar of same media kind
+  
   if (baseType(typeA) === baseType(typeB)) return true;
   if ((typeA === "filepath" || typeA === "text") && (typeB === "filepath" || typeB === "text")) return true;
-  // A constant vector primitive can feed any vector-map socket: numpy
-  // broadcasts a (1,1,3) array against (H,W,C) maps server-side.
+  
+  
   if ((typeA === "vector" && typeB === "vector-map") || (typeA === "vector-map" && typeB === "vector")) return true;
-  // UV / vector maps carry a .png sidecar so they wire-compatible with
-  // image consumers (cmd-edit, preview, uv-render's pixel input). The
-  // artifact resolver in resolveNode prefers the .npy when the consumer
-  // is itself a vector op.
+  
+  
+  
+  
   if ((typeA === "vector-map" && typeB === "image") || (typeA === "image" && typeB === "vector-map")) return true;
   if ((typeA === "vector-map" && typeB === "image-bundle") || (typeA === "image-bundle" && typeB === "vector-map")) return true;
   if ((typeA === "vector" && typeB === "image") || (typeA === "image" && typeB === "vector")) return true;
@@ -56,7 +56,7 @@ const COMMAND_COMMON_PROPS = [
   { id: "style", label: "Style", kind: "text", default: "Moebius", placeholder: "Moebius" },
   { id: "iterations", label: "Iterations", kind: "number", default: 1 },
   { id: "concurrency", label: "Concurrency", kind: "number", default: null, placeholder: "auto" },
-  { id: "output_dir", label: "Output Dir", kind: "text", default: ".rundeer/outputs" },
+  { id: "output_dir", label: "Output Dir", kind: "text", default: ".rundeer/data/outputs" },
   { id: "output_name", label: "Output Name", kind: "text", default: "output" },
 ];
 
@@ -126,9 +126,9 @@ function groupProps(group, props) {
   return props.map((prop) => ({ ...prop, group }));
 }
 
-// Compress node helper: returns true when its `in` socket has an incoming
-// edge whose effective output base-type is text. Used to conditionally render
-// the `instructions` input socket and to drive auto-helper-node creation.
+
+
+
 function compressInHasTextUpstream(nodeId) {
   const edge = activeIncomingEdges(nodeId, "in")[0];
   if (!edge) return false;
@@ -136,8 +136,8 @@ function compressInHasTextUpstream(nodeId) {
   return baseType(sock?.type || "any") === "text";
 }
 
-// Whether a given input socket should be visible on the node body. The
-// Compress node hides `instructions` unless its `in` is fed by a text source.
+
+
 function isInputSocketVisible(node, def, sock) {
   if (node?.type === "compress-image" && sock.id === "instructions") {
     return compressInHasTextUpstream(node.id);
@@ -180,9 +180,9 @@ function propGroupSummary(node, groupId, count) {
   return String(count);
 }
 
-// Returns true when a node's output socket carries a *bundle* (array of
-// values) rather than a single value. Used to show bundle markers on the
-// socket dot and to render bundle wires as dashed.
+
+
+
 function outputProducesBundle(nodeId, sockId, seen = new Set()) {
   const key = `${nodeId}:${sockId}`;
   if (seen.has(key)) return false;
@@ -198,7 +198,7 @@ function outputProducesBundle(nodeId, sockId, seen = new Set()) {
   if (n.type === "folder-bundle") return true;
   if (n.type === "create-bundle") return true;
   if (n.type === "sample-bundle") {
-    // count is always a scalar; only the `out` socket can ever be a bundle.
+    
     if (sockId !== "out") return false;
     return sampleBundleProducesBundle(n);
   }
@@ -206,8 +206,8 @@ function outputProducesBundle(nodeId, sockId, seen = new Set()) {
   if (COMMAND_TYPES.has(n.type)) {
     const directIters = Number(n.props.iterations || 1);
     if (directIters > 1) return true;
-    // iterations may also be wired in from an upstream node — peek at the
-    // source's static value so the bundle marker is still drawn pre-run.
+    
+    
     const wired = activeIncomingEdges(nodeId, "iterations")[0];
     if (wired) {
       const src = graph.nodes[wired.fromNode];
@@ -224,15 +224,15 @@ function outputProducesBundle(nodeId, sockId, seen = new Set()) {
   return false;
 }
 
-// ─── UV / Mix helpers ────────────────────────────────────────────────────
-// Small coercers shared between the `vector-op`, `mix`, and `uv-render`
-// executor cases. They turn the loosely-typed values the resolver collects
-// (paths, hex colors, numbers, arrays) into payload shapes the
-// /api/uv/* endpoints can consume.
+
+
+
+
+
 
 function _isUvPath(v) {
   if (typeof v !== "string" || !v) return false;
-  // Anything with a known image-ish suffix or our cached .npy maps.
+  
   return /\.(npy|png|jpe?g|webp|tiff?|bmp|gif)$/i.test(v);
 }
 
@@ -272,9 +272,9 @@ function _coerceVectorInput(v) {
 }
 
 function _coerceMixInput(v, { isFactor } = {}) {
-  // Returns { payload, isPath, scalar?, color? } — payload is the dict that
-  // goes into the /api/uv/mix request; the other fields drive the JS fast
-  // path.
+  
+  
+  
   if (typeof v === "string" && _isUvPath(v)) {
     return { payload: { path: v }, isPath: true };
   }
@@ -295,7 +295,7 @@ function _coerceMixInput(v, { isFactor } = {}) {
   if (typeof v === "number") {
     return { payload: { scalar: v }, isPath: false, scalar: v };
   }
-  // Default by role: factor → 0.5, color slot → black.
+  
   if (isFactor) return { payload: { scalar: 0.5 }, isPath: false, scalar: 0.5 };
   return { payload: { color: [0, 0, 0, 1] }, isPath: false, color: [0, 0, 0, 1] };
 }
@@ -309,9 +309,9 @@ function _coerceVector2Value(v, fallback = [0, 0]) {
     return fallback.slice(0, 2);
   }
   if (typeof v === "number") return Number.isFinite(v) ? [v, v] : fallback.slice(0, 2);
-  // Dict shapes that mirror the Python `_coerce_vector2` helper. These can
-  // come from prop sockets when an upstream node ships a wrapped vector
-  // (e.g. {x, y}) or a typed primitive ({scalar} / {color} / {value}).
+  
+  
+  
   if (typeof v === "object") {
     if ("x" in v || "y" in v) return _coerceVector2Value([v.x ?? fallback[0], v.y ?? fallback[1]], fallback);
     if ("value" in v) return _coerceVector2Value(v.value, fallback);
@@ -326,9 +326,9 @@ function _coerceVector2Value(v, fallback = [0, 0]) {
   return fallback.slice(0, 2);
 }
 
-// Detect strings that look like file paths (e.g. ".npy" UV maps) wired into
-// a size/position socket. Returns the offending path or "" — used to warn
-// users that a wired socket silently fell back to its default value.
+
+
+
 function _vectorSocketUnparseableSource(v) {
   if (typeof v !== "string") return "";
   const s = v.trim();
@@ -353,16 +353,16 @@ function _jsBlend(a, b, mode) {
     case "multiply": return pair((x, y) => x * y);
     case "screen":   return pair((x, y) => 1 - (1 - x) * (1 - y));
     case "overlay":  return pair((x, y) => x < 0.5 ? 2 * x * y : 1 - 2 * (1 - x) * (1 - y));
-    default:         return b.slice(); // "mix"
+    default:         return b.slice(); 
   }
 }
 
-// Parse a Sample Bundle expression into a list of integer indices given a
-// known bundle length. Used both at run time and for the bundle-marker hint.
-// Returns null when the expression is empty/wildcard (meaning "all items").
-// Supports: "*", "", single index, negative indices, comma lists, and
-// Python-style slices ("start:stop[:step]"). Out-of-range indices are
-// silently dropped.
+
+
+
+
+
+
 function parseSampleBundleExpression(expr, length) {
   const raw = String(expr ?? "").trim();
   if (!raw || raw === "*") return null;
@@ -406,8 +406,8 @@ function parseSampleBundleExpression(expr, length) {
   return out;
 }
 
-// Heuristic: does a `sample-bundle` node's expression yield multiple items?
-// Used for the dashed-wire / bundle-marker hint before the graph has run.
+
+
 function sampleBundleProducesBundle(n) {
   const expr = String(n?.props?.expression ?? "").trim();
   if (!expr || expr === "*") return true;
@@ -415,9 +415,9 @@ function sampleBundleProducesBundle(n) {
   return false;
 }
 
-// Resolve the effective base media type of an output socket, peeking past
-// reroutes and using the output socket type directly. Used by Create Bundle
-// to lock its item slots to a single coherent type.
+
+
+
 function effectiveBundleItemType(nodeId, socketId) {
   const seen = new Set();
   let curNode = nodeId;
@@ -453,7 +453,7 @@ function outputTypeForRenderedEdge(edge, seen = new Set()) {
   return outputSocketDef(edge.fromNode, edge.fromSocket)?.type || "any";
 }
 
-// ─── Node catalog ────────────────────────────────────────────────────────────
+
 
 const NODE_CATALOG = [
   {
@@ -492,9 +492,9 @@ const NODE_CATALOG = [
         props: [{ id: "value", label: "Value", kind: "checkbox", default: false }],
       },
       {
-        // Constant vector primitive (3-component). Feeds Vector / Mapping /
-        // Mix wherever a vector input is expected. The value broadcasts
-        // against per-pixel maps server-side.
+        
+        
+        
         type: "vector-input", label: "Vector", desc: "Constant 3-component vector (X, Y, Z).",
         allInline: true,
         inputs: [],
@@ -506,10 +506,10 @@ const NODE_CATALOG = [
         ],
       },
       {
-        // Unified file node — replaces the previous image-input/video-input/
-        // filepath-input trio. Inherits the Preview node's UI (toolbar,
-        // collapse-upstream button, refresh, media rendering) so the path
-        // value is shown inline without an extra Preview wired downstream.
+        
+        
+        
+        
         type: "file", label: "File", desc: "Path to an image, video, or any file. Previews the artifact inline.",
         inputs: [],
         outputs: [{ id: "out", label: "Out", type: "any" }],
@@ -546,10 +546,10 @@ const NODE_CATALOG = [
         ],
       },
       {
-        // Gaussian blur for images. Single image path in, single blurred
-        // image path out. Bundles fan out automatically (one cached output
-        // per input) so the node slots into a loop or feeds straight into
-        // a Preview / cmd-edit downstream.
+        
+        
+        
+        
         type: "blur-image", label: "Blur",
         desc: "Gaussian blur an image (or bundle of images)",
         inputs: [
@@ -778,9 +778,9 @@ const NODE_CATALOG = [
         ],
       },
       {
-        // Create Bundle — collects N inputs into a single bundle wire.
-        // The `items` socket is multi (a new empty placeholder row appears
-        // as soon as one is wired), and addEdge enforces same-type plugs.
+        
+        
+        
         type: "create-bundle", label: "Create Bundle", desc: "Combine multiple inputs of the same type into a bundle. Plug into the dotted socket — a new slot appears automatically.",
         defaultWidth: 240,
         inputs: [{ id: "items", label: "Item", type: "any", multi: true }],
@@ -788,15 +788,15 @@ const NODE_CATALOG = [
         props: [],
       },
       {
-        // Sample Bundle — pick indices / slices / wildcards out of a bundle.
-        // Expression syntax:
-        //   *                 — entire bundle (passthrough)
-        //   3                 — single item (output is scalar)
-        //   -1                — last item
-        //   0,2,4             — specific indices (output is a bundle)
-        //   1:5  · 1:5:2      — Python-style slice (start:stop[:step])
-        //   :3  · 2:          — open-ended slices
-        //   any combination of the above separated by commas
+        
+        
+        
+        
+        
+        
+        
+        
+        
         type: "sample-bundle", label: "Sample Bundle", desc: "Pick indices, slices, or a sub-bundle from a bundle. Single index → scalar, multiple → bundle.",
         defaultWidth: 260,
         inputs: [{ id: "bundle", label: "Bundle", type: "any" }],
@@ -839,9 +839,9 @@ const NODE_CATALOG = [
     category: "Triggers",
     nodes: [
       {
-        // Fires a manual run for the connected subgraph (upstream + downstream
-        // from each connected command node). Has only one output socket
-        // (the `run` type, isolated from data wires) and a big play button.
+        
+        
+        
         type: "run-trigger", label: "Run", desc: "Press play to run the connected command(s) and their upstream + downstream nodes.",
         defaultWidth: 200,
         defaultHeight: 170,
@@ -863,11 +863,11 @@ const NODE_CATALOG = [
     category: "Coordinates",
     nodes: [
       {
-        // Coordinate node: emits a fresh UV map at the requested size.
-        // Treated as both a vector-map source and an image source: its
-        // `.png` sidecar lets it feed any image consumer (cmd-edit,
-        // preview, uv-render), while the `.npy` flows naturally into
-        // downstream vector ops.
+        
+        
+        
+        
+        
         type: "coordinate", label: "Coordinate",
         desc: "Generate a bottom-left UV coordinate map (R=u, G=v in [0,1]). Acts as both a vector field and an image - wire into Mapping, Vector, Render, Preview, or any command's image input.",
         defaultWidth: 260,
@@ -883,7 +883,7 @@ const NODE_CATALOG = [
         ],
       },
       {
-        // Blender-style Mapping (Point mode): scale → rotate → translate.
+        
         type: "mapping", label: "Mapping",
         desc: "Transform a UV map: scale, rotate (deg), then translate, around a configurable pivot.",
         inputs: [{ id: "uv", label: "UV", type: "vector-map" }],
@@ -912,12 +912,12 @@ const NODE_CATALOG = [
     category: "Vector",
     nodes: [
       {
-        // Vector operations as a true per-pixel field operator (Blender's
-        // Vector Math). A/B accept anything that can be coerced to a
-        // per-pixel field: images, UV/vector maps, vector primitives, or
-        // scalars. The backend (core.uv_ops.vector_op) broadcasts scalars
-        // and vectors against spatial maps; mismatched spatial extents
-        // are nearest-neighbor resized to the larger side.
+        
+        
+        
+        
+        
+        
         type: "vector-op", label: "Vector",
         desc: "Per-pixel vector op between two fields (image, UV map, vector, or scalar). Mirrors Blender's Vector Math node.",
         inputs: [
@@ -934,8 +934,8 @@ const NODE_CATALOG = [
         ],
       },
       {
-        // Blender-style Mix node. Factor/A/B are prop sockets so each row is
-        // both the connectable socket and its local fallback control.
+        
+        
         type: "mix", label: "Mix",
         desc: "Blend two inputs by a factor. A/B default to color controls; factor can be a number or an image/map. Mirrors Blender's Mix node.",
         inputs: [],
@@ -977,10 +977,10 @@ const NODE_CATALOG = [
         resizable: true,
       },
       {
-        // Render: samples a pixel image at the UV coordinates in `uv`.
-        // Output is a regular image path, so downstream nodes treat it
-        // exactly like any other image. Shares the Preview node's inline
-        // rendering machinery (collapse, zoom, refresh).
+        
+        
+        
+        
         type: "uv-render", label: "Render",
         desc: "Sample a pixel image using a bottom-left UV coordinate map. Like Blender's Image Texture sampled by a custom UV.",
         inputs: [
@@ -999,13 +999,13 @@ const NODE_CATALOG = [
     ],
   },
 
-  // ─── Agent Brain ────────────────────────────────────────────────────────
-  // Three special nodes describe the chat agent: `brain` composes the
-  // system prompt + tool list, `agent` carries runtime settings and is
-  // the destination of the brain, and `tool-flag` enables/overrides a
-  // single tool. Everything else on the canvas (text-input, create-bundle,
-  // preview, …) comes from the regular palette — the brain just wires
-  // them together.
+  
+  
+  
+  
+  
+  
+  
   {
     category: "Agent Brain",
     nodes: [
@@ -1061,8 +1061,8 @@ const NODE_BY_TYPE = Object.fromEntries(
 const PREVIEW_TYPES = new Set(["preview", "file", "uv-render", "coordinate", "canvas"]);
 const LIVE_UPDATE_TYPES = new Set(["mix"]);
 const LEGACY_PREVIEW_TYPES = new Set(["preview-image", "preview-video", "preview-text"]);
-// Legacy primitive file-source types that were folded into the unified `file`
-// node. Migrated on load.
+
+
 const LEGACY_FILE_TYPES = new Set(["image-input", "video-input", "filepath-input"]);
 const COMMAND_TYPES = new Set(["cmd-image", "cmd-video", "cmd-edit", "cmd-merge", "cmd-extend"]);
 const PREVIEW_ZOOM_MIN = 1;
@@ -1101,10 +1101,10 @@ function stashNodeResult(nodeId, outputs) {
   return changed;
 }
 
-// ─── Graph state ─────────────────────────────────────────────────────────────
+
 
 const graph = {
-  nodes: {},   // id → { id, type, x, y, props, width, lastResult, hidden, collapsedBy, foldLocked, muted }
+  nodes: {},   
   edges: [],
   _nextId: 1,
 };
@@ -1156,7 +1156,7 @@ function genNodeId(preferredId = null) {
 }
 function genEdgeId() { return `e${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`; }
 
-// ─── Viewport ────────────────────────────────────────────────────────────────
+
 
 const vp = { x: 0, y: 0, zoom: 1 };
 const ZOOM_MIN = 0.08;
@@ -1221,7 +1221,7 @@ function preserveCanvasRightEdge(mutator) {
   renderConnections();
 }
 
-// ─── Interaction state ───────────────────────────────────────────────────────
+
 
 const ix = {
   draggingNode: null,
@@ -1236,20 +1236,20 @@ const ix = {
   boxStart: null,
   selection: new Set(),
   resizeHoverEl: null,
-  // Modal transform (Blender G/R/S)
-  modal: null,           // { kind: "G"|"R"|"S", startMouse:{x,y}, snapshots, companionSnapshots }
-  // Cut tool (Ctrl+RMB drag)
-  cutting: null,         // { points: [{x,y}, ...] }
-  // Mouse tracking for Shift+A
+  
+  modal: null,           
+  
+  cutting: null,         
+  
   lastMouseScreen: { x: 0, y: 0 },
   lastMouseCanvas: { x: 0, y: 0 },
 };
 
-// ─── Graph mutations ─────────────────────────────────────────────────────────
+
 
 function addNode(type, canvasX, canvasY, opts = {}) {
-  // Synthetic palette entry: "loop" creates a Decompose + Output pair
-  // sharing a fresh, unique loop_id so users insert the loop as one block.
+  
+  
   if (type === "loop") {
     return addLoopPair(canvasX, canvasY, opts);
   }
@@ -1259,8 +1259,8 @@ function addNode(type, canvasX, canvasY, opts = {}) {
   const props = {};
   for (const p of def.props || []) props[p.id] = p.default ?? "";
   Object.assign(props, opts.props || {});
-  // Adding a bare Decompose (e.g. via legacy graph load or undo): assign a
-  // unique loop_id and auto-add the matching Output node.
+  
+  
   const isStandaloneDecompose = (type === "loop-decompose" && !opts.skipPair);
   if (isStandaloneDecompose) {
     props.loop_id = nextLoopId();
@@ -1320,9 +1320,9 @@ function addNode(type, canvasX, canvasY, opts = {}) {
   return id;
 }
 
-// Create a Loop · Decompose + Loop · Output pair sharing a fresh loop_id.
-// Returns the id of the Decompose node (the anchor users will probably
-// click first).
+
+
+
 function addLoopPair(canvasX, canvasY, opts = {}) {
   const loopId = nextLoopId();
   const decDef = NODE_BY_TYPE["loop-decompose"];
@@ -1380,7 +1380,7 @@ function addLoopPair(canvasX, canvasY, opts = {}) {
   return decId;
 }
 
-// Pick a loop_id that doesn't collide with any existing pair.
+
 function nextLoopId() {
   const used = new Set(
     Object.values(graph.nodes)
@@ -1393,7 +1393,7 @@ function nextLoopId() {
 }
 
 function removeNode(id) {
-  // Also un-hide anything this node was collapsing
+  
   for (const other of Object.values(graph.nodes)) {
     if (other.collapsedBy === id) { other.collapsedBy = null; other.hidden = false; }
   }
@@ -1533,7 +1533,7 @@ function removeEdge(edgeId) {
 }
 
 function addEdge(fromNode, fromSocket, toNode, toSocket) {
-  // Prevent self-loops
+  
   if (fromNode === toNode) return;
   toSocket = canonicalInputSocketId(toNode, toSocket);
   const fromSockDef = outputSocketDef(fromNode, fromSocket);
@@ -1543,9 +1543,9 @@ function addEdge(fromNode, fromSocket, toNode, toSocket) {
     setTimeout(clearHint, 1200);
     return;
   }
-  // Create Bundle: enforce that every wired item shares the same base media
-  // type (image/video/text/etc.) so the resulting bundle is coherent. The
-  // first connection sets the bundle's effective type; later ones must match.
+  
+  
+  
   if (graph.nodes[toNode]?.type === "create-bundle" && toSocket === "items") {
     const existing = graph.edges.filter((e) => e.toNode === toNode && e.toSocket === "items");
     if (existing.length > 0) {
@@ -1562,10 +1562,10 @@ function addEdge(fromNode, fromSocket, toNode, toSocket) {
   }
   const isMulti = Boolean(toSockDef?.multi);
   if (!isMulti) {
-    // Replace any existing edge into the same input.
+    
     graph.edges = graph.edges.filter((e) => !(e.toNode === toNode && e.toSocket === toSocket));
   } else {
-    // Don't add a duplicate of the exact same connection.
+    
     if (graph.edges.some((e) =>
       e.fromNode === fromNode && e.fromSocket === fromSocket &&
       e.toNode === toNode && e.toSocket === toSocket
@@ -1578,11 +1578,11 @@ function addEdge(fromNode, fromSocket, toNode, toSocket) {
   schedulePreviewRefresh();
 }
 
-// Compress node bookkeeping. When the `in` socket gains a text upstream we
-// spawn (or reuse) a String node to the left, pre-filled with a useful
-// summarization prompt, and wire it into the `instructions` socket. When the
-// upstream is no longer text we tear down the helper edge but never delete
-// the spawned String node — the user keeps any edits to it.
+
+
+
+
+
 const COMPRESS_HELPER_PROMPT =
   "Summarize and compress the input text. Keep all the same meaning, intent, " +
   "facts, and tone — strip filler, redundancy, and rephrase verbose passages " +
@@ -1595,13 +1595,13 @@ function maintainCompressInstructions(nodeId, changedSocket) {
   if (changedSocket !== "in" && changedSocket !== "instructions") return;
   const hasText = compressInHasTextUpstream(nodeId);
   if (!hasText) {
-    // Drop any edge feeding `instructions`; helper node (if any) stays put.
+    
     graph.edges = graph.edges.filter(
       (e) => !(e.toNode === nodeId && e.toSocket === "instructions")
     );
     return;
   }
-  // Text upstream → ensure an instructions edge exists.
+  
   const existing = graph.edges.find(
     (e) => e.toNode === nodeId && e.toSocket === "instructions"
   );
@@ -1666,7 +1666,7 @@ function updateSelectionVisuals() {
   });
 }
 
-// ─── Upstream traversal (for preview collapse) ───────────────────────────────
+
 
 function getUpstreamNodes(nodeId, visited = new Set()) {
   if (visited.has(nodeId)) return visited;
@@ -1678,8 +1678,8 @@ function getUpstreamNodes(nodeId, visited = new Set()) {
 }
 
 function applyCollapseStates() {
-  // Reset transient collapse flags every render so toggling "collapsed" on/off
-  // immediately reflects, without leaking state from a previous expansion.
+  
+  
   for (const n of Object.values(graph.nodes)) {
     n.collapsedBy = null;
     n.collapseIndex = null;
@@ -1689,7 +1689,7 @@ function applyCollapseStates() {
     n.foldCount = null;
     n.hidden = false;
   }
-  // Apply: each collapsed preview hides every node upstream of it
+  
   for (const n of Object.values(graph.nodes)) {
     if (PREVIEW_TYPES.has(n.type) && n.collapsed) {
       const upstream = getUpstreamNodes(n.id);
@@ -1735,8 +1735,8 @@ function toggleCollapse(previewId) {
   if (!node || !PREVIEW_TYPES.has(node.type)) return;
   node.collapsed = !node.collapsed;
   renderGraph();
-  // The CSS transition (~280ms) animates upstream node positions; re-draw
-  // wires every frame so they track the moving sockets.
+  
+  
   animateConnectionsFor(320);
   scheduleAutosave();
 }
@@ -1944,7 +1944,7 @@ function animateConnectionsFor(durationMs) {
   requestAnimationFrame(tick);
 }
 
-// ─── Render ──────────────────────────────────────────────────────────────────
+
 
 function renderGraph() {
   applyCollapseStates();
@@ -1967,17 +1967,17 @@ function renderNodes() {
       el = buildNodeElement(id, node);
       canvas.appendChild(el);
     } else if (el.dataset.signature !== nodeSignature(node)) {
-      // Rebuild if shape changed
+      
       const replacement = buildNodeElement(id, node);
       el.replaceWith(replacement);
       el = replacement;
     }
     enforceNodeMinimumSize(id, node, el);
 
-    // Position: hidden nodes animate into a small stack tucked beneath their
-    // collapsed preview, so they disappear under the preview instead of on top.
-    // Fold-exposed nodes render in a temporary horizontal dock; their stored
-    // x/y remains the expanded graph layout, updated by group drags below.
+    
+    
+    
+    
     const target = node.hidden && node.collapsedBy && graph.nodes[node.collapsedBy]
       ? graph.nodes[node.collapsedBy]
       : null;
@@ -2011,19 +2011,19 @@ function renderNodes() {
 }
 
 function nodeSignature(node) {
-  // Used to detect when we need to rebuild DOM (e.g. preview content changes).
-  // Including the per-path cache token forces the <img>/<video> to refresh
-  // even when the upstream artifact path is unchanged between runs.
+  
+  
+  
   const v = node.lastResult?.value || "";
   const tok = v ? (artifactURL._tokens?.[v] || "") : "";
-  // Edges into this node affect socket layout (multi placeholders + prop-socket
-  // disabled state), so encode them so the DOM rebuilds when wires change.
+  
+  
   const inSig = graph.edges
     .filter((e) => e.toNode === node.id)
     .map((e) => `${e.toSocket}<${e.fromNode}.${e.fromSocket}`)
     .sort()
     .join(",");
-  // Bundle results render very differently (grid/slider) — encode shape too.
+  
   const resultShape = Array.isArray(v) ? `arr:${v.length}` : "";
   return [
     node.type,
@@ -2281,7 +2281,7 @@ function buildNodeElement(id, node) {
     el.classList.add("is-resized");
   }
 
-  // Header
+  
   const header = document.createElement("div");
   header.className = "ne-node-header";
   const isPreview = PREVIEW_TYPES.has(node.type);
@@ -2358,7 +2358,7 @@ function buildNodeElement(id, node) {
     const body = document.createElement("div");
     body.className = "ne-node-body";
 
-    // Outputs are intentionally first so data leaves from the top of each node.
+    
     const outputRows = (def.outputs || []).map((sock) => buildSocketRow(id, sock, false));
     if (outputRows.length > 0) {
       if (shouldWrapSocketSection(outputRows)) {
@@ -2375,15 +2375,15 @@ function buildNodeElement(id, node) {
       body.appendChild(buildNodeFields(id, node, def));
     }
 
-    // Static input sockets are kept below the inline fields, so outputs remain
-    // visually above inputs while prop values stay close to the node title.
+    
+    
     const inputRows = [];
     for (const sock of def.inputs || []) {
       if (!isInputSocketVisible(node, def, sock)) continue;
       if (sock.multi) {
-        // Render one row per existing edge plus one empty placeholder row at
-        // the bottom so the order of multi-image inputs is visible and the
-        // user can keep adding more.
+        
+        
+        
         const matches = graph.edges
           .filter((e) => e.toNode === id && e.toSocket === sock.id);
         matches.forEach((edge, i) => {
@@ -2407,12 +2407,12 @@ function buildNodeElement(id, node) {
       }
     }
 
-    // Preview content sits under the sockets so the media area stays stable.
+    
     if (PREVIEW_TYPES.has(node.type)) {
       body.appendChild(buildPreviewContent(node));
     }
 
-    // Run trigger: render a big play button below the output socket.
+    
     if (node.type === "run-trigger") {
       body.appendChild(buildRunTriggerButton(id));
     }
@@ -2622,7 +2622,7 @@ function stopGraphRun() {
   const run = _graphRunState;
   if (!run || run.cancelled) return;
   run.cancelled = true;
-  try { run.abortController?.abort(); } catch (_) { /* ignore */ }
+  try { run.abortController?.abort(); } catch (_) {  }
   resolvePauseWaiters(run);
   appendRunLog("■ Stopping graph…\n");
   setGraphStatus("stopping…", "is-cancelled");
@@ -2923,9 +2923,9 @@ function toggleNodePanel(nodeId, panelKey, defaultCollapsed = false) {
   if (!node) return;
   node.collapsedPanels ||= {};
   node.collapsedPanels[panelKey] = !isNodePanelCollapsed(node, panelKey, Boolean(defaultCollapsed));
-  // Toggling a panel changes the natural content size of the node, so any
-  // explicit height the user picked is no longer meaningful — revert to the
-  // CSS-driven natural fit so the node visibly adapts (shrinks or grows).
+  
+  
+  
   node.height = null;
   renderGraph();
   scheduleAutosave();
@@ -2934,9 +2934,9 @@ function toggleNodePanel(nodeId, panelKey, defaultCollapsed = false) {
 function previewBundleItems(node) {
   const value = node?.lastResult?.value;
   if (!Array.isArray(value)) return [];
-  // Defensive one-level flatten: in case an upstream emitted a nested
-  // bundle (older graphs, custom nodes), render it as a flat grid instead
-  // of stringified arrays.
+  
+  
+  
   const flat = [];
   for (const v of value) {
     if (Array.isArray(v)) flat.push(...v);
@@ -2953,7 +2953,7 @@ const PREVIEW_TILE_MIN = 56;
 const PREVIEW_TILE_MAX = 256;
 const PREVIEW_TILE_DEFAULT = 96;
 const PREVIEW_GRID_GAP = 4;
-const PREVIEW_GRID_OVERSCAN = 6; // rows above/below viewport to pre-render
+const PREVIEW_GRID_OVERSCAN = 6; 
 
 function previewTileSize(node) {
   const raw = Number(node?.previewTileSize);
@@ -2967,7 +2967,7 @@ function setPreviewTileSize(nodeId, next) {
   const size = clampValue(Math.round(Number(next) || PREVIEW_TILE_DEFAULT), PREVIEW_TILE_MIN, PREVIEW_TILE_MAX);
   if (node.previewTileSize === size) return;
   node.previewTileSize = size;
-  // Re-layout the grid in place rather than re-rendering everything.
+  
   const grid = document.querySelector(`[data-node-id="${nodeId}"] .ne-bundle-vgrid`);
   if (grid && grid._bundleVGrid) {
     grid._bundleVGrid.setTileSize(size);
@@ -2978,8 +2978,8 @@ function setPreviewTileSize(nodeId, next) {
   scheduleAutosave();
 }
 
-// Cheap thumbnail URL (server-side cached JPEG). Falls back to the
-// full file when we can't sensibly produce a thumb (text values etc).
+
+
 function thumbURL(path, size = 128) {
   const s = String(path || "");
   if (!s) return "";
@@ -2989,9 +2989,9 @@ function thumbURL(path, size = 128) {
   return `/api/thumb?path=${encodeURIComponent(s)}&size=${bucket}${token ? `&v=${token}` : ""}`;
 }
 
-// Snap requested thumbnail dimensions to a small set of buckets so the
-// server doesn't have to encode a unique thumb per pixel size and the
-// browser HTTP cache stays effective across small node-resize wiggles.
+
+
+
 const THUMB_BUCKETS = [64, 96, 128, 192, 256, 384];
 function quantizeThumbSize(size) {
   const n = Math.max(32, Math.min(1024, Math.round(Number(size) || 128)));
@@ -2999,15 +2999,15 @@ function quantizeThumbSize(size) {
   return THUMB_BUCKETS[THUMB_BUCKETS.length - 1];
 }
 
-// Global concurrency-limited image loader. Browsers cap simultaneous
-// connections per origin (~6), so a giant preview will starve every other
-// request unless we throttle ourselves. We also need to *cancel* loads for
-// tiles that scrolled out of view before they ever start fetching.
+
+
+
+
 const ThumbLoader = (() => {
   const MAX_INFLIGHT = 6;
   let inflight = 0;
-  const queue = []; // {url, img, key, cancelled, started}
-  const handles = new WeakMap(); // img → handle
+  const queue = []; 
+  const handles = new WeakMap(); 
 
   function pump() {
     while (inflight < MAX_INFLIGHT && queue.length > 0) {
@@ -3026,13 +3026,13 @@ const ThumbLoader = (() => {
       h._done = done;
       h.img.addEventListener("load", done);
       h.img.addEventListener("error", done);
-      // Setting src kicks off the request. Browser still does its own
-      // caching layer, so re-requests of identical urls are instant.
+      
+      
       h.img.src = h.url;
     }
   }
   return {
-    /** Enqueue a thumbnail load on `img`. Returns a handle with cancel(). */
+    
     load(img, url) {
       this.cancel(img);
       const h = { url, img, cancelled: false, started: false, done: false };
@@ -3041,15 +3041,15 @@ const ThumbLoader = (() => {
       pump();
       return h;
     },
-    /** Cancel any pending load for this <img> (no-op if not queued). */
+    
     cancel(img) {
       const h = handles.get(img);
       if (h) {
         h.cancelled = true;
         handles.delete(img);
-        // If we already started the request, free the inflight slot now —
-        // detached imgs don't reliably fire error after removeAttribute("src"),
-        // which would otherwise leak slots and starve future loads.
+        
+        
+        
         if (h.started && !h.done) {
           h.done = true;
           if (h._done) {
@@ -3060,8 +3060,8 @@ const ThumbLoader = (() => {
           pump();
         }
       }
-      // If the request already started, aborting via empty src tells the
-      // browser to drop the in-flight transfer.
+      
+      
       if (img && img.src && !img.complete) {
         img.removeAttribute("src");
       }
@@ -3462,10 +3462,10 @@ function buildReadonlyMarkdownViewer(node, value, contextNodeId = null) {
   return wrap;
 }
 
-// Build a scrollable, virtualized image grid for bundles of any size.
-// Only tiles inside the viewport (plus a small overscan) are kept in the
-// DOM, and only those have their thumbnail <img> src set. Designed to
-// handle folders of tens of thousands of frames without choking.
+
+
+
+
 function makeBundleVirtualGrid(node, items) {
   const root = document.createElement("div");
   root.className = "ne-bundle-vgrid";
@@ -3502,8 +3502,8 @@ function makeBundleVirtualGrid(node, items) {
       img.className = "ne-bundle-vthumb";
       img.alt = "";
       img.decoding = "async";
-      // Note: we *don't* set src directly. ThumbLoader assigns it when a
-      // slot is free so a giant grid can't starve other requests.
+      
+      
       const px = Math.max(96, Math.min(384, Math.round(tileSize * (window.devicePixelRatio || 1))));
       const url = thumbURL(v, px);
       tile._thumbImg = img;
@@ -3560,20 +3560,20 @@ function makeBundleVirtualGrid(node, items) {
     }
     for (const [idx, el] of tileCache) {
       if (!needed.has(idx)) {
-        // Cancel any pending/in-flight image fetch before dropping the tile.
+        
         if (el._thumbImg) ThumbLoader.cancel(el._thumbImg);
         el.remove();
         tileCache.delete(idx);
       }
     }
-    // Debounced load: schedule a single microtask after the burst settles
-    // so a fast scroll past 300 tiles doesn't enqueue 300 image requests.
+    
+    
     if (newlyCreated.length > 0) {
       if (loadScheduled) clearTimeout(loadScheduled);
       loadScheduled = setTimeout(() => {
         loadScheduled = null;
         for (const tile of newlyCreated) {
-          // Tile may have been evicted while waiting.
+          
           if (!tile.isConnected || !tile._thumbImg) continue;
           ThumbLoader.load(tile._thumbImg, tile._thumbURL);
         }
@@ -3612,8 +3612,8 @@ function makeBundleVirtualGrid(node, items) {
   ro.observe(root);
   queueMicrotask(() => {
     rerender();
-    // Restore previous scroll position when re-rendered (mode toggle,
-    // tile-size change-induced rebuild, etc.).
+    
+    
     const prev = Number(node.previewScrollTop || 0);
     if (prev > 0) {
       root.scrollTop = prev;
@@ -3708,7 +3708,7 @@ function buildPreviewContent(node) {
     return wrap;
   }
 
-  // Bundle (array) — render grid OR slider based on node.previewMode.
+  
   if (Array.isArray(result.value)) {
     const items = previewBundleItems(node);
     if (items.length === 0) {
@@ -3794,9 +3794,9 @@ function buildPreviewContent(node) {
 
   const rawValue = String(result.value);
   const kind = inferPreviewMediaKind(node, result.kind, rawValue);
-  // Prefer the .png sidecar alias for image rendering when the raw value
-  // is a UV / vector-map .npy. The alias is set by runGraph from the
-  // backend's `image` field (coordinate / vector-op / mapping responses).
+  
+  
+  
   const value = (kind === "image" && result.image) ? String(result.image) : rawValue;
   if (kind === "image") {
     wrap.appendChild(makeSingleMediaPreview(node, value, "image"));
@@ -3808,19 +3808,19 @@ function buildPreviewContent(node) {
   return wrap;
 }
 
-// Decide how to render a non-bundle preview value: prefer the explicit
-// result.kind set by runGraph, then infer from the upstream socket type, and
-// finally fall back to the file extension.
+
+
+
 function inferPreviewMediaKind(node, resultKind, value) {
   const k = String(resultKind || "").toLowerCase();
   if (k.startsWith("image")) return "image";
   if (k.startsWith("video")) return "video";
-  // UV / vector maps render as their .png sidecar alias — treat as image.
+  
   if (k === "vector-map" || k === "vector") return "image";
   if (k && k !== "any" && k !== "text") {
     if (k === "number" || k === "filepath") return "text";
   }
-  // Walk back to whatever feeds the preview's `in` socket.
+  
   const incoming = graph.edges.find((e) => e.toNode === node.id && e.toSocket === "in");
   if (incoming) {
     const srcDef = NODE_BY_TYPE[graph.nodes[incoming.fromNode]?.type];
@@ -3837,8 +3837,8 @@ function inferPreviewMediaKind(node, resultKind, value) {
 
 function makeBundleMedia(value, kindHint) {
   const hint = String(kindHint || "");
-  // Accept legacy `preview-image` / `preview-video` strings as well as the
-  // simple `image`/`video`/`text` kinds emitted by the merged preview.
+  
+  
   const isVideo = hint === "video" || hint === "preview-video" || /\.(mp4|mov|webm|mkv)$/i.test(String(value));
   if (isVideo) {
     const url = artifactURL(String(value));
@@ -3869,8 +3869,8 @@ function makeBrokenLabel(originalPath) {
 }
 
 function artifactURL(pathOrId) {
-  // If it looks like a file path inside the project, route through /api/file.
-  // Append a cache-busting token so re-runs refresh the displayed image.
+  
+  
   const s = String(pathOrId || "");
   if (!s) return "";
   if (s.startsWith("/api/") || s.startsWith("http")) return s;
@@ -3905,8 +3905,8 @@ function buildSocketRow(nodeId, sock, isInput, opts = {}) {
   dot.dataset.isOutput = isInput ? "0" : "1";
   if (opts.edgeId) dot.dataset.edgeId = opts.edgeId;
   if (opts.isMultiPlaceholder) dot.dataset.multiPlaceholder = "1";
-  // Mark bundle-producing output sockets so CSS can render them visually
-  // distinct (e.g. with a square inner glyph).
+  
+  
   if (!isInput && outputProducesBundle(nodeId, sock.id)) {
     dot.dataset.bundle = "1";
   }
@@ -3926,8 +3926,8 @@ function buildSocketRow(nodeId, sock, isInput, opts = {}) {
     e.preventDefault();
     if (e.button !== 0) return;
     if (isInput) {
-      // If this row maps to a specific edge (multi sockets), pull THAT edge.
-      // Otherwise behave as before (single-input replace).
+      
+      
       let existing = null;
       if (opts.edgeId) {
         existing = graph.edges.find((edge) => edge.id === opts.edgeId);
@@ -4127,15 +4127,15 @@ function buildPropValueControl(nodeId, propDef, currentValue, opts = {}) {
 
 function buildNodeFields(nodeId, node, def) {
   const fields = document.createDocumentFragment();
-  // Primitives surface their first prop bare (no collapsible group) so the
-  // node's primary value stays front-and-center. Any additional props still
-  // group as usual.
+  
+  
+  
   const isPrimitive = def.category === "Primitives";
   const allProps = def.props || [];
   let inlinePropIds = new Set();
   if (isPrimitive && allProps.length > 0) {
-    // When allInline is set, surface ALL props bare (no collapsible group).
-    // Use this for primitives with multiple tightly-related values like Vector.
+    
+    
     const propsToInline = def.allInline ? allProps : [allProps[0]];
     for (const p of propsToInline) {
       inlinePropIds.add(p.id);
@@ -4185,14 +4185,14 @@ function buildInlinePropRow(nodeId, propDef, currentValue) {
   return row;
 }
 
-// ─── Connections ──────────────────────────────────────────────────────────────
+
 
 function renderLoopRegions() {
   const layer = document.getElementById("loopRegions");
   if (!layer) return;
   layer.innerHTML = "";
-  // Group decompose / output nodes by loop_id and draw a translucent rect
-  // covering both, so users can see "what happens between" a loop pair.
+  
+  
   const groups = {};
   for (const [id, n] of Object.entries(graph.nodes)) {
     if (n.hidden) continue;
@@ -4239,13 +4239,13 @@ function renderLoopRegions() {
 }
 
 function renderConnections() {
-  // Loop region overlays must update in lock-step with wires.
+  
   renderLoopRegions();
   const g = document.getElementById("connectionEdges");
   g.innerHTML = "";
 
   for (const edge of graph.edges) {
-    // Skip edges where either endpoint is hidden
+    
     if (graph.nodes[edge.fromNode]?.hidden || graph.nodes[edge.toNode]?.hidden) continue;
     const fromPos = getSocketCanvasPos(edge.fromNode, edge.fromSocket, true);
     const toPos = getSocketCanvasPos(edge.toNode, edge.toSocket, false, edge.id);
@@ -4287,7 +4287,7 @@ function getSocketCanvasPos(nodeId, socketId, isOutput, edgeId) {
     );
   }
   if (!dot) {
-    // Prefer non-placeholder dot.
+    
     const all = document.querySelectorAll(
       `[data-node-id="${nodeId}"] [data-socket-id="${socketId}"][data-is-output="${isOutput ? "1" : "0"}"]`
     );
@@ -4371,7 +4371,7 @@ function makeBezierPath(from, to) {
   return `M ${from.x} ${from.y} C ${from.x + dx} ${from.y} ${to.x - dx} ${to.y} ${to.x} ${to.y}`;
 }
 
-// ─── Wire (drag from socket) ──────────────────────────────────────────────────
+
 
 function startWire(e, nodeId, socketId, socketType, isFromOutput, opts = {}) {
   const pos = getSocketCanvasPos(nodeId, socketId, isFromOutput);
@@ -4439,7 +4439,7 @@ function endWire(targetNodeId, targetSocketId, targetType, targetIsOutput, targe
   }
 }
 
-// ─── Lazy-connect (Alt+RightClick drag, Node Wrangler style) ─────────────────
+
 
 function pickAutoConnectPair(fromNode, toNode) {
   const fromDef = NODE_BY_TYPE[graph.nodes[fromNode]?.type];
@@ -4461,7 +4461,7 @@ function pickAutoConnectPair(fromNode, toNode) {
 function startLazyConnect(e, fromNodeId) {
   const fromNode = graph.nodes[fromNodeId];
   if (!fromNode) return;
-  // Start the wire at the node's right edge midpoint.
+  
   const startX = fromNode.x + (fromNode.width || 220);
   const startY = fromNode.y + 40;
   ix.lazyConnect = { fromNode: fromNodeId, startX, startY };
@@ -4479,7 +4479,7 @@ function endLazyConnect(e) {
   document.getElementById("wireDraft").style.display = "none";
   document.getElementById("wireDraft").setAttribute("d", "");
   if (!lazy) return;
-  // Find target node under cursor.
+  
   const target = document.elementFromPoint(e.clientX, e.clientY);
   const nodeEl = target?.closest(".ne-node");
   if (!nodeEl) return;
@@ -4586,7 +4586,7 @@ function cancelReroutePlacement() {
   renderProps(ix.selection.size === 1 ? [...ix.selection][0] : null);
 }
 
-// ─── Node dragging ───────────────────────────────────────────────────────────
+
 
 function startNodeDrag(e, nodeId) {
   const node = graph.nodes[nodeId];
@@ -4602,7 +4602,7 @@ function startNodeDrag(e, nodeId) {
   if (!ix.selection.has(nodeId)) selectOnly(nodeId);
 }
 
-// ─── Node resize ─────────────────────────────────────────────────────────────
+
 
 const NODE_RESIZE_HIT_PX = 12;
 
@@ -4682,8 +4682,8 @@ function startNodeResize(e, nodeId, edge = "se") {
   document.body.style.cursor = resizeCursorForEdge(edge);
 }
 
-// Fixed floor for the string primitive's editor surface. Text content should
-// scroll inside the surface instead of forcing the node to grow as it changes.
+
+
 function stringEditorMinRowHeight() {
   return 62;
 }
@@ -4704,11 +4704,11 @@ function nodeResizeMin(node) {
   const PREVIEW_BODY = 120;
   const FOOTER = 26;
   const MINIMIZED_BODY = 18;
-  // Buffer requested by user: ~50px under the last socket/group so the node
-  // never feels cramped, even when panels are expanded with little content.
-  // The string primitive already pads itself via the editor's toolbar and
-  // textarea chrome, so it gets a much smaller buffer to avoid the visibly
-  // huge empty area that shows up once the value grows past a few lines.
+  
+  
+  
+  
+  
   const BOTTOM_BUFFER = node.type === "text-input" ? 6 : 50;
 
   if (node.minimized) {
@@ -4720,7 +4720,7 @@ function nodeResizeMin(node) {
 
   let contentH = 0;
 
-  // Outputs panel.
+  
   const outputs = def?.outputs || [];
   if (outputs.length > 0) {
     if (shouldWrapSocketSection(outputs)) {
@@ -4733,7 +4733,7 @@ function nodeResizeMin(node) {
     }
   }
 
-  // Props are split into one collapsible panel per group.
+  
   const props = def?.props || [];
   if (props.length > 0) {
     const groups = new Map();
@@ -4755,7 +4755,7 @@ function nodeResizeMin(node) {
     }
   }
 
-  // Inputs panel.
+  
   const inputs = def?.inputs || [];
   if (inputs.length > 0) {
     let rows = 0;
@@ -4777,7 +4777,7 @@ function nodeResizeMin(node) {
     }
   }
 
-  // Preview body.
+  
   if (PREVIEW_TYPES.has(node.type)) {
     contentH += PREVIEW_BODY;
   }
@@ -4809,19 +4809,19 @@ function applyNodeMinimumSizeNow(nodeId) {
 }
 
 function enforceNodeMinimumSize(id, node, el) {
-  // IMPORTANT: do NOT mutate node.width/node.height here. This runs on every
-  // render (including during drag), so any writeback would ratchet the node
-  // size upward each frame. Just expose the floor via CSS — the browser will
-  // grow the element naturally to fit content, and the resize/scale handlers
-  // clamp to this same floor when the user explicitly resizes.
+  
+  
+  
+  
+  
   const min = nodeResizeMin(node);
   el.style.minWidth = `${min.w}px`;
   el.style.minHeight = `${min.h}px`;
-  // Horizontal: explicitly remove any max so wider scaling stays unrestricted.
+  
   el.style.maxWidth = "none";
 }
 
-// ─── Modal transforms (Blender G/R/S) ─────────────────────────────────────────
+
 
 function startModal(kind) {
   if (ix.selection.size === 0) {
@@ -4858,7 +4858,7 @@ function startModal(kind) {
     snapshots,
     companionSnapshots: kind === "G" ? collapsedPreviewCompanionSnapshots(modalIds, modalIds) : new Map(),
     pivot,
-    axis: null,           // "x" or "y"
+    axis: null,           
   };
   setModalHint(kind);
   document.body.classList.add("is-modal");
@@ -4876,7 +4876,7 @@ function updateModal(e) {
     if (m.axis === "x") useY = 0;
     if (m.axis === "y") useX = 0;
     if (e.ctrlKey || e.metaKey) {
-      // Snap to 20px grid
+      
       useX = Math.round(useX / 20) * 20;
       useY = Math.round(useY / 20) * 20;
     }
@@ -4896,27 +4896,27 @@ function updateModal(e) {
     const distStart = Math.hypot(m.startMouse.x - m.pivot.x, m.startMouse.y - m.pivot.y) || 1;
     const distNow = Math.hypot(cur.x - m.pivot.x, cur.y - m.pivot.y);
     const factor = distNow / distStart;
-    // Blender-style: with a single node selected, S resizes the node (with
-    // optional X/Y axis lock for width/height only). With multiple nodes
-    // selected, S keeps node sizes intact and just fans positions out/in
-    // around the median pivot — same as Blender's node editor behaviour.
+    
+    
+    
+    
     const multi = m.snapshots.size > 1;
     const fx = m.axis === "y" ? 1 : factor;
     const fy = m.axis === "x" ? 1 : factor;
     for (const [id, snap] of m.snapshots) {
       const node = graph.nodes[id];
       if (!node) continue;
-      // Position scales around pivot on whichever axes are active.
+      
       node.x = m.pivot.x + (snap.x - m.pivot.x) * fx;
       node.y = m.pivot.y + (snap.y - m.pivot.y) * fy;
       if (multi) {
-        // Restore snapshot size so multi-select scaling never resizes nodes.
+        
         node.width = snap.w;
         node.height = snap.hadHeight ? snap.h : null;
         continue;
       }
-      // Pin the floor to the snapshot's pre-scale width so the content-aware
-      // min height stays stable through the gesture instead of stepping.
+      
+      
       if (!snap.min) snap.min = nodeResizeMin(node);
       const min = snap.min;
       node.width = Math.max(min.w, Math.round(snap.w * fx));
@@ -4986,7 +4986,7 @@ function setHint(text) {
 
 function clearHint() { setHint(""); }
 
-// ─── Canvas mouse events ─────────────────────────────────────────────────────
+
 
 function onCanvasMousedown(e) {
   const wrap = document.getElementById("canvasWrap");
@@ -5002,7 +5002,7 @@ function onCanvasMousedown(e) {
     return;
   }
 
-  // Ctrl+RMB → cut tool
+  
   if (e.button === 2 && (e.ctrlKey || e.metaKey)) {
     const c = screenToCanvas(e.clientX, e.clientY);
     ix.cutting = { points: [c] };
@@ -5036,8 +5036,8 @@ function onMousemove(e) {
     if (node) {
       const dx = (e.clientX - r.startMouse.x) / vp.zoom;
       const dy = (e.clientY - r.startMouse.y) / vp.zoom;
-      // Use a stable floor captured from the node's pre-drag width so the
-      // content-aware min height doesn't jump as width changes mid-drag.
+      
+      
       if (!r.min) r.min = nodeResizeMin(node);
       const min = r.min;
       const edge = r.edge || "se";
@@ -5100,7 +5100,7 @@ function onMousemove(e) {
     if (node) {
       const dx = (pos.x - ix.dragOffsetX) - node.x;
       const dy = (pos.y - ix.dragOffsetY) - node.y;
-      // Move all selected together.
+      
       const movedSet = ix.selection.has(ix.draggingNode) ? ix.selection : new Set([ix.draggingNode]);
       const movedIds = new Set(movedSet);
       for (const id of movedSet) {
@@ -5108,8 +5108,8 @@ function onMousemove(e) {
         if (!n) continue;
         n.x += dx; n.y += dy;
       }
-      // If a moved node is a collapsed preview, drag the nodes it currently
-      // owns by the same delta so they expand back into the same layout.
+      
+      
       for (const id of movedSet) {
         const n = graph.nodes[id];
         if (!n || !PREVIEW_TYPES.has(n.type) || !n.collapsed) continue;
@@ -5124,7 +5124,7 @@ function onMousemove(e) {
   if (ix.wire) {
     const pos = screenToCanvas(e.clientX, e.clientY);
     updateWireDraft(ix.wire.startX, ix.wire.startY, pos.x, pos.y);
-    // Lazy-connect: also highlight the node under the cursor.
+    
     if (ix.lazyConnect) {
       document.querySelectorAll(".ne-node.is-lazy-target").forEach((el) => el.classList.remove("is-lazy-target"));
       const target = document.elementFromPoint(e.clientX, e.clientY);
@@ -5166,8 +5166,8 @@ function onMouseup(e) {
     ix.resizing = null;
     document.body.classList.remove("is-resizing");
     document.body.style.cursor = "";
-    // If a fold-exposed preview or its anchor was resized, redraw the
-    // temporary dock so adjacent previews keep their horizontal alignment.
+    
+    
     const rn = graph.nodes[resizedId];
     if (rn) {
       if (rn.foldAnchorId || foldExposedNodeIds(resizedId).length > 0) {
@@ -5193,7 +5193,7 @@ function onMouseup(e) {
   }
 
   if (ix.wire) {
-    // Lazy-connect releases use elementFromPoint over a node body, not a socket.
+    
     if (ix.lazyConnect) {
       document.querySelectorAll(".ne-node.is-lazy-target").forEach((el) => el.classList.remove("is-lazy-target"));
       endLazyConnect(e);
@@ -5210,7 +5210,7 @@ function onMouseup(e) {
         (socketEl.dataset.aggregateSocketIds || "").split(/\s+/).filter(Boolean)
       );
     } else {
-      // Released on empty canvas → spawn add menu, remember pending wire
+      
       showAddMenu(e.clientX, e.clientY);
     }
     return;
@@ -5293,7 +5293,7 @@ function onCanvasWheel(e) {
   renderConnections();
 }
 
-// ─── Cut tool (Ctrl+RMB drag across edges) ────────────────────────────────────
+
 
 function drawCutPath() {
   if (!ix.cutting) return;
@@ -5316,7 +5316,7 @@ function finishCut() {
     const fromPos = getSocketCanvasPos(edge.fromNode, edge.fromSocket, true);
     const toPos = getSocketCanvasPos(edge.toNode, edge.toSocket, false);
     if (!fromPos || !toPos) continue;
-    // Approximate: sample bezier in 16 segments and test against cut polyline
+    
     if (intersectsBezier(fromPos, toPos, pts)) toRemove.push(edge.id);
   }
   if (toRemove.length > 0) {
@@ -5353,7 +5353,7 @@ function segmentsIntersect(a, b, c, d) {
   return ccw(a, c, d) !== ccw(b, c, d) && ccw(a, b, c) !== ccw(a, b, d);
 }
 
-// ─── Keyboard shortcuts ──────────────────────────────────────────────────────
+
 
 const SHORTCUT_DEFINITIONS = [
   { id: "runGraph", group: "Run", label: "Run graph", description: "Run active graph", default: "Mod+Enter" },
@@ -5583,7 +5583,7 @@ function renderShortcutSettings() {
   }
   root.replaceChildren(frag);
   const meta = document.getElementById("settingsPageMeta");
-  if (meta) meta.textContent = `${SHORTCUT_DEFINITIONS.length} shortcuts · .rundeer/web-state.json`;
+  if (meta) meta.textContent = `${SHORTCUT_DEFINITIONS.length} shortcuts · .rundeer/data/web-state.json`;
 }
 
 function selectedSliderPreviewNodeId() {
@@ -5633,7 +5633,7 @@ function onKeydown(e) {
     return;
   }
 
-  // Modal-active key handling
+  
   if (ix.modal) {
     if (e.key === "Escape") { cancelModal(); e.preventDefault(); return; }
     if (e.key === "Enter") { commitModal(); e.preventDefault(); return; }
@@ -5642,7 +5642,7 @@ function onKeydown(e) {
     return;
   }
 
-  // Add-menu open
+  
   const addMenu = document.getElementById("addMenu");
   if (addMenu.style.display !== "none") {
     if (e.key === "Escape") hideAddMenu();
@@ -5824,9 +5824,9 @@ function onKeydown(e) {
 }
 
 function duplicateSelection() {
-  // Snapshot the original selection IDs before mutating ix.selection.
-  // Iterating a Set we keep adding to (via addNode → selectOnly) caused an
-  // infinite loop and crashed the tab.
+  
+  
+  
   const sourceIds = [...ix.selection];
   const offset = 24;
   const newIds = [];
@@ -5854,7 +5854,7 @@ function duplicateSelection() {
     newIds.push(newId);
     idMap[id] = newId;
   }
-  // Duplicate edges that lie entirely inside the selection.
+  
   for (const e of graph.edges) {
     if (idMap[e.fromNode] && idMap[e.toNode]) {
       graph.edges.push({
@@ -5869,7 +5869,7 @@ function duplicateSelection() {
   updateSelectionVisuals();
   if (newIds.length > 0) renderProps(newIds[0]);
   scheduleAutosave();
-  // Enter modal grab so the duplicates follow cursor (Blender-like).
+  
   startModal("G");
 }
 
@@ -5900,7 +5900,7 @@ function cutSelectionToClipboard() {
   setTimeout(clearHint, 1400);
 }
 
-// ─── Panel toggles (T/P/R) ───────────────────────────────────────────────────
+
 
 function togglePanel(which) {
   const shell = document.querySelector(".ne-shell");
@@ -5941,7 +5941,7 @@ function autoConnectSelected() {
     return;
   }
   let [a, b] = ids;
-  // Order: leftmost = source
+  
   if (graph.nodes[a].x > graph.nodes[b].x) [a, b] = [b, a];
   const aDef = NODE_BY_TYPE[graph.nodes[a].type];
   const bDef = NODE_BY_TYPE[graph.nodes[b].type];
@@ -5971,7 +5971,7 @@ function previewSelected() {
   }
 }
 
-// ─── Frame all ───────────────────────────────────────────────────────────────
+
 
 function frameAll() {
   const nodes = Object.values(graph.nodes).filter((n) => !n.hidden);
@@ -6007,7 +6007,7 @@ function frameAll() {
   renderConnections();
 }
 
-// ─── Add menu (Shift+A / drop on empty canvas) ────────────────────────────────
+
 
 let pendingWireForMenu = null;
 let addMenuCanvasPos = null;
@@ -6023,7 +6023,7 @@ function showAddMenu(screenX, screenY) {
 
   const menu = document.getElementById("addMenu");
   menu.style.display = "";
-  // Position with bounds clamping
+  
   const menuW = 240, menuH = 380;
   const left = Math.min(Math.max(8, screenX), window.innerWidth - menuW - 8);
   const top = Math.min(Math.max(8, screenY), window.innerHeight - menuH - 8);
@@ -6082,8 +6082,8 @@ function renderAddMenuList(query) {
         const newId = addNode(nodeDef.type, pos.x - 110, pos.y - 30);
         if (newId && pendingWireForMenu) {
           const w = pendingWireForMenu;
-          // For the synthetic "loop" entry resolve to the real node type
-          // of the created anchor node.
+          
+          
           const realType = graph.nodes[newId]?.type || nodeDef.type;
           const def = NODE_BY_TYPE[realType];
           if (w.isOutput) {
@@ -6110,7 +6110,7 @@ function hideAddMenu() {
   cancelWire();
 }
 
-// ─── Properties panel ────────────────────────────────────────────────────────
+
 
 function renderProps(nodeId) {
   const body = document.getElementById("propsBody");
@@ -6143,7 +6143,7 @@ function renderProps(nodeId) {
 
   body.appendChild(buildNodeIdentitySection(nodeId, node, def));
 
-  // Sockets summary
+  
   const sockSection = document.createElement("div");
   sockSection.className = "ne-props-section";
   sockSection.innerHTML = `<p class="ne-props-section-title">sockets</p>`;
@@ -6166,7 +6166,7 @@ function renderProps(nodeId) {
   }
   body.appendChild(sockSection);
 
-  // Props
+  
   if ((def.props || []).length > 0) {
     const divider = document.createElement("div");
     divider.className = "ne-props-divider";
@@ -6176,7 +6176,7 @@ function renderProps(nodeId) {
     }
   }
 
-  // Last result
+  
   if (node.lastResult) {
     const divider = document.createElement("div");
     divider.className = "ne-props-divider";
@@ -6230,8 +6230,8 @@ function buildPropControl(nodeId, propDef, currentValue) {
   const wrap = document.createElement("div");
   wrap.className = "ne-prop";
 
-  // If a socket-edge feeds this prop, the control becomes read-only and is
-  // visually muted to make clear the value is coming from upstream.
+  
+  
   const isWired = isPropWired(nodeId, propDef.id);
   if (isWired) wrap.classList.add("is-disabled");
 
@@ -6262,7 +6262,7 @@ function buildPropControl(nodeId, propDef, currentValue) {
   return wrap;
 }
 
-// ─── Advanced String editor (markdown preview + @-mentions) ──────────────────
+
 
 function escHtmlSafe(s) {
   return String(s ?? "")
@@ -6272,12 +6272,12 @@ function escHtmlSafe(s) {
     .replace(/"/g, "&quot;");
 }
 
-// Classify an @reference token by looking it up against the upstream mention
-// catalog. Returns one of: image | video | file | definition | text | unknown.
+
+
 function classifyReferenceToken(token, nodeId) {
   if (!token) return "unknown";
   const t = token.toLowerCase();
-  // Definitions appear as @name on Definition nodes.
+  
   for (const n of Object.values(graph.nodes)) {
     if (n.type === "definition" && (n.props?.name || "").toLowerCase() === t) return "definition";
   }
@@ -6288,8 +6288,8 @@ function classifyReferenceToken(token, nodeId) {
   return "unknown";
 }
 
-// Wrap @tokens with reference chips. Operates on already-escaped HTML, so it
-// only matches plain @ characters that survived escaping.
+
+
 function highlightReferences(htmlEscaped, nodeId) {
   return htmlEscaped.replace(/(^|[\s(>])@([A-Za-z0-9_.\-/]+)/g, (m, lead, tok) => {
     const kind = classifyReferenceToken(tok, nodeId);
@@ -6434,9 +6434,9 @@ function flashTextButton(button, label = "copied") {
   }, 900);
 }
 
-// Tiny, dependency-free markdown renderer. Supports: headings, bold, italic,
-// inline code, fenced code blocks, blockquotes, hr, links, ordered + unordered
-// lists, and paragraphs. Reference chips are layered on top.
+
+
+
 function renderInlineMarkdown(src, nodeId, opts = {}) {
   const highlightSpecs = parseWordHighlightPairs(graph.nodes[nodeId]?.props?.highlight_pairs || "");
   const decorate = (html) => applyConfiguredWordHighlights(highlightReferences(html, nodeId), highlightSpecs);
@@ -6447,16 +6447,16 @@ function renderInlineMarkdown(src, nodeId, opts = {}) {
   const flushParagraph = (buf) => {
     if (!buf.length) return;
     let text = escHtmlSafe(buf.join("\n"));
-    // inline code
+    
     text = text.replace(/`([^`\n]+)`/g, (_, c) => `<code>${c}</code>`);
-    // bold + italic (bold first, then italic to avoid swallowing)
+    
     text = text.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
     text = text.replace(/__([^_\n]+)__/g, "<strong>$1</strong>");
     text = text.replace(/(^|[\s(])\*([^*\n]+)\*/g, "$1<em>$2</em>");
     text = text.replace(/(^|[\s(])_([^_\n]+)_/g, "$1<em>$2</em>");
-    // links [label](url)
+    
     text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer noopener">$1</a>');
-    // line breaks
+    
     text = text.replace(/\n/g, "<br>");
     text = decorate(text);
     out.push(`<p>${text}</p>`);
@@ -6466,7 +6466,7 @@ function renderInlineMarkdown(src, nodeId, opts = {}) {
   while (i < lines.length) {
     const line = lines[i];
 
-    // fenced code
+    
     if (/^```/.test(line)) {
       flushParagraph(para); para = [];
       const langMatch = line.match(/^```(\S*)/);
@@ -6476,19 +6476,19 @@ function renderInlineMarkdown(src, nodeId, opts = {}) {
       while (i < lines.length && !/^```/.test(lines[i])) {
         code.push(lines[i]); i++;
       }
-      i++; // consume closing fence
+      i++; 
       out.push(`<pre data-lang="${escHtmlSafe(lang)}">${applyConfiguredWordHighlights(escHtmlSafe(code.join("\n")), highlightSpecs)}</pre>`);
       continue;
     }
 
-    // hr
+    
     if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
       flushParagraph(para); para = [];
       out.push("<hr>");
       i++; continue;
     }
 
-    // heading
+    
     const h = line.match(/^(#{1,3})\s+(.+)$/);
     if (h) {
       flushParagraph(para); para = [];
@@ -6498,7 +6498,7 @@ function renderInlineMarkdown(src, nodeId, opts = {}) {
       i++; continue;
     }
 
-    // blockquote
+    
     if (/^>\s?/.test(line)) {
       flushParagraph(para); para = [];
       const quoted = [];
@@ -6512,7 +6512,7 @@ function renderInlineMarkdown(src, nodeId, opts = {}) {
       continue;
     }
 
-    // unordered list
+    
     if (/^\s*[-*+]\s+/.test(line)) {
       flushParagraph(para); para = [];
       const items = [];
@@ -6531,7 +6531,7 @@ function renderInlineMarkdown(src, nodeId, opts = {}) {
       continue;
     }
 
-    // ordered list
+    
     if (/^\s*\d+\.\s+/.test(line)) {
       flushParagraph(para); para = [];
       const items = [];
@@ -6562,7 +6562,7 @@ function renderInlineMarkdown(src, nodeId, opts = {}) {
   return applyTextSearchHighlights(out.join(""), opts.search || "");
 }
 
-// Wrap a textarea selection with prefix/suffix, or apply a line transform.
+
 function wrapSelection(textarea, prefix, suffix = prefix) {
   const start = textarea.selectionStart ?? 0;
   const end = textarea.selectionEnd ?? 0;
@@ -6655,7 +6655,7 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
   wrap.dataset.mode = "preview";
   wrap.style.setProperty("--ne-text-zoom", String(clampTextZoom(graph.nodes[nodeId])));
 
-  // Toolbar
+  
   const toolbar = document.createElement("div");
   toolbar.className = "ne-string-toolbar";
 
@@ -6703,7 +6703,7 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
 
   toolbar.append(editBtn, previewBtn, sep1, boldBtn, italBtn, codeBtn, h2Btn, liBtn, quoteBtn, refBtn, spacer, searchControl.wrap, meta, copyBtn);
 
-  // Textarea (editor)
+  
   const textarea = document.createElement("textarea");
   textarea.className = "ne-string-textarea";
   textarea.value = currentValue ?? propDef.default ?? "";
@@ -6714,7 +6714,7 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
     textarea.title = "value is coming from a connected socket - disconnect to edit";
   }
 
-  // Preview
+  
   const preview = document.createElement("div");
   preview.className = "ne-string-preview";
   preview.tabIndex = 0;
@@ -6789,7 +6789,7 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
     }
   };
 
-  // Click preview → edit mode
+  
   preview.addEventListener("mousedown", (e) => {
     e.stopPropagation();
     if (!ix.selection.has(nodeId)) selectOnly(nodeId);
@@ -6800,11 +6800,11 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
     setMode("edit");
   });
 
-  // Editing → re-render preview on blur (deferred so mention popup clicks land first)
+  
   textarea.addEventListener("blur", () => {
     setTimeout(() => {
       if (document.activeElement === textarea) return;
-      // If the mention popup is open and has focus, stay in edit mode.
+      
       if (_mentionState && _mentionState.control === textarea) return;
       if (mode === "edit") setMode("preview");
     }, 200);
@@ -6837,7 +6837,7 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
     renderPreview();
   });
 
-  // Keyboard shortcuts
+  
   textarea.addEventListener("keydown", (e) => {
     const mentionActive = _mentionState && _mentionState.control === textarea;
     if (mentionActive && ["ArrowDown", "ArrowUp", "Enter", "Tab", "Escape"].includes(e.key)) return;
@@ -6875,7 +6875,7 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
     }
   });
 
-  // Commit input → graph state
+  
   const commit = () => {
     updateLineNumbers();
     updateMeta();
@@ -6883,10 +6883,10 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
   };
   textarea.addEventListener("input", commit);
 
-  // Mention support runs on the inner textarea (real selection/value).
+  
   enableMentions(textarea, nodeId);
 
-  // Proxy `.value` / `.disabled` so syncPropControls + outer code keep working.
+  
   Object.defineProperty(wrap, "value", {
     get() { return textarea.value; },
     set(v) {
@@ -6922,10 +6922,10 @@ function buildMarkdownEditorControl(nodeId, propDef, currentValue, opts) {
   return { control: wrap, valueDisplay: null };
 }
 
-// ─── @-mention autocomplete ──────────────────────────────────────────────────
+
 
 let _mentionPopupEl = null;
-let _mentionState = null; // { control, nodeId, atIndex, options, highlight }
+let _mentionState = null; 
 
 function basenameOf(p) {
   if (!p) return "";
@@ -6935,7 +6935,7 @@ function basenameOf(p) {
 }
 
 function gatherMentionOptions(forNodeId) {
-  // Walk upstream from the node (if any) to collect direct context first.
+  
   const seen = new Set();
   const opts = [];
   const pushOpt = (id, label, value, kind) => {
@@ -6964,9 +6964,9 @@ function gatherMentionOptions(forNodeId) {
     }
   };
   if (forNodeId) walk(forNodeId, 0);
-  // Also include any other image/video producing nodes anywhere in the graph
-  // so users still see useful options on Text primitive nodes (which have no
-  // upstream of their own).
+  
+  
+  
   for (const id of Object.keys(graph.nodes)) {
     walk(id, 0);
   }
@@ -7016,7 +7016,7 @@ function renderMentionPopup() {
     });
     el.appendChild(row);
   });
-  // Position below the focused control.
+  
   const rect = st.control.getBoundingClientRect();
   el.style.left = `${Math.round(rect.left)}px`;
   el.style.top = `${Math.round(rect.bottom + 4)}px`;
@@ -7046,7 +7046,7 @@ function acceptMention(index) {
 function updateMentionFromControl(control, nodeId) {
   const value = control.value;
   const caret = control.selectionStart ?? value.length;
-  // Find the most recent unescaped '@' before the caret with no whitespace between.
+  
   let at = -1;
   for (let i = caret - 1; i >= 0; i--) {
     const ch = value[i];
@@ -7102,16 +7102,16 @@ function enableMentions(control, nodeId) {
     }
   });
   control.addEventListener("blur", () => {
-    // Defer so click handlers on options run first.
+    
     setTimeout(() => {
       if (_mentionState && _mentionState.control === control) closeMentionPopup();
     }, 150);
   });
 }
 
-// ─── Graph execution ─────────────────────────────────────────────────────────
 
-// Build the play action shown inside a `run-trigger` node body.
+
+
 function buildRunTriggerButton(nodeId) {
   const wrap = document.createElement("div");
   wrap.className = "ne-run-trigger-wrap";
@@ -7175,10 +7175,10 @@ async function pauseGraphAtNode(nodeId, outputs, opts = {}) {
   await waitForGraphRunReady(opts);
 }
 
-// Compute the set of node ids that should be run when a trigger fires:
-// for each command node fed by the trigger's run-output, include the
-// command itself plus every node reachable via data edges in either
-// direction (upstream ancestors and downstream descendants).
+
+
+
+
 function nodesInTriggerSubgraph(triggerId) {
   if (isNodeMuted(triggerId)) return new Set();
   const targets = activeOutgoingEdges(triggerId, "run")
@@ -7187,8 +7187,8 @@ function nodesInTriggerSubgraph(triggerId) {
   const include = new Set();
   for (const seed of targets) {
     if (include.has(seed)) continue;
-    // BFS upstream + downstream from the seed, ignoring `run`-typed edges
-    // so trigger wires don't pull in unrelated triggers.
+    
+    
     const stack = [seed];
     while (stack.length) {
       const cur = stack.pop();
@@ -7227,12 +7227,12 @@ async function runFromTrigger(triggerId, opts = {}) {
   await runGraph({ ...opts, subset });
 }
 
-// Returns the set of node ids that live inside *any* loop body, i.e. those
-// that sit on a path from a `loop-decompose` to its matching `loop-output`
-// via the loop-output's `item` input. These nodes must be driven by their
-// owning loop-output (which iterates them) instead of being treated as
-// independent top-level terminals — otherwise a cmd-* inside the body would
-// resolve once with i=0 and the loop would never iterate.
+
+
+
+
+
+
 function computeLoopBodyMembers() {
   const inBody = new Set();
   for (const node of Object.values(graph.nodes)) {
@@ -7250,9 +7250,9 @@ function computeLoopBodyMembers() {
       if (!n) continue;
       if (isNodeMuted(n)) continue;
       inBody.add(id);
-      // Stop walking past the matching decompose — its bundle input lives
-      // OUTSIDE the loop body and must remain reachable as a normal
-      // upstream dependency.
+      
+      
+      
       if (n.type === "loop-decompose" && String(n.props.loop_id || "loop1") === loopId) continue;
       for (const e of activeIncomingEdges(id)) stack.push(e.fromNode);
     }
@@ -7274,11 +7274,11 @@ async function runGraph(opts = {}) {
     setHint(`removed ${removedEdges} incompatible link${removedEdges === 1 ? "" : "s"}`);
     setTimeout(clearHint, 1800);
   }
-  // Find leaf nodes: command nodes OR preview nodes with input connected.
-  // Nodes that live *inside a loop body* are driven by their owning
-  // loop-output instead, so they must not run as standalone terminals
-  // (otherwise a cmd-* inside the body would resolve once with i=0 and the
-  // loop would never iterate).
+  
+  
+  
+  
+  
   const inLoop = computeLoopBodyMembers();
   const terminals = Object.keys(graph.nodes).filter((id) => {
     if (subset && !subset.has(id)) return false;
@@ -7287,8 +7287,8 @@ async function runGraph(opts = {}) {
     if (isNodeMuted(n)) return false;
     if (COMMAND_TYPES.has(n.type)) return true;
     if (PREVIEW_TYPES.has(n.type)) {
-      // Coordinate is a self-contained source (no inputs); it should run
-      // eagerly so its inline UV preview appears.
+      
+      
       if (n.type === "coordinate") return true;
       return activeIncomingEdges(id).length > 0;
     }
@@ -7318,13 +7318,13 @@ async function runGraph(opts = {}) {
         await waitForGraphRunReady({ run: runState });
         appendRunLog(`▶ Resolving ${nodeId} (${graph.nodes[nodeId].type})…\n`);
         const res = await resolveNode(nodeId, cache, {}, { dryRun, run: runState });
-        // Stash result for preview rendering
+        
         const node = graph.nodes[nodeId];
         const outSock = (NODE_BY_TYPE[node.type].outputs || [])[0];
         const value = outSock ? res[outSock.id] : (res.in || "");
         let kind = outSock?.type || "any";
         if (Array.isArray(value)) {
-          // Pick the bundle variant of the socket type.
+          
           if (kind === "image" || kind === "any") kind = "image-bundle";
           else if (kind === "video") kind = "video-bundle";
         }
@@ -7333,13 +7333,13 @@ async function runGraph(opts = {}) {
           node.lastResult.image = node._uvImage;
           delete node._uvImage;
         }
-        // Bump cache token so preview <img>/<video> reload after a re-run.
+        
         if (Array.isArray(value)) {
           for (const v of value) if (v) artifactURL.bump(String(v));
         } else if (value) {
           artifactURL.bump(String(value));
         }
-        // Force re-render of this node (signature changes)
+        
         const el = document.querySelector(`[data-node-id="${nodeId}"]`);
         if (el) el.dataset.signature = "stale";
         renderNodes();
@@ -7374,8 +7374,8 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   loopCtx = loopCtx || {};
   opts = opts || {};
   await waitForGraphRunReady(opts);
-  // Cache key includes the loop context so the same node can yield different
-  // values when re-resolved inside a loop body.
+  
+  
   const ctxKey = Object.keys(loopCtx).sort().map((k) => `${k}=${loopCtx[k].i}`).join("|");
   const cacheKey = `${nodeId}@${ctxKey}`;
   if (cache[cacheKey]) return cache[cacheKey];
@@ -7390,10 +7390,10 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   }
   const traceNode = shouldTraceNodeResolution(opts);
 
-  // Loop-decompose inside its own loop iteration: serve directly from the
-  // precomputed item list carried by loopCtx. This is critical — walking
-  // back through the `bundle` input on every iteration would re-execute
-  // every upstream command (n2 cmd-image, etc.) once per loop step.
+  
+  
+  
+  
   if (node.type === "loop-decompose") {
     const loopId = String(node.props.loop_id || "loop1");
     const ctx = loopCtx[loopId];
@@ -7416,14 +7416,14 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
   }
 
-  // Lite mode (used by the preview-refresh pass): never invoke an actual
-  // command — fall back to whatever the last real run produced. This lets
-  // preview chains update the moment any cheap upstream value changes,
-  // without re-spending API credits or hitting server endpoints.
+  
+  
+  
+  
   if (opts.lite || opts.liteCommands) {
-    // Heavy nodes never re-execute in lite mode — they reuse their last
-    // real result. loop-output is treated as heavy too: re-iterating its
-    // body in lite mode would mis-feed a bundle into a per-iteration sink.
+    
+    
+    
     const heavy = COMMAND_TYPES.has(node.type)
       || node.type === "compress-image"
       || node.type === "prompt"
@@ -7442,9 +7442,9 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
 
   const inputs = {};
   const skipInputResolution = node.type === "loop-output" ? new Set(["item"]) : new Set();
-  // When an image-typed socket pulls from a vector-map producer, swap the
-  // raw .npy for its .png sidecar alias so commands / previews see a real
-  // image. Vector consumers (vector-op) keep the .npy via their `any` type.
+  
+  
+  
   const adaptForDest = (rawValue, edge, destType) => {
     if (rawValue == null || rawValue === "") return rawValue;
     if (Array.isArray(rawValue)) return rawValue;
@@ -7455,9 +7455,9 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     const alias = src?._uvImage || src?.lastResult?.image || "";
     return alias || rawValue;
   };
-  // Build a lookup: any input socket id whose name matches a prop becomes
-  // overridden by an edge if one exists. This is what makes "props as
-  // sockets" work — the synthetic input socket overrides the static prop.
+  
+  
+  
   for (const sock of (def.inputs || [])) {
     if (skipInputResolution.has(sock.id)) {
       inputs[sock.id] = node.props[sock.id] ?? "";
@@ -7483,8 +7483,8 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       inputs[sock.id] = node.props[sock.id] ?? "";
     }
   }
-  // Synthetic prop-sockets: any prop with an incoming edge replaces the
-  // static prop value for this resolution.
+  
+  
   for (const propDef of def.props || []) {
     if ((def.inputs || []).some((s) => s.id === propDef.id)) continue;
     const matching = activeIncomingEdges(nodeId, propDef.id);
@@ -7495,11 +7495,11 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
   }
 
-  // Effective props view: each prop is a first-class socket — when wired,
-  // the upstream value overrides the static `node.props` entry; otherwise
-  // the static value is used. Cases below must read from `props` (never
-  // `node.props`) so prop sockets are honoured uniformly. This is what
-  // makes every prop on every node actually "evaluate".
+  
+  
+  
+  
+  
   const props = { ...node.props };
   for (const propDef of def.props || []) {
     if ((def.inputs || []).some((s) => s.id === propDef.id)) continue;
@@ -7550,8 +7550,8 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       break;
     }
     case "folder-bundle": {
-      // `props` already merges wired prop sockets over the static values,
-      // so each field below is automatically socket-aware.
+      
+      
       const folderPath = String(props.path || "").trim();
       if (!folderPath) { outputs.out = []; break; }
       const kind = String(props.kind || "all");
@@ -7578,10 +7578,10 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       break;
     }
     case "create-bundle": {
-      // `items` is a multi socket — the standard resolver above already
-      // collected every wired source into a flat array. Pass it straight
-      // through as a bundle. Same-type validation happens at addEdge time,
-      // so anything that lands here is already coherent.
+      
+      
+      
+      
       const collected = Array.isArray(inputs.items) ? inputs.items.slice() : [];
       outputs.out = collected;
       break;
@@ -7593,15 +7593,15 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const picked = parseSampleBundleExpression(expr, items.length);
       let chosen;
       if (picked === null) {
-        // wildcard / empty → whole bundle
+        
         chosen = items.slice();
       } else {
         chosen = picked.map((i) => items[i]);
       }
-      // Single-index expressions collapse to a scalar so downstream nodes
-      // receive a plain value instead of a 1-element array. Slices and
-      // multi-index lists always stay as a bundle, even when they happen
-      // to yield a single element.
+      
+      
+      
+      
       const exprIsSingle = !!expr && expr !== "*" && !expr.includes(",") && !expr.includes(":");
       if (exprIsSingle && chosen.length === 1) {
         outputs.out = chosen[0];
@@ -7618,7 +7618,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
     case "compress-image": {
       const v = inputs.in;
-      // Bundle (array) → zip via backend.
+      
       if (Array.isArray(v)) {
         const items = v.filter((x) => x != null && x !== "").map((x) => String(x));
         if (items.length === 0) { outputs.out = ""; break; }
@@ -7634,8 +7634,8 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       }
       const str = (v == null) ? "" : String(v);
       if (!str) { outputs.out = ""; break; }
-      // Decide between path and raw text. Heuristic: looks-like-path when it
-      // has a short extension, no newlines, and no spaces in a long string.
+      
+      
       const looksLikePath =
         /\.[A-Za-z0-9]{1,6}$/.test(str) &&
         !str.includes("\n") &&
@@ -7659,7 +7659,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         appendRunLog(`  ↳ → ${(outputs.out || "").length} chars (was ${str.length})\n`);
         break;
       }
-      // File path → dispatch by extension server-side.
+      
       appendRunLog(`  ↳ Compressing ${str} (q=${props.quality})…\n`);
       const result = await graphFetchJSON("/api/compress", {
         method: "POST",
@@ -7677,8 +7677,8 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       break;
     }
     case "blur-image": {
-      // Gaussian blur via PIL on the server. Accepts a single image path or
-      // a bundle (array of paths). Empty input → empty output (no-op).
+      
+      
       const radius = Math.max(0, Number(props.radius ?? 4));
       const blurOne = async (path) => {
         const p = String(path || "").trim();
@@ -7706,12 +7706,12 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       break;
     }
     case "crop-media": {
-      // Both size and position are prop sockets with `passthroughWired:
-      // true`, so `props.X` already reflects whatever was wired in (or
-      // falls back to the static text default). Warn loudly when the
-      // wired value looks like a file path — that's almost always a UV
-      // .npy from a vector-op with spatial inputs, which can't be parsed
-      // as a 2-vector and would silently use the default.
+      
+      
+      
+      
+      
+      
       const sizeWired = inputs.size;
       const positionWired = inputs.position;
       const sizeBad = _vectorSocketUnparseableSource(sizeWired);
@@ -7734,9 +7734,9 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         appendRunLog(`  ↳ → ${result.path}\n`);
         return result.path;
       };
-      // Preserve bundle semantics: array in → array out (even for a single
-      // item). Matches blur-image and keeps downstream bundle-aware nodes
-      // honest.
+      
+      
+      
       const v = inputs.in;
       if (Array.isArray(v)) {
         const out = [];
@@ -7792,7 +7792,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const imageNote = imageInputs.length
         ? ` + ${imageInputs.length} image${imageInputs.length === 1 ? "" : "s"}`
         : "";
-      // Edges into prop-sockets override the static prop value.
+      
       const pf_pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : props[key];
       const pf_str = (key) => {
         const v = pf_pick(key);
@@ -7845,8 +7845,8 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
     case "reroute":
       outputs.out = inputs.in;
-      // Carry the .png alias forward so downstream previews can render
-      // UV / vector-map sources without staring at a .npy.
+      
+      
       {
         const inc = activeIncomingEdges(nodeId, "in")[0];
         const src = inc ? graph.nodes[inc.fromNode] : null;
@@ -7868,10 +7868,10 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const images = _mediaPathList(inputs.images);
       if (images.length === 0) { outputs.out = ""; break; }
       const rawPositions = Array.isArray(inputs.positions) ? inputs.positions : (inputs.positions ? [inputs.positions] : []);
-      // Per-image position evaluation. Each multi-edge feeding `positions`
-      // contributes one entry; images with no matching position get [0,0].
-      // Path-like strings (e.g. a UV .npy wired from a spatial vector-op)
-      // are flagged loudly instead of silently defaulting.
+      
+      
+      
+      
       const positions = images.map((_, i) => {
         const raw = rawPositions[i];
         const bad = _vectorSocketUnparseableSource(raw);
@@ -7912,8 +7912,8 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       }, opts);
       if (result.error) throw new Error(`coordinate: ${result.error}`);
       outputs.uv = result.path;
-      // Stash the .png alias so inline image previews (and any downstream
-      // consumer that prefers an image) can render without loading a .npy.
+      
+      
       node._uvImage = result.image || result.preview || "";
       break;
     }
@@ -7930,9 +7930,9 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         body: JSON.stringify(payload),
       }, opts);
       if (result.error) throw new Error(`vector: ${result.error}`);
-      // When both inputs are scalar/vector primitives the result is a 1×1
-      // map. Return the raw value array so size/position sockets downstream
-      // can parse it directly instead of receiving an unreadable .npy path.
+      
+      
+      
       outputs.out = (result.value != null) ? result.value : result.path;
       node._uvImage = result.image || result.preview || "";
       break;
@@ -7977,7 +7977,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const a = _coerceMixInput(aRaw, {});
       const b = _coerceMixInput(bRaw, {});
 
-      // Fast path: pure scalar/color → blend in JS, no server hit.
+      
       if (!factor.isPath && !a.isPath && !b.isPath) {
         const f = clamp ? Math.max(0, Math.min(1, Number(factor.scalar ?? factor.color?.[0] ?? 0))) : Number(factor.scalar ?? factor.color?.[0] ?? 0);
         const colA = a.color || [Number(a.scalar) || 0, Number(a.scalar) || 0, Number(a.scalar) || 0, 1];
@@ -8125,14 +8125,14 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     }
     case "loop-output": {
       const loopId = String(node.props.loop_id || "loop1");
-      // Find the matching decompose node.
+      
       const decomposeNodeId = Object.keys(graph.nodes).find((id) => {
         const n = graph.nodes[id];
         return n.type === "loop-decompose" && String(n.props.loop_id || "loop1") === loopId;
       });
       if (!decomposeNodeId) throw new Error(`loop-output: no matching loop-decompose with loop_id="${loopId}"`);
-      // Resolve the bundle feeding into the decompose ONCE, in the outer
-      // cache, so n2 / upstream commands don't re-execute per iteration.
+      
+      
       const decomposeBundleEdges = activeIncomingEdges(decomposeNodeId, "bundle");
       let bundleValue = [];
       if (decomposeBundleEdges.length > 0) {
@@ -8141,9 +8141,9 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         const v = src[edge.fromSocket];
         bundleValue = Array.isArray(v) ? v : (v ? [v] : []);
       }
-      // Resolve the item input N times with a fresh sub-cache per iteration.
-      // The item list is carried in loopCtx so the decompose node can serve
-      // it without re-walking its bundle input.
+      
+      
+      
       const itemEdges = activeIncomingEdges(nodeId, "item");
       const collected = [];
       for (let i = 0; i < bundleValue.length; i++) {
@@ -8153,11 +8153,11 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         if (itemEdges.length > 0) {
           const edge = itemEdges[0];
           const r = await resolveNodeWithPausedWork(work, edge.fromNode, subCache, subCtx, opts);
-          // Flatten-on-output: if an iteration produced a bundle (e.g. an
-          // inner command with iterations > 1, or a nested Loop · Output),
-          // spread its items into the outer bundle so the result is always
-          // a flat array. One level only — loops compose by re-flattening
-          // at each enclosing Loop · Output.
+          
+          
+          
+          
+          
           const v = r[edge.fromSocket];
           if (Array.isArray(v)) collected.push(...v);
           else collected.push(v);
@@ -8165,9 +8165,9 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
           collected.push(node.props.item ?? "");
         }
       }
-      // Stash the assembled bundle on the immediate source node so the user
-      // can see the per-iteration fan-out (e.g. n8 cmd-video) carry a bundle
-      // instead of just its last single artifact.
+      
+      
+      
       if (itemEdges.length > 0) {
         const srcNodeId = itemEdges[0].fromNode;
         const srcNode = graph.nodes[srcNodeId];
@@ -8190,14 +8190,14 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     default: {
       if (COMMAND_TYPES.has(node.type)) {
         const result = await executeCommandNode(node, inputs, opts);
-        // Iterations > 1 produces a bundle; otherwise a single artifact.
+        
         if (Array.isArray(result.artifacts) && result.artifacts.length > 1) {
           outputs.out = result.artifacts;
         } else {
-          // When no artifact is found we leave the output empty rather than
-          // falling back to the run ID — the latter looks like a path to
-          // downstream nodes and surfaces as "artifact not found <code>" in
-          // the preview.
+          
+          
+          
+          
           outputs.out = result.firstArtifact || "";
         }
       }
@@ -8245,8 +8245,8 @@ async function executeCommandNode(node, inputs, opts = {}) {
   };
   const command = cmdMap[node.type];
   const p = node.props;
-  // Edges into prop-sockets override the static prop value. `inputs` was
-  // populated by resolveNode for every wired prop socket.
+  
+  
   const pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : p[key];
   const num = (key, fallback) => {
     const v = pick(key);
@@ -8270,12 +8270,12 @@ async function executeCommandNode(node, inputs, opts = {}) {
     if (typeof v === "string") return !["false", "0", "no", "off"].includes(v.trim().toLowerCase());
     return Boolean(v);
   };
-  // Multi-image inputs arrive as arrays from resolveNode; the CLI accepts
-  // comma-separated paths via --input.
+  
+  
   const inputList = Array.isArray(inputs.input)
     ? inputs.input.filter((v) => v).map((v) => String(v)).join(",")
     : (inputs.input || "");
-  const outputDir = str("output_dir", ".rundeer/outputs");
+  const outputDir = str("output_dir", ".rundeer/data/outputs");
   const outputName = str("output_name", "output");
   const model = str("model", "");
   const aspectRatio = str("aspect_ratio", "");
@@ -8358,8 +8358,8 @@ async function executeCommandNode(node, inputs, opts = {}) {
     if (runState && result.id) runState.activeRunIds.delete(result.id);
     await persistRunLogNow(result.id).catch(() => {});
   }
-  // Resolve the produced artifact(s). When iterations > 1 we collect ALL
-  // matching artifacts so the output socket carries a bundle.
+  
+  
   const artifacts = await findArtifactsForRun(final, { output_dir: outputDir, output_name: outputName }, opts);
   return {
     id: result.id,
@@ -8369,21 +8369,21 @@ async function executeCommandNode(node, inputs, opts = {}) {
 }
 
 async function findArtifactsForRun(runRecord, props, opts = {}) {
-  const outputDir = (props?.output_dir || ".rundeer/outputs").replace(/^\.\//, "");
+  const outputDir = (props?.output_dir || ".rundeer/data/outputs").replace(/^\.\//, "");
   const outputName = String(props?.output_name || "");
   const startedAt = (runRecord.startedAt || 0) - 5;
-  // Match files whose basename is `<output_name>` or `<output_name>_<digits>`
-  // followed by a media extension. Anchoring on the basename (not a substring
-  // of the full path) prevents false positives like "output" matching every
-  // file inside the `outputs/` directory.
+  
+  
+  
+  
   const escName = outputName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const baseRe = outputName
     ? new RegExp(`^${escName}(?:_\\d+)?\\.(?:png|jpe?g|webp|gif|mp4|mov|webm|mkv)$`, "i")
     : /\.(?:png|jpe?g|webp|gif|mp4|mov|webm|mkv)$/i;
   try {
-    // Pass output_dir so the server scans it too — runs writing outside
-    // .rundeer/outputs (e.g. a user-specified `hurl_test/`) would otherwise
-    // be invisible to /api/artifacts and we'd fall back to the run ID.
+    
+    
+    
     const qs = outputDir ? `?dir=${encodeURIComponent(outputDir)}` : "";
     const data = await graphFetchJSON(`/api/artifacts${qs}`, {}, opts);
     const items = data.artifacts || [];
@@ -8403,10 +8403,10 @@ async function findArtifactsForRun(runRecord, props, opts = {}) {
 }
 
 function findArtifactPath(output, props) {
-  // Look for lines like "saved <path>" or paths under output_dir
-  const dir = props?.output_dir || ".rundeer/outputs";
+  
+  const dir = props?.output_dir || ".rundeer/data/outputs";
   const lines = output.split(/\r?\n/);
-  // Match common patterns produced by rundeer
+  
   const patterns = [
     /(?:saved|wrote|->)\s+(\S+\.(?:png|jpg|jpeg|webp|mp4|mov|webm))/i,
     new RegExp(`(${dir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\S+\\.(?:png|jpg|jpeg|webp|mp4|mov|webm))`, "i"),
@@ -8431,8 +8431,8 @@ async function pollUntilDone(runId, opts = {}) {
       appendRunLog(out.slice(lastLen));
       lastLen = out.length;
     }
-    // Server emits "failed (rc=N)" — treat any status starting with these
-    // tokens as terminal so polling can never spin forever.
+    
+    
     const status = String(rec.status || "");
     const finished = rec.endedAt != null
       || status === "done"
@@ -8455,16 +8455,16 @@ function markNodeState(nodeId, cls) {
   if (cls) el.classList.add(cls);
 }
 
-// ─── Run log (draggable run dock) ────────────────────────────────────────────
-//
-// The run dock is a single persistent element (#runLog). It retains its log
-// content across show/hide cycles so re-opening from the runs panel doesn't
-// lose info. Use startRunLog() to begin a new run (clears + shows); use
-// showRunLog() to merely unhide the existing content.
+
+
+
+
+
+
 
 let _runLogState = {
-  currentRunId: null,    // active run we're streaming into
-  lastShownRunId: null,  // most recently displayed run (for dedup)
+  currentRunId: null,    
+  lastShownRunId: null,  
   linkedRunIds: new Set(),
   persistTimer: null,
   persistInFlight: false,
@@ -8730,7 +8730,7 @@ function toggleRunLogMinimized() {
   requestAnimationFrame(() => applyRunDockState(state));
 }
 
-// --- Edge-locked drag inside the node viewport ------------------------------
+
 
 function setupRunDockDrag() {
   const dock = document.getElementById("runLog");
@@ -8782,7 +8782,7 @@ function setupRunDockDrag() {
   window.addEventListener("resize", repositionRunDockFromCurrentState);
 }
 
-// ─── Past runs page ──────────────────────────────────────────────────────────
+
 
 function runStatusText(status) {
   const raw = String(status || "?");
@@ -8865,7 +8865,7 @@ async function refreshRunsList() {
       li.addEventListener("click", () => openRunInLog(run.id));
       list.appendChild(li);
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {  }
 }
 window.refreshRunsList = refreshRunsList;
 
@@ -8881,7 +8881,7 @@ async function openRunInLog(runId) {
   }
 }
 
-// ─── Persistence ─────────────────────────────────────────────────────────────
+
 
 let autosaveTimer = null;
 
@@ -9287,13 +9287,13 @@ function tabsPayload() {
   };
 }
 
-// ─── Graph tabs + saved graphs library ───────────────────────────────────────
-//
-// tabsState.tabs is an ordered list of open documents. Each tab is:
-//   { id, name, savedGraphId|null, dirty, snapshot }
-// The active tab's `snapshot` is what's currently materialised in `graph`.
-// When switching/closing, we serialize the live graph into the active tab
-// before swapping. Persisted to .rundeer so reloads restore the layout.
+
+
+
+
+
+
+
 
 const tabsState = {
   tabs: [],
@@ -9448,7 +9448,7 @@ function newTab(opts = {}) {
 function openSavedGraphInTab(savedId) {
   const saved = findSavedGraph(savedId);
   if (!saved) return;
-  // If a tab for this saved graph is already open, focus it.
+  
   const existing = tabsState.tabs.find((t) => t.savedGraphId === savedId);
   if (existing) { activateTab(existing.id); return; }
   newTab({
@@ -9462,7 +9462,7 @@ function openSavedGraphInTab(savedId) {
 async function closeTab(id) {
   const tab = tabsState.tabs.find((t) => t.id === id);
   if (!tab) return;
-  // If this tab is the active one, capture latest before deciding.
+  
   const isActive = tabsState.activeId === id;
   if (isActive) captureActiveSnapshot();
   if (tab.dirty) {
@@ -9476,14 +9476,14 @@ async function closeTab(id) {
     });
     if (decision.action === "cancel") return;
     if (decision.action === "confirm") {
-      // Temporarily activate so saveCurrentGraph operates on this tab's data.
+      
       if (!isActive) {
         const prevActive = tabsState.activeId;
         tabsState.activeId = id;
         applyTabToCanvas(tab);
         const ok = await saveCurrentGraph({ silent: true });
         if (!ok) {
-          // User cancelled the name prompt — abort close.
+          
           tabsState.activeId = prevActive;
           const prev = tabsState.tabs.find((t) => t.id === prevActive);
           if (prev) applyTabToCanvas(prev);
@@ -9500,7 +9500,7 @@ async function closeTab(id) {
   tabsState.tabs.splice(idx, 1);
   if (isActive) {
     if (tabsState.tabs.length === 0) {
-      // Always keep at least one tab around so the user has a canvas.
+      
       const fresh = {
         id: genStorageId("tab"),
         name: "Untitled",
@@ -9581,11 +9581,11 @@ function renderGraphTabs() {
   }
 }
 
-// Save current canvas into .rundeer/graphs.
-// Returns true on success, false if cancelled.
+
+
 async function saveCurrentGraph(opts = {}) {
   const tab = getActiveTab();
-  // Brain tabs save to their own server-backed agent graph.
+  
   if (tab && tab.kind === "brain") {
     return saveBrainGraphTab(tab, opts);
   }
@@ -9599,7 +9599,7 @@ async function saveCurrentGraph(opts = {}) {
     const defaultName = tab?.name && tab.name !== "Untitled" ? tab.name : `graph-${new Date().toISOString().slice(0, 10)}`;
     const result = await openAppDialog({
       title: "Save graph",
-      message: "This writes the graph to .rundeer/graphs.",
+      message: "This writes the graph to .rundeer/data/graphs.",
       inputLabel: "Graph name",
       defaultValue: defaultName,
       confirmText: "Save",
@@ -9640,10 +9640,10 @@ async function saveCurrentGraph(opts = {}) {
   return true;
 }
 
-// ─── Agent brain tab ─────────────────────────────────────────────────────
-// Brain tabs persist to the server (.rundeer/agent/brain.json) instead of
-// regular graph state, and recompile the runtime config on every save so the next
-// agent turn picks up the changes.
+
+
+
+
 
 const BRAIN_TAB_NAME = "Agent Brain";
 
@@ -9667,7 +9667,7 @@ function brainTabNameForAgent(agentName) {
 
 async function openBrainTab(agentId = null) {
   const targetAgentId = agentId || selectedAgentId();
-  // Focus existing brain tab if open.
+  
   const existing = tabsState.tabs.find((t) => t.kind === "brain" && (t.agentId || "default") === targetAgentId);
   if (existing) { activateTab(existing.id); return existing; }
   let payload = null;
@@ -9711,9 +9711,9 @@ function saveBrainGraphTab(tab, opts = {}) {
   tab.dirty = false;
   renderGraphTabs();
   persistTabs();
-  // Also notify the live agent WS so the running Conversation refreshes
-  // its in-memory snapshot + runtime. The HTTP POST above already
-  // persisted + recompiled on disk, so skip a second write here.
+  
+  
+  
   try {
     if (window.AgentChat && typeof window.AgentChat.sendBrainSnapshot === "function" && (tab?.agentId || "default") === selectedAgentId()) {
       window.AgentChat.sendBrainSnapshot(data, { persist: false });
@@ -9723,10 +9723,10 @@ function saveBrainGraphTab(tab, opts = {}) {
 }
 
 function applyBrainPatchOp(op) {
-  // Brain patches use the same op shape as workflow patches; just dispatch
-  // through the existing helper so add_node/remove_node/set_props/edge ops
-  // mutate the live brain canvas. Only safe to call while the brain tab is
-  // active.
+  
+  
+  
+  
   applyAgentPatchOp(op);
 }
 
@@ -9735,7 +9735,7 @@ async function deleteSavedGraph(id) {
   if (!saved) return;
   const decision = await openAppDialog({
     title: "Delete graph",
-    message: `Delete "${saved.name}" from .rundeer/graphs?`,
+    message: `Delete "${saved.name}" from .rundeer/data/graphs?`,
     confirmText: "Delete",
     cancelText: "Cancel",
     showInput: false,
@@ -9746,7 +9746,7 @@ async function deleteSavedGraph(id) {
     body: JSON.stringify({ id }),
   });
   graphLibrary.graphs = getSavedGraphs().filter((g) => g.id !== id);
-  // Detach any open tabs pointing at it (they remain as unsaved dirty tabs).
+  
   for (const t of tabsState.tabs) {
     if (t.savedGraphId === id) { t.savedGraphId = null; t.dirty = true; }
   }
@@ -9810,7 +9810,7 @@ function renderGraphsPage() {
       e.stopPropagation();
       const result = await openAppDialog({
         title: "Rename graph",
-        message: "Update the graph name in .rundeer/graphs.",
+        message: "Update the graph name in .rundeer/data/graphs.",
         inputLabel: "Graph name",
         defaultValue: g.name,
         confirmText: "Rename",
@@ -9898,7 +9898,7 @@ async function initTabsSystem() {
   applyShellKind(active);
   renderGraphTabs();
   renderPalette();
-  // Auto-fit once the canvas is laid out.
+  
   requestAnimationFrame(() => requestAnimationFrame(() => frameAll()));
   persistTabs();
 }
@@ -9909,10 +9909,10 @@ function scheduleAutosave() {
   autosaveTimer = setTimeout(autosaveWorkspaceState, 400);
 }
 
-// ─── Preview auto-refresh ────────────────────────────────────────────────────
-// Re-resolves preview nodes and live-update nodes in `lite` mode after any
-// cheap upstream change (text-input edits, edge add/remove, etc.). Lite mode
-// never invokes command nodes — those reuse their lastResult.
+
+
+
+
 
 let _previewRefreshTimer = null;
 let _previewRefreshRunning = false;
@@ -9938,11 +9938,11 @@ async function refreshAllPreviews(opts = {}) {
         const before = JSON.stringify(node.lastResult || null);
         await resolveNode(node.id, cache, {}, resolveOpts);
         if (JSON.stringify(node.lastResult || null) !== before) changedAny = true;
-      } catch (_) { /* ignore: leaves prior lastResult untouched */ }
+      } catch (_) {  }
     }
     for (const node of previews) {
-      // `file` is a preview-style source: its value comes straight from the
-      // `path` prop (or a wired prop-socket) — no upstream `in` to walk.
+      
+      
       if (node.type === "file") {
         const wiredEdge = graph.edges.find((e) => e.toNode === node.id && e.toSocket === "path");
         let value = "";
@@ -9977,9 +9977,9 @@ async function refreshAllPreviews(opts = {}) {
         }
         continue;
       }
-      // Most previews use an "in" socket. Render and any future preview
-      // with bespoke inputs still need to refresh — accept any incoming edge.
-      // Coordinate has no inputs but is self-driving from its props.
+      
+      
+      
       if (node.type !== "coordinate" && !graph.edges.some((e) => e.toNode === node.id)) continue;
       try {
         const res = await resolveNode(node.id, cache, {}, resolveOpts);
@@ -10015,7 +10015,7 @@ async function refreshAllPreviews(opts = {}) {
           const el = document.querySelector(`[data-node-id="${node.id}"]`);
           if (el) el.dataset.signature = "stale";
         }
-      } catch (_) { /* ignore: leaves prior lastResult untouched */ }
+      } catch (_) {  }
     }
     renderNodes();
     if (changedAny) scheduleAutosave();
@@ -10031,9 +10031,9 @@ async function refreshAllPreviews(opts = {}) {
 function refreshPreview(nodeId, opts = {}) {
   const node = graph.nodes[nodeId];
   if (!node || !PREVIEW_TYPES.has(node.type)) return;
-  // Re-fetch the existing preview value without re-running upstream nodes.
-  // Bump cache-bust tokens on each artifact path so <img>/<video>/thumb URLs
-  // refetch, mark the node DOM as stale, and re-render just this node.
+  
+  
+  
   const value = node.lastResult?.value;
   if (Array.isArray(value)) {
     for (const v of value) if (v) artifactURL.bump(String(v));
@@ -10046,7 +10046,7 @@ function refreshPreview(nodeId, opts = {}) {
 }
 
 function serializeGraph() {
-  // Strip transient fields
+  
   const cleanNodes = {};
   for (const [id, n] of Object.entries(graph.nodes)) {
     cleanNodes[id] = {
@@ -10077,9 +10077,9 @@ function loadGraphData(data) {
   if (!data || !data.nodes) return false;
   graph.nodes = {};
   for (const [id, n] of Object.entries(data.nodes)) {
-    // Legacy migration: collapse preview-image / preview-video / preview-text
-    // into the unified `preview` node, and image-input / video-input /
-    // filepath-input into the unified `file` node.
+    
+    
+    
     let migrated = n;
     if (LEGACY_PREVIEW_TYPES.has(n.type)) migrated = { ...migrated, type: "preview" };
     if (LEGACY_FILE_TYPES.has(migrated.type)) migrated = { ...migrated, type: "file" };
@@ -10124,7 +10124,7 @@ function loadGraphData(data) {
 
 function autosaveWorkspaceState() {
   const data = serializeGraph();
-  // Mirror into the active tab's snapshot so tabs persist across reloads.
+  
   const tab = getActiveTab();
   if (tab) tab.snapshot = data;
   persistTabs();
@@ -10180,7 +10180,7 @@ async function clearGraph() {
   scheduleAutosave();
 }
 
-// ─── Status ──────────────────────────────────────────────────────────────────
+
 
 let graphStatusTimer = null;
 function setGraphStatus(text, cls) {
@@ -10197,11 +10197,11 @@ function setGraphStatus(text, cls) {
   }, 3000);
 }
 
-// ─── Palette ─────────────────────────────────────────────────────────────────
 
-// Display-only catalog: hides the two real Loop node types behind a single
-// virtual "Loop" entry so users always insert a complete Decompose/Output
-// pair instead of an orphan half.
+
+
+
+
 function paletteCategoriesForDisplay() {
   return NODE_CATALOG.map((cat) => {
     if (cat.category !== "Loop") return cat;
@@ -10264,7 +10264,7 @@ function renderPalette(query = "") {
   }
 }
 
-// ─── Masthead ────────────────────────────────────────────────────────────────
+
 
 async function loadState() {
   try {
@@ -10285,7 +10285,7 @@ async function loadState() {
     }
     const stylesEl = document.getElementById("stylesStat");
     if (stylesEl) stylesEl.textContent = String((data.styles || []).length);
-    // Initialize agent chat once the state confirms it's available.
+    
     if (data.agent && data.agent.enabled && data.agent.port && window.AgentChat && !window.AgentChat._inited) {
       window.AgentChat._inited = true;
       const wsProto = location.protocol === "https:" ? "wss:" : "ws:";
@@ -10295,12 +10295,12 @@ async function loadState() {
         model: data.agent.model || "agent",
         apiKeyPresent: Boolean(data.agent.api_key_present),
         getGraphSnapshot: () => {
-          // When the user is on the brain tab, the live `graph` holds the
-          // brain graph — which must not be sent to the agent as the
-          // workflow snapshot, or the conversation will see a huge spurious
-          // diff every turn and try to operate on brain nodes with
-          // workflow tools. Fall back to the most recent workflow tab's
-          // saved snapshot instead.
+          
+          
+          
+          
+          
+          
           const active = getActiveTab();
           const isBrain = !!(active && active.kind === "brain");
           if (!isBrain) {
@@ -10326,11 +10326,11 @@ async function loadState() {
         openBrainTab: (agentId) => openBrainTab(agentId),
         applyBrainPatch: (ops) => {
           if (!Array.isArray(ops)) return;
-          // Ensure the brain tab is active so patches mutate the correct
-          // graph; await it so add_node positions are well-defined.
+          
+          
           Promise.resolve(openBrainTab()).then(() => {
             for (const op of ops) applyAgentPatchOp(op);
-            // Mark brain tab dirty + autosave-on-snapshot via WS.
+            
             const active = getActiveTab();
             if (active && active.kind === "brain") {
               active.dirty = true;
@@ -10352,7 +10352,7 @@ async function loadState() {
   }
 }
 
-// Apply a single patch op emitted by the agent's mutate tools.
+
 function applyAgentPatchOp(op) {
   if (!op || typeof op !== "object") return;
   try {
@@ -10361,7 +10361,7 @@ function applyAgentPatchOp(op) {
         if (typeof addNode === "function") {
           const actualId = addNode(op.type, Number(op.x) || 0, Number(op.y) || 0, { id: op.id, props: op.props || {}, muted: Boolean(op.muted) });
           if (actualId && op.id && actualId !== op.id) {
-            // Track remapping so subsequent ops can resolve aliases if needed.
+            
             window.AgentChat._idAliases = window.AgentChat._idAliases || {};
             window.AgentChat._idAliases[op.id] = actualId;
           }
@@ -10443,7 +10443,7 @@ function applyAgentPatchOp(op) {
         break;
       }
       default:
-        // Unknown op: ignore.
+        
         break;
     }
   } catch (err) {
@@ -10457,7 +10457,7 @@ function _resolveAgentId(id) {
   return aliases[id] || id;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 
 async function fetchJSON(url, opts = {}) {
   const res = await fetch(url, {
@@ -10553,7 +10553,7 @@ function formatBytes(n) {
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
-// ─── View tabs (Explore / Nodes) ─────────────────────────────────────────────
+
 
 function setActiveView(name, opts = {}) {
   if (name !== "explore" && name !== "nodes" && name !== "runs" && name !== "graphs" && name !== "settings") name = "nodes";
@@ -10561,7 +10561,7 @@ function setActiveView(name, opts = {}) {
   if (!shell) return;
   shell.dataset.activeView = name;
   document.querySelectorAll(".view-tab").forEach((b) => {
-    if (!b.dataset.view) return; // skip non-view buttons (e.g. Help)
+    if (!b.dataset.view) return; 
     const active = b.dataset.view === name;
     b.classList.toggle("is-active", active);
     b.setAttribute("aria-selected", String(active));
@@ -10569,12 +10569,12 @@ function setActiveView(name, opts = {}) {
   document.querySelectorAll(".ne-view").forEach((v) => {
     v.hidden = v.dataset.view !== name;
   });
-  // Lazy-init explore tree the first time it's shown.
+  
   if (name === "explore") initExplore();
   if (name === "runs" && window.refreshRunsList) window.refreshRunsList();
   if (name === "graphs") renderGraphsPage();
   if (name === "settings") renderShortcutSettings();
-  // Update history without reload so deep links still work.
+  
   const url = name === "explore"
     ? "/explore"
     : name === "runs"
@@ -10590,7 +10590,7 @@ function setActiveView(name, opts = {}) {
       else history.pushState({ view: name }, "", url);
     } catch (_) {}
   }
-  // Frame all when entering nodes (gives the canvas a chance to recompute size).
+  
   if (name === "nodes") {
     requestAnimationFrame(() => { applyViewport(); renderConnections(); });
   }
@@ -10606,7 +10606,7 @@ function initialViewFromPath() {
   return "nodes";
 }
 
-// ─── Explore view ────────────────────────────────────────────────────────────
+
 
 const explore = {
   initialized: false,
@@ -10622,7 +10622,7 @@ async function initExplore() {
   explore.initialized = true;
   bindExploreHandlers();
   await loadExploreTree();
-  // Restore previous split width.
+  
   const saved = webLayoutState().exploreSplit;
   if (saved) document.getElementById("exShell").style.setProperty("--ex-split", saved);
   setupExploreResizer();
@@ -10809,14 +10809,14 @@ function previewExploreFile(node) {
   } else {
     body.innerHTML = `<div class="ex-preview-empty">no inline preview for .${escHtml(ext)} files</div>`;
   }
-  // Re-render tree so selection highlight updates.
+  
   renderExploreTree();
 }
 
 function setupSidePanelResizers() {
   const shell = document.querySelector(".ne-shell");
   if (!shell) return;
-  // Restore saved widths.
+  
   const layout = webLayoutState();
   if (layout.paletteW) shell.style.setProperty("--palette-w", layout.paletteW);
   if (layout.propsW) shell.style.setProperty("--props-w", layout.propsW);
@@ -10895,7 +10895,7 @@ function setupExploreResizer() {
   });
 }
 
-// ─── Boot ────────────────────────────────────────────────────────────────────
+
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadWebStore();
@@ -10914,8 +10914,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   wrap.addEventListener("wheel", onCanvasWheel, { passive: false });
   wrap.addEventListener("contextmenu", (e) => e.preventDefault());
 
-  // Alt + RightClick drag → lazy-connect (Node Wrangler style).
-  // Capture-phase listener so it intercepts before per-node handlers swallow it.
+  
+  
   window.addEventListener("mousedown", (e) => {
     if (e.button !== 2 || !e.altKey) return;
     if (e.ctrlKey || e.metaKey) return;
@@ -10939,8 +10939,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.addEventListener("keydown", onKeydown);
 
-  // High-priority reroute placement commit/cancel: while E-placement is
-  // active, clicks should place/cancel the draft instead of selecting nodes.
+  
+  
   window.addEventListener("mousedown", (e) => {
     if (!ix.reroutePlacement) return;
     if (e.button === 0) commitReroutePlacement();
@@ -10950,9 +10950,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.stopPropagation();
   }, true);
 
-  // High-priority modal commit/cancel: when a transform is active, ANY
-  // mouse click anywhere (including on top of nodes) commits or cancels.
-  // Capture phase + early return so node-level handlers don't fire.
+  
+  
+  
   window.addEventListener("mousedown", (e) => {
     if (!ix.modal) return;
     if (e.button === 0) commitModal();
@@ -10962,9 +10962,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.stopPropagation();
   }, true);
 
-  // Click anywhere outside the floating add-menu (including on the canvas)
-  // closes it. The mention popup is a sibling element so we still leave it
-  // intact via its own dismissal logic.
+  
+  
+  
   document.addEventListener("mousedown", (e) => {
     const menu = document.getElementById("addMenu");
     if (menu.style.display === "none") return;
@@ -10975,7 +10975,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("paletteSearch").addEventListener("input", (e) => renderPalette(e.target.value.trim()));
 
-  // Toolbar
+  
   document.getElementById("runGraphBtn").addEventListener("click", () => runGraph());
   const stopGraphBtn = document.getElementById("stopGraphBtn");
   if (stopGraphBtn) stopGraphBtn.addEventListener("click", stopGraphRun);
@@ -11007,10 +11007,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const resetShortcutsBtn = document.getElementById("resetShortcutsBtn");
   if (resetShortcutsBtn) resetShortcutsBtn.addEventListener("click", resetAllShortcuts);
 
-  // View tabs (Tree / Runs / Graphs / Explore) — switching is a CSS toggle
-  // so state (graph, panels, run dock) is preserved without a reload. The
-  // Help button shares the same nav element but has no data-view, so we
-  // skip it here and bind it to the help modal separately.
+  
+  
+  
+  
   document.querySelectorAll(".view-tab").forEach((b) => {
     if (!b.dataset.view) return;
     b.addEventListener("click", () => setActiveView(b.dataset.view, { history: true }));
@@ -11031,7 +11031,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const runsToggle = document.getElementById("runsToggle");
   if (runsToggle) runsToggle.addEventListener("click", () => setActiveView("runs"));
 
-  // Help / quick-start modal — toggle is-hidden on the help overlay.
+  
   const helpBtn = document.getElementById("helpBtn");
   const helpModal = document.getElementById("helpModal");
   const helpClose = document.getElementById("helpClose");
@@ -11054,14 +11054,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Restore tabs and saved graphs from .rundeer.
+  
   await initTabsSystem();
   refreshRunsList();
   setInterval(refreshRunsList, 4000);
-  // Initial preview pass so non-command upstream values populate immediately.
+  
   schedulePreviewRefresh();
 
-  // Save before unload as a final safety net.
+  
   window.addEventListener("beforeunload", () => {
     captureActiveSnapshot();
     persistTabs();

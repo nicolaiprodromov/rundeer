@@ -1,12 +1,12 @@
-/* rundeer console — studio instrument panel
- * Display: Bricolage Grotesque   Body: Hanken Grotesk   Mono: Geist Mono
- * Palette: dark, warm-tinted neutrals (h≈80) with cadmium gold + violet accents.
- */
+
+
+
+
 
 :root {
   color-scheme: dark;
 
-  /* Neutrals tinted toward warm yellow (h≈80). Reduced chroma at extremes. */
+  
   --bg:           oklch(13.5% 0.006 80);
   --bg-deep:      oklch(10% 0.005 80);
   --surface:      oklch(16% 0.007 80);
@@ -21,14 +21,14 @@
   --quiet:        oklch(48% 0.008 80);
   --whisper:      oklch(36% 0.008 80);
 
-  /* Accents — used sparingly. */
+  
   --gold:         oklch(83% 0.130 88);
   --gold-soft:    oklch(72% 0.090 88);
   --gold-deep:    oklch(45% 0.090 80);
   --violet:       oklch(70% 0.135 304);
   --violet-soft:  oklch(58% 0.105 304);
 
-  /* 4pt scale, semantic names */
+  
   --space-2:  4px;
   --space-3:  8px;
   --space-4:  12px;
@@ -53,8 +53,8 @@
 * { box-sizing: border-box; }
 *::selection { background: var(--gold-deep); color: var(--text); }
 
-/* Hidden but functional scrollbars: every scrolling panel keeps its scroll
- * but the scrollbar chrome stays out of the way so the UI feels native. */
+
+
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
@@ -98,7 +98,7 @@ a { color: var(--gold-soft); text-decoration: none; }
 }
 .skip-link:focus { transform: none; }
 
-/* Layout shell ---------------------------------------------------------- */
+
 
 .shell {
   height: 100vh;
@@ -108,7 +108,7 @@ a { color: var(--gold-soft); text-decoration: none; }
   overflow: hidden;
 }
 
-/* Masthead -------------------------------------------------------------- */
+
 
 .masthead {
   position: sticky;
@@ -139,11 +139,11 @@ a { color: var(--gold-soft); text-decoration: none; }
   font-family: var(--font-mono);
   font-size: 5px;
   line-height: 1;
-  color: oklch(72% 0.18 330); /* fallback if gradient mask unsupported */
+  color: oklch(72% 0.18 330); 
   background: linear-gradient(
     90deg,
-    oklch(72% 0.18 330) 0%,    /* pink (Dolly) */
-    oklch(58% 0.20 290) 100%   /* violet (Charple) */
+    oklch(72% 0.18 330) 0%,    
+    oklch(58% 0.20 290) 100%   
   );
   -webkit-background-clip: text;
           background-clip: text;
@@ -219,7 +219,7 @@ a { color: var(--gold-soft); text-decoration: none; }
   max-width: min(48vw, 620px);
 }
 
-/* Stat strip on the right of the masthead */
+
 .stat-strip {
   margin: 0;
   display: grid;
@@ -250,7 +250,7 @@ a { color: var(--gold-soft); text-decoration: none; }
 .stat dd.is-positive { color: var(--gold); }
 .stat dd.is-quiet { color: var(--quiet); }
 
-/* Workbench ------------------------------------------------------------- */
+
 
 .workbench {
   display: grid;
@@ -260,7 +260,7 @@ a { color: var(--gold-soft); text-decoration: none; }
   overflow: hidden;
 }
 
-/* Rail */
+
 
 .rail {
   display: grid;
@@ -323,7 +323,7 @@ a { color: var(--gold-soft); text-decoration: none; }
   letter-spacing: -0.005em;
 }
 
-/* Composer */
+
 
 .composer {
   padding: var(--space-7) var(--space-7);
@@ -380,7 +380,7 @@ a { color: var(--gold-soft); text-decoration: none; }
 
 .composer-actions { display: flex; gap: var(--space-3); align-items: center; }
 
-/* Buttons */
+
 
 .btn {
   display: inline-flex;
@@ -419,7 +419,7 @@ a { color: var(--gold-soft); text-decoration: none; }
 
 .btn-tiny { height: 30px; padding: 0 12px; font-size: 11px; }
 
-/* Mode toggle (Classic ↔ Nodes) */
+
 
 .mode-toggle {
   display: inline-flex;
@@ -450,7 +450,7 @@ a { color: var(--gold-soft); text-decoration: none; }
 }
 
 
-/* Form blocks */
+
 
 .composer-form {
   display: grid;
@@ -563,7 +563,7 @@ select {
   color: var(--text-soft);
 }
 
-/* References */
+
 .reference-strip {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
@@ -615,7 +615,7 @@ select {
   text-align: center;
 }
 
-/* Definitions */
+
 .definition-rows { display: grid; gap: var(--space-3); }
 .definition-row {
   display: grid;
@@ -627,7 +627,7 @@ select {
   align-items: center;
 }
 
-/* Folds */
+
 .fold {
   border-top: 1px solid var(--line);
   padding-top: var(--space-5);
@@ -660,7 +660,7 @@ select {
 .fold-num { color: var(--gold-soft); font-variant-numeric: tabular-nums; }
 .fold-body { padding-top: var(--space-4); display: grid; gap: var(--space-4); }
 
-/* Aside (output + files) */
+
 
 .aside {
   border-left: 1px solid var(--line);
@@ -826,7 +826,7 @@ select {
   font-size: 11.5px;
 }
 
-/* Dock (artifacts) */
+
 
 .dock {
   border-top: 1px solid var(--line);
@@ -941,7 +941,7 @@ select {
   white-space: pre;
 }
 
-/* Ledger */
+
 .ledger {
   display: flex;
   justify-content: space-between;
@@ -958,16 +958,16 @@ select {
 }
 .ledger-mid { color: var(--gold-soft); }
 
-/* Visibility helpers */
+
 .is-hidden,
 [hidden] { display: none !important; }
 
-/* ====================================================================
-   New: file tree, reference tree, mention popover, premium output,
-   artifact dock + lightbox.
-   ==================================================================== */
 
-/* Mention popover --------------------------------------------------- */
+
+
+
+
+
 .mention-host { position: relative; }
 .mention-popover {
   position: absolute;
@@ -1027,7 +1027,7 @@ select {
   font-family: var(--font-body);
 }
 
-/* File tree --------------------------------------------------------- */
+
 .file-tree, .artifact-tree {
   display: grid;
   align-content: start;
@@ -1124,7 +1124,7 @@ select {
   display: none !important;
 }
 
-/* Reference tree ---------------------------------------------------- */
+
 .ref-toolbar {
   display: flex;
   gap: var(--space-3);
@@ -1171,7 +1171,7 @@ select {
   gap: var(--space-3);
 }
 
-/* Output / terminal upgrade ---------------------------------------- */
+
 .terminal-wrap { position: relative; min-height: 0; display: grid; }
 .terminal-scrim {
   pointer-events: none;
@@ -1223,7 +1223,7 @@ select {
 .icon-btn:hover { color: var(--gold); border-color: color-mix(in oklch, var(--gold) 50%, var(--line)); }
 .icon-btn.is-flash { color: var(--gold); border-color: var(--gold); background: color-mix(in oklch, var(--gold) 14%, var(--surface)); }
 
-/* Settings --------------------------------------------------------- */
+
 body.settings-open { overflow: hidden; }
 .settings-page {
   position: fixed;
@@ -1318,7 +1318,7 @@ body.settings-open { overflow: hidden; }
 .settings-form .ctl-toggle { min-height: 38px; align-content: end; }
 .settings-form input[type="number"]::placeholder { color: var(--whisper); }
 
-/* Search inline + segmented -------------------------------------- */
+
 .search-inline { height: 30px; min-width: 200px; }
 .seg {
   display: inline-flex;
@@ -1341,7 +1341,7 @@ body.settings-open { overflow: hidden; }
 .seg-btn:hover { color: var(--text); }
 .seg-btn.is-active { color: var(--gold); background: color-mix(in oklch, var(--gold) 12%, transparent); }
 
-/* Artifact dock upgrade ------------------------------------------ */
+
 .dock { max-height: 38vh; overflow: hidden; }
 body.dock-expanded .dock { max-height: 78vh; }
 .dock.is-collapsed,
@@ -1406,7 +1406,7 @@ body.dock-expanded .dock.is-collapsed {
 }
 .artifact-item.is-grid img { aspect-ratio: 16 / 9; }
 
-/* Lightbox -------------------------------------------------------- */
+
 body.lightbox-open { overflow: hidden; }
 .lightbox {
   position: fixed; inset: 0;
@@ -1545,13 +1545,13 @@ body.lightbox-open { overflow: hidden; }
   .lightbox-side { display: none; }
 }
 
-/* Reduced motion */
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   .wordmark-cursor { animation: none; opacity: 1; }
 }
 
-/* Responsive */
+
 @media (max-width: 1280px) {
   .workbench { grid-template-columns: 168px minmax(0, 1.4fr) minmax(320px, 1fr); }
   .ascii-deer { display: none; }

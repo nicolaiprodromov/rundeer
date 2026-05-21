@@ -1,0 +1,14 @@
+.env
+.env.*
+.rundeer/data/**
+.repomix/**
+.vscode/**
+.crush/**
+.niku/**
+**/__pycache__/**
+**/.pytest_cache/**
+**/.mypy_cache/**
+**/.ruff_cache/**
+**/node_modules/**
+**/Reference/**
+repomix-output.*

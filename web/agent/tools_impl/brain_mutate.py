@@ -1,19 +1,19 @@
-"""Self-modify tools: emit patches against the agent brain graph.
 
-Every tool here returns a dict of shape::
 
-    {"patch_target": "brain", "patch": [ops], "summary": "human text"}
 
-The conversation loop forwards the patch via a ``brain_graph_patch`` event so
-the frontend applies it to the brain canvas, then echoes back a snapshot.
-The conversation will reload the compiled runtime so subsequent steps in the
-same turn observe the edits.
 
-These tools intentionally do NOT write to disk directly — the brain canvas
-in the UI is the source of truth during a session, and the websocket
-snapshot pipeline persists via ``save_brain_graph`` on the next snapshot
-acknowledgement (or on explicit Save).
-"""
+
+
+
+
+
+
+
+
+
+
+
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -56,9 +56,9 @@ def _ok(patch: List[Dict[str, Any]], summary: str, **extra: Any) -> Dict[str, An
 
 
 def _brain_section_targets(graph: Dict[str, Any]) -> Dict[str, Any]:
-    """Return the brain node and the node we should attach new section
-    text-input nodes to (the bundle wired into brain.sections, if any;
-    otherwise the brain node itself)."""
+
+
+
     brain = _find_node(graph, type_="brain")
     if brain is None:
         return {"brain": None, "target": None, "socket": None}
@@ -75,7 +75,7 @@ def _brain_section_targets(graph: Dict[str, Any]) -> Dict[str, Any]:
     return {"brain": brain, "target": brain, "socket": target_socket}
 
 
-# ── Read ──────────────────────────────────────────────────────────────────
+
 
 def read_brain_graph(*, root: Path, agent_id: str = "default") -> Dict[str, Any]:
     g = _load(root, agent_id=agent_id)
@@ -106,7 +106,7 @@ def read_brain_graph(*, root: Path, agent_id: str = "default") -> Dict[str, Any]
     }
 
 
-# ── System prompt sections (generic text-input nodes wired into brain) ────
+
 
 def set_system_prompt_section(*, root: Path, section_id: str, body: str, agent_id: str = "default") -> Dict[str, Any]:
     g = _load(root, agent_id=agent_id)
@@ -165,7 +165,7 @@ def remove_system_prompt_section(*, root: Path, section_id: str, agent_id: str =
     )
 
 
-# ── Tool flags ────────────────────────────────────────────────────────────
+
 
 def set_tool_flag(
     *, root: Path,
@@ -199,7 +199,7 @@ def set_tool_flag(
     )
 
 
-# ── Agent settings ────────────────────────────────────────────────────────
+
 
 ALLOWED_SETTINGS_KEYS = {
     "model", "temperature", "max_tool_iterations", "max_web_search_per_turn",

@@ -1,12 +1,12 @@
-/**
- * CLI client for the live variant mode poll/reply protocol.
- *
- * Usage:
- *   npx impeccable poll                         # Block until browser event, print JSON
- *   npx impeccable poll --timeout=600000        # Custom timeout (ms); default is long-poll friendly
- *   npx impeccable poll --reply <id> done       # Reply "done" to event <id>
- *   npx impeccable poll --reply <id> error "msg" # Reply with error
- */
+
+
+
+
+
+
+
+
+
 
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -14,10 +14,10 @@ import { fileURLToPath } from 'node:url';
 import { completionAckForAcceptResult, completionTypeForAcceptResult } from './live-completion.mjs';
 import { readLiveServerInfo } from './impeccable-paths.mjs';
 
-// Node's built-in fetch (undici under the hood) enforces a 300s headers
-// timeout that can't be lowered per-request. We cap each request below
-// that ceiling and loop in `pollOnce` to synthesize a long poll without
-// depending on the standalone undici package.
+
+
+
+
 const PER_REQUEST_TIMEOUT_MS = 270_000;
 
 function readServerInfo() {
@@ -67,14 +67,14 @@ Options:
   const info = readServerInfo();
   const base = `http://localhost:${info.port}`;
 
-  // Reply mode: npx impeccable poll --reply <id> <status> [--file path] [message]
+  
   const replyIdx = args.indexOf('--reply');
   if (replyIdx !== -1) {
     const id = args[replyIdx + 1];
     const status = args[replyIdx + 2] || 'done';
     const fileIdx = args.indexOf('--file');
     const filePath = fileIdx !== -1 && fileIdx + 1 < args.length ? args[fileIdx + 1] : undefined;
-    // Message is any remaining positional arg that isn't a flag
+    
     const message = args.find((a, i) => i > replyIdx + 2 && !a.startsWith('--') && i !== fileIdx + 1) || undefined;
 
     if (!id) {
@@ -85,7 +85,7 @@ Options:
     try {
       await postReply(base, info.token, { id, type: status, message, file: filePath });
 
-      // Success — silent exit (agent doesn't need output for replies)
+      
     } catch (err) {
       if (err.cause?.code === 'ECONNREFUSED') {
         console.error('Live server not running. Start one with: npx impeccable live');
@@ -97,10 +97,10 @@ Options:
     return;
   }
 
-  // Poll mode: block until browser event. Default 10 min. Node's built-in
-  // fetch enforces a 300s headers timeout, so we loop in slices under that
-  // ceiling and keep re-polling until we get a real event or the user's
-  // total timeout runs out.
+  
+  
+  
+  
   const timeoutArg = args.find(a => a.startsWith('--timeout='));
   const totalTimeout = timeoutArg ? parseInt(timeoutArg.split('=')[1], 10) : 600000;
 
@@ -128,15 +128,15 @@ Options:
       }
 
       const next = await res.json();
-      // Server-side timeout means no browser event arrived in this slice.
-      // Loop and re-poll until we get a real event or we hit the user's
-      // total deadline.
+      
+      
+      
       if (next?.type === 'timeout' && Date.now() < deadline) continue;
       event = next;
       break;
     }
 
-    // Auto-handle accept/discard via deterministic script
+    
     if (event.type === 'accept' || event.type === 'discard') {
       const __dirname = path.dirname(fileURLToPath(import.meta.url));
       const acceptScript = path.join(__dirname, 'live-accept.mjs');
@@ -174,14 +174,14 @@ Options:
       }
     }
 
-    // Second signal path: stderr banner in case the agent parses stdout
-    // JSON but skips nested fields. One line is enough — the full checklist
-    // is in reference/live.md.
+    
+    
+    
     if (event._acceptResult?.carbonize === true) {
       process.stderr.write('\n⚠ Carbonize cleanup REQUIRED before next poll. After cleanup, run live-complete.mjs --id ' + event.id + '. See reference/live.md "Required after accept".\n\n');
     }
 
-    // Print the event as JSON — the agent reads this from stdout
+    
     console.log(JSON.stringify(event));
   } catch (err) {
     if (err.cause?.code === 'ECONNREFUSED') {
@@ -193,7 +193,7 @@ Options:
   }
 }
 
-// Auto-execute when run directly
+
 const _running = process.argv[1];
 if (_running?.endsWith('live-poll.mjs') || _running?.endsWith('live-poll.mjs/')) {
   pollCli();

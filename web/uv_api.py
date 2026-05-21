@@ -1,16 +1,16 @@
-"""HTTP request handlers for the UV / vector node pipeline.
 
-Each handler resolves input paths against the project root, runs the
-corresponding ``core.uv_ops`` function, and returns a small JSON payload
-of the form::
 
-    {"path": "<rel .npy>", "width": W, "height": H, "preview": "<rel .png>"}
 
-for map outputs, or ``{"path": "<rel .png>", "width": W, "height": H}``
-for the final rendered image. The Mix endpoint may also return
-``{"color": [r, g, b, a]}`` when its fast path triggers (no per-pixel
-work needed).
-"""
+
+
+
+
+
+
+
+
+
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -22,7 +22,7 @@ import numpy as np
 from rundeer.core import uv_ops
 
 
-# ── Path resolution (mirrors web.server.safe_project_path) ──────────────
+
 
 def _safe_path(root: Path, rel: str) -> Path:
     raw = unquote(rel or "")
@@ -43,17 +43,17 @@ def _relpath(root: Path, path: Path) -> str:
         return str(path)
 
 
-# ── Input coercion ──────────────────────────────────────────────────────
+
 
 def _resolve_input(root: Path, value: Any) -> Any:
-    """Turn a JSON payload value into something ``uv_ops`` can consume.
 
-    Accepted shapes::
-        {"path": "..."}    → ndarray loaded from .npy / image
-        {"scalar": 1.5}    → float
-        {"color": [...]}   → list[float]
-        plain number / list/tuple / string path / None
-    """
+
+
+
+
+
+
+
     if value is None or value == "":
         return None
     if isinstance(value, dict):
@@ -69,7 +69,7 @@ def _resolve_input(root: Path, value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [float(x) for x in value]
     if isinstance(value, str):
-        # Treat bare strings as file paths.
+
         return uv_ops.load_map(_safe_path(root, value))
     return value
 
@@ -82,7 +82,7 @@ def _shape_meta(arr: np.ndarray) -> Dict[str, int]:
     return {"width": 1, "height": 1}
 
 
-# ── Endpoints ───────────────────────────────────────────────────────────
+
 
 def coordinate(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     width = int(payload.get("width") or 1024)
@@ -113,9 +113,9 @@ def vector(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         "image": _relpath(root, png),
         **_shape_meta(arr),
     }
-    # When both inputs are scalar/vector primitives the result is a 1×1 map.
-    # Include the raw value so downstream size/position sockets (which expect
-    # a plain [x, y, ...] array) don't receive an unreadable .npy path.
+
+
+
     if arr.ndim >= 3 and arr.shape[0] == 1 and arr.shape[1] == 1:
         result["value"] = arr[0, 0].tolist()
     return result
@@ -152,7 +152,7 @@ def mix(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     mode = str(payload.get("mode") or "mix")
     clamp = bool(payload.get("clamp") if payload.get("clamp") is not None else True)
 
-    # Fill defaults: factor → 0.5, a → black, b → white (Blender parity).
+
     if factor is None:
         factor = 0.5
     if a is None:
@@ -162,13 +162,13 @@ def mix(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
     result = uv_ops.mix(factor, a, b, mode=mode, clamp_factor=clamp)
     if isinstance(result, np.ndarray):
-        # Image-typed output → write a viewable PNG.
+
         png = uv_ops.save_image(result, root, f"mix_{mode}")
         return {
             "path": _relpath(root, png),
             **_shape_meta(result),
         }
-    # Scalar/color fast path.
+
     return {"color": list(result)}
 
 
