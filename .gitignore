@@ -20,10 +20,13 @@ __pycache__/
 .rundeer/data/graphs/
 .rundeer/data/benchmark/
 
-.crush/
-.vscode/
-.niku/
-
 .repomix/
 repomix-output.*
+
+.crush/
+.grok/
+.claude/
+.github/
+.vscode/
+.niku/
 

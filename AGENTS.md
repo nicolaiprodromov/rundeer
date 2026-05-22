@@ -1,10 +1,6 @@
----
-name: "Rundeer"
-description: "Use when: working on the rundeer codebase, rundeer CLI, rundeer web app, node editor, .rundeer data layout, media generation workflows, or Rundeer frontend design."
-tools: [vscode/extensions, vscode/askQuestions, vscode/installExtension, vscode/memory, vscode/newWorkspace, vscode/resolveMemoryFileUri, vscode/runCommand, vscode/vscodeAPI, vscode/toolSearch, execute/getTerminalOutput, execute/killTerminal, execute/sendToTerminal, execute/runTask, execute/createAndRunTask, execute/runTests, execute/testFailure, execute/runNotebookCell, execute/runInTerminal, read/terminalSelection, read/terminalLastCommand, read/getTaskOutput, read/getNotebookSummary, read/problems, read/readFile, read/viewImage, read/readNotebookCellOutput, agent/runSubagent, browser/openBrowserPage, browser/readPage, browser/screenshotPage, browser/navigatePage, browser/clickElement, browser/dragElement, browser/hoverElement, browser/typeInPage, browser/runPlaywrightCode, browser/handleDialog, edit/createDirectory, edit/createFile, edit/createJupyterNotebook, edit/editFiles, edit/editNotebook, edit/rename, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, search/usages, web/fetch, web/githubRepo, web/githubTextSearch, deepwiki/ask_question, deepwiki/read_wiki_contents, deepwiki/read_wiki_structure, playwright/browser_click, playwright/browser_close, playwright/browser_console_messages, playwright/browser_drag, playwright/browser_drop, playwright/browser_evaluate, playwright/browser_file_upload, playwright/browser_fill_form, playwright/browser_handle_dialog, playwright/browser_hover, playwright/browser_navigate, playwright/browser_navigate_back, playwright/browser_network_request, playwright/browser_network_requests, playwright/browser_press_key, playwright/browser_resize, playwright/browser_run_code_unsafe, playwright/browser_select_option, playwright/browser_snapshot, playwright/browser_tabs, playwright/browser_take_screenshot, playwright/browser_type, playwright/browser_wait_for, todo]
-user-invocable: true
----
-You are the Rundeer project agent. Your job is to work on this repository.
+# Rundeer Project Rules
+
+You are working on the Rundeer project repository.
 
 ## What Rundeer Is
 Rundeer is a CLI-backed visual workbench for batch-first AI image and video generation. It turns creative directions into repeatable runs, keeps style brains and references organized, supports dry-runs before spending API credits, and exposes the same command engine through CLI commands and a browser node workbench.
@@ -48,18 +44,16 @@ Primary user workflows are image generation, video generation, image/video edit,
 3. Dive deep into the section/s the user is talking about.
 4. Reason about the task.
 5. Make a clear ordered TODO plan with the exact steps to resolve.
-6. **Execute code changes or complete the task**. Whenever it's possible, you can delegate parallel tasks to subagents to read sections or to implement parts of the task.
+6. **Execute code changes or complete the task**. Whenever possible, delegate parallel tasks to subagents to read sections or to implement parts of the task.
 7. Test your implementation with smoke tests and actual testing. When working on the frontend you must use playwright and actually make sure the app is still functional and that what was implemented works. Be careful to never work in an existing graph when trying things with nodes, make a new graph and delete it after or keep it if it's useful for the user to see something you made.
-8. Final response to user must include all touched files and explanation of the reasoning behind the task
+8. Final response to user must include all touched files and explanation of the reasoning behind the task.
 9. Throughout the task you should update the user on your reasoning and understanding of the task and what you are currently doing.
-
 
 ## Working Style
 1. Read the current files before editing, especially if the worktree is dirty.
 2. Use existing helpers and conventions.
 3. Use `src/rundeer/core/paths.py` for `.rundeer` paths.
 4. Use `src/rundeer/core/bootstrap.py` for bootstrap and migration behavior.
-
 
 ## Useful Validation
 - Python syntax: `python3 -m compileall -q src web rundeer.py __init__.py`.
@@ -69,8 +63,6 @@ Primary user workflows are image generation, video generation, image/video edit,
 - JavaScript syntax when web static code changes: `rg --files -g '*.js' -g '*.mjs' | xargs -r -n 1 node --check`.
 
 ## Frontend Design Context
-For UI work, use `impeccable.md` as the onboarding map and consult `.github/skills/impeccable/SKILL.md` when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality.
+For UI work, use `impeccable.md` as the onboarding map and consult `.grok/skills/impeccable/SKILL.md` when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality.
 
 Treat Rundeer as a product UI and operational media workflow tool, not a landing page. Keep the web app dense, dark, precise, graph-native, and built for repeated action. Respect `PRODUCT.md` and `DESIGN.md` for product register, audience, visual tokens, typography, colors, and interaction principles.
-
-
