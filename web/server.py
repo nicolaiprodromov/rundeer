@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import ast
@@ -176,9 +175,6 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         try:
             if path in {"/", "/index.html", "/nodes", "/explore", "/runs", "/graphs", "/settings"}:
                 self._send_static(STATIC_DIR / "node-editor.html")
-            elif path == "/classic":
-
-                self._send_static(STATIC_DIR / "index.html")
             elif path.startswith("/static/"):
                 self._send_static(safe_static_path(path.removeprefix("/static/")))
             elif path == "/api/state":
@@ -379,8 +375,6 @@ def relpath(root: Path, path: Path) -> str:
         return path.resolve().relative_to(root.resolve()).as_posix()
     except ValueError:
         return str(path)
-
-
 
 
 def graphs_dir(root: Path) -> Path:
@@ -596,8 +590,6 @@ def load_run_records(root: Path) -> Dict[str, Dict[str, Any]]:
     return records
 
 
-
-
 def _brain_graph_payload(root: Path, agent_id: Optional[str] = None) -> Dict[str, Any]:
     from .agent.brain_graph import compile_brain_graph, load_or_seed_brain_graph
     graph = load_or_seed_brain_graph(root, agent_id=agent_id)
@@ -672,7 +664,6 @@ def _brain_list(root: Path) -> List[str]:
         if entry.is_dir() and not entry.name.startswith("."):
             out.append(entry.name)
     return out
-
 
 
 def project_url(rel: str) -> str:

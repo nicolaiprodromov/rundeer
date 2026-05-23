@@ -1,0 +1,61 @@
+settings:
+  Shortcuts:
+    # map all the shortcuts of our app here
+  UI:
+    general:
+      text_size: # number from min to max
+    header:
+      title: rundeer # user editable name in the title
+      version: 0.3.5 # current version, but synced with source of truth from code so no user edits will be considered here, only present for consistency
+      menu: compact # full, compact if the node_menu should show icons+text or only icons
+      workspace: true # if to display workspace name
+      # reverse the order of menu title and menu inside the header: 
+      # [title-version-workspace                         node_menu] <-- false (current)
+      # [node_menu                         title-version-workspace] <-- true
+      reverse: false
+    tree:
+      canvas:
+        cell_size: # number from min to max
+        thickness: # number from min to max
+        opacity: #number 0 to 100
+        default_zoom: #number (zoom percentage)
+        selection_color: oklch(13.5% 0.006 80)
+      node_menu:
+        on_start: false # if to display on rundeer start of the app
+        width: # number from min to max for initial width
+        expand: [0,0,0,0,0,0,0,0,0] # list of node categories to be expanded (1) or collapsed (0) initially in the view
+      palette:
+        on_start: false # if to display on rundeer start of the app
+        width: # number from min to max for initial width
+        height: # number from min to max for initial height
+        x_pos: # number from min to max for initial x position
+        y_pos: # number from min to max for initial y position
+        conv_display: true # if to display the conversation ui initially in palette
+        fullscreen: false # if to have fullscreen enabled initially
+    explore:
+      preview_width: # number from min to max for intial preview width
+      # list of folders/files to be ignored in the explorer
+      ignore_patterns: [
+          "*.env",
+          "*.env.example",
+          "__pycache__/",
+          ".git/",
+          ".venv/",
+          "venv/"
+          ]
+    help: help.md
+  Nodes:
+    categories:
+      - Primitives: oklch(13.5% 0.006 80)
+      - Operations: oklch(13.5% 0.006 80)
+      # continue here..
+    sockets:
+      - String: 
+        color: oklch(13.5% 0.006 80)
+        radius: # number from min to max for the radius of the socket circle shape
+        shape: circle # option from circle,rect,tri,diamond
+      # continue here..
+    links:
+      interpolation: # the function we use for the shape of the link to create those bezier curves like in blender
+      thickness: # number from min to max
+

@@ -41,7 +41,7 @@ Primary user workflows are image generation, video generation, image/video edit,
 
 1. Run `npx -y repomix@latest -c repomix.config.json` from the repository root.
 2. Use `.repomix/rundeer-context.xml` for the initial whole-project map. Use the output of repomix to understand the project and task.
-3. Dive deep into the section/s the user is talking about.
+3. Dive deep into the section/s the user is talking about in the repomix output file that contains the entire codebaset, so you can manage context while reasoning. only read from actual files when doing actual coding. VERY IMPORTANT to read from the repomix file output in .repomix/rundeer while planning and reasoning and figuring out what to do not from the actual codebase!!!
 4. Reason about the task.
 5. Make a clear ordered TODO plan with the exact steps to resolve.
 6. **Execute code changes or complete the task**. Whenever possible, delegate parallel tasks to subagents to read sections or to implement parts of the task.

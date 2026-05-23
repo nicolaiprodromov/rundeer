@@ -18,6 +18,7 @@
   let agents = [];
   let currentAgent = null;
   let stickToBottom = true;
+  let sessionTokens = 0;
   let modelEl, streamEl, inputEl, attachBtnEl, fileInputEl;
   let composerEl, sendBtnEl, cancelBtnEl, newBtnEl, historyBtnEl, historyEl, historyListEl;
   let attachmentsEl, mentionPopEl, agentRootEl, agentDisabledEl, agentListEl, agentCreateBtnEl;
@@ -240,6 +241,10 @@
       case "confirm_request":
         renderConfirm(ev);
         break;
+      case "usage":
+        sessionTokens = ev.session_total || (sessionTokens + (ev.total_tokens || 0));
+        updateTokenDisplay(sessionTokens);
+        break;
       case "done":
         setStatus("ready");
         cancelBtnEl.hidden = true;
@@ -283,7 +288,15 @@
     toolCardById = {};
     confirmCardById = {};
     stickToBottom = true;
+    sessionTokens = 0;
+    updateTokenDisplay(0);
     showEmptyPlaceholder();
+  }
+  function updateTokenDisplay(tokens) {
+    const el = document.getElementById("agentTokenCount");
+    if (!el) return;
+    if (!tokens) { el.textContent = ""; return; }
+    el.textContent = tokens >= 1000 ? (tokens / 1000).toFixed(1) + "k tokens" : tokens + " tokens";
   }
   function showEmptyPlaceholder() {
     if (!streamEl || streamEl.querySelector(".ne-agent-empty")) return;

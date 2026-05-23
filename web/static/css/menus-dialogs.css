@@ -1,0 +1,241 @@
+.ne-add-menu {
+  position: fixed;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 8px 32px oklch(0% 0 0 / 0.5);
+  min-width: 200px;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ne-add-menu-search {
+  flex-shrink: 0;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--bg-deep);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+.ne-add-menu-search::placeholder { color: var(--whisper); }
+
+.ne-add-menu-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ne-add-menu-section {
+  padding: var(--space-2) 0;
+}
+
+.ne-add-menu-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px 4px 16px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--node-accent, var(--muted));
+  background: transparent;
+  border-top: 1px solid color-mix(in oklch, var(--node-accent, var(--gold)) 24%, var(--line));
+  border-left: 3px solid var(--node-accent, var(--gold));
+}
+
+.ne-add-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: none;
+  border: 0;
+  color: var(--text-soft);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.ne-add-menu-item:hover,
+.ne-add-menu-item.is-active {
+  background: color-mix(in oklch, var(--node-accent, var(--gold)) 18%, var(--surface-2));
+  color: var(--text);
+}
+
+.ne-add-menu-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--node-accent, var(--muted));
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--node-accent, var(--muted)) 22%, transparent);
+}
+
+.ne-app-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: oklch(0% 0 0 / 0.66);
+}
+.ne-app-dialog.is-hidden { display: none; }
+.ne-app-dialog-card {
+  width: min(420px, 100%);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 20px 80px oklch(0% 0 0 / 0.58);
+}
+.ne-app-dialog-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.ne-app-dialog-head h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.ne-app-dialog-body {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.ne-app-dialog-body p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ne-app-dialog-field {
+  display: grid;
+  gap: 6px;
+}
+.ne-app-dialog-field[hidden] { display: none; }
+.ne-app-dialog-field span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ne-app-dialog-field input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+.ne-app-dialog-field input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--gold) 35%, transparent);
+}
+.ne-app-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.ne-help-modal {
+  position: fixed;
+  inset: 0;
+  background: oklch(0% 0 0 / 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 24px;
+}
+.ne-help-modal.is-hidden { display: none; }
+.ne-help-card {
+  width: min(720px, 100%);
+  max-height: 84vh;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 80px oklch(0% 0 0 / 0.6);
+}
+.ne-help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.ne-help-head h2 {
+  margin: 0;
+  font-family: var(--font-display, var(--font-sans));
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--text);
+}
+.ne-help-close {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--quiet);
+  width: 26px; height: 26px;
+  font-size: 16px;
+  line-height: 22px;
+  cursor: pointer;
+}
+.ne-help-close:hover { color: var(--gold); border-color: var(--gold-soft); }
+.ne-help-body {
+  padding: 16px 22px 22px;
+  overflow-y: auto;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+.ne-help-body h3 {
+  margin: 18px 0 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.ne-help-body h3:first-child { margin-top: 0; }
+.ne-help-body p, .ne-help-body ul, .ne-help-body ol { margin: 0 0 8px; }
+.ne-help-body code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  padding: 1px 5px;
+  color: var(--text);
+}
+.ne-help-body kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  background: var(--bg-deep);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  padding: 1px 5px;
+  color: var(--text);
+}
+.ne-help-body strong { color: var(--text); }

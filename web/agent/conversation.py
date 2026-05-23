@@ -63,6 +63,7 @@ class Conversation:
     _persist_task: Optional[asyncio.Task] = None
     _runtime: Any = None
     _effective_settings: Optional[AgentSettings] = None
+    total_tokens_used: int = 0
 
 
     @classmethod
@@ -380,6 +381,7 @@ class Conversation:
 
         accumulated_text = ""
         accumulated_reasoning = ""
+        last_usage = None
 
         tool_calls_acc: Dict[int, Dict[str, Any]] = {}
         finish_reason: Optional[str] = None
@@ -430,6 +432,9 @@ class Conversation:
                             if getattr(fn, "arguments", None):
                                 slot["arguments"] += fn.arguments
                 finish_reason = getattr(choice, "finish_reason", finish_reason)
+                chunk_usage = getattr(chunk, "usage", None)
+                if chunk_usage:
+                    last_usage = chunk_usage
         except CancelledTurn:
             raise
         except Exception as exc:
@@ -461,6 +466,15 @@ class Conversation:
         self._persist()
 
         yield evt("message_end", role="assistant", id=msg_id, finish_reason=finish_reason, tool_call_count=len(tool_calls_final))
+
+        if last_usage:
+            prompt_tokens = getattr(last_usage, "prompt_tokens", 0) or 0
+            completion_tokens = getattr(last_usage, "completion_tokens", 0) or 0
+            total_tokens = getattr(last_usage, "total_tokens", 0) or 0
+            if not total_tokens:
+                total_tokens = prompt_tokens + completion_tokens
+            self.total_tokens_used += total_tokens
+            yield evt("usage", prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, total_tokens=total_tokens, session_total=self.total_tokens_used)
 
 
     async def _handle_tool_call(self, tc: Dict[str, Any]) -> AsyncIterator[Dict[str, Any]]:

@@ -29,7 +29,7 @@ It is built for iteration: sketch a workflow as nodes, dry-run the plan, generat
 | Style brains | Store reusable style prompts under `brain/`, attach reference images by numeric id, and keep subject text separate from house style. |
 | Full media loop | Generate images, generate videos, animate a start frame, edit images, edit videos, merge up to five images, and extend existing clips. |
 | Explore and preview | Browse project files, generated artifacts, configs, logs, images, videos, JSON, and text from the web UI. |
-| CLI-backed execution | Use the same command engine from node graphs, dry-runs, curses TUI, plain logs, or the legacy `/classic` form UI. |
+| CLI-backed execution | Use the same command engine from node graphs, dry-runs, curses TUI, or plain logs. |
 | Reproducible workspace | Auto-bootstrap `.rundeer/` with config, web run configs, outputs, cache, logs, benchmark templates, and a reusable agent skill. |
 | Research hooks | Score spatial accuracy with a built-in position benchmark that writes JSON logs and CSV summaries. |
 
@@ -80,7 +80,7 @@ rundeer video --style=Moebius --subject="a station at sunrise" --motion="slow do
 
 ### Web Workbench
 
-`rundeer web --open` starts the modern browser workbench. The default app serves the same UI at `/`, `/nodes`, and `/explore`; the older form-based UI is still available at `/classic` as a fallback.
+`rundeer web --open` starts the browser workbench. The default app serves the same UI at `/`, `/nodes`, and `/explore`.
 
 The **Nodes** view is a Blender-style graph editor. The palette includes:
 

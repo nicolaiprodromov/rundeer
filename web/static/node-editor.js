@@ -1208,18 +1208,7 @@ function screenToCanvas(sx, sy) {
   };
 }
 
-function preserveCanvasRightEdge(mutator) {
-  const wrap = document.getElementById("canvasWrap");
-  const beforeRight = wrap?.getBoundingClientRect().right;
-  mutator();
-  if (!wrap || !Number.isFinite(beforeRight)) return;
-  const afterRight = wrap.getBoundingClientRect().right;
-  const dx = afterRight - beforeRight;
-  if (Math.abs(dx) < 0.5) return;
-  vp.x += dx;
-  applyViewport();
-  renderConnections();
-}
+
 
 
 
@@ -1401,7 +1390,6 @@ function removeNode(id) {
   graph.edges = graph.edges.filter((e) => e.fromNode !== id && e.toNode !== id);
   ix.selection.delete(id);
   renderGraph();
-  renderProps(null);
   scheduleAutosave();
 }
 
@@ -1418,7 +1406,6 @@ function removeSelectedNodes() {
   graph.edges = graph.edges.filter((e) => !doomed.has(e.fromNode) && !doomed.has(e.toNode));
   ix.selection.clear();
   renderGraph();
-  renderProps(null);
   scheduleAutosave();
   return ids.length;
 }
@@ -1657,7 +1644,6 @@ function selectOnly(id) {
   ix.selection.clear();
   if (id) ix.selection.add(id);
   updateSelectionVisuals();
-  renderProps(id || null);
 }
 
 function updateSelectionVisuals() {
@@ -1895,7 +1881,6 @@ function toggleNodeMinimized(nodeIds) {
     node.height = null;
   }
   renderGraph();
-  if (ids.length === 1 && ix.selection.has(ids[0])) renderProps(ids[0]);
   scheduleAutosave();
   setHint(nextState ? `hid ${ids.length} node${ids.length === 1 ? "" : "s"} (H)` : `restored ${ids.length} node${ids.length === 1 ? "" : "s"} (H)`);
   setTimeout(clearHint, 1200);
@@ -1920,7 +1905,6 @@ function toggleNodeMuted(nodeIds) {
     }
   }
   renderGraph();
-  if (ix.selection.size === 1) renderProps([...ix.selection][0]);
   scheduleAutosave();
   setHint(nextState ? `muted ${ids.length} node${ids.length === 1 ? "" : "s"} (M)` : `unmuted ${ids.length} node${ids.length === 1 ? "" : "s"} (M)`);
   setTimeout(clearHint, 1200);
@@ -2115,13 +2099,6 @@ function setNodeTitle(nodeId, rawTitle, sourceControl = null) {
     }
     nodeEl.dataset.signature = nodeSignature(node);
   }
-  if (ix.selection.has(nodeId)) {
-    const nameEl = document.getElementById("propsNodeName");
-    if (nameEl) {
-      nameEl.textContent = title;
-      nameEl.title = nodeDefaultLabel(node);
-    }
-  }
   document.querySelectorAll(`[data-title-node="${nodeId}"]`).forEach((control) => {
     if (control !== sourceControl) control.value = node.title || "";
   });
@@ -2157,7 +2134,6 @@ function startNodeTitleEdit(nodeId) {
     const currentEl = document.querySelector(`[data-node-id="${nodeId}"]`);
     if (currentEl) currentEl.dataset.signature = "stale-title-edit";
     renderNodes();
-    if (ix.selection.has(nodeId)) renderProps(nodeId);
   };
 
   input.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -2440,7 +2416,6 @@ function buildNodeElement(id, node) {
       if (e.shiftKey) {
         ix.selection.add(id);
         updateSelectionVisuals();
-        renderProps(id);
       } else {
         selectOnly(id);
       }
@@ -4556,7 +4531,6 @@ function startReroutePlacement() {
   document.body.classList.add("is-reroute-placing");
   updateReroutePlacement();
   updateSelectionVisuals();
-  renderProps(nodeId);
   setHint("Reroute — LMB place · Esc cancel");
 }
 
@@ -4568,7 +4542,6 @@ function commitReroutePlacement() {
   clearHint();
   ix.selection = new Set([placement.nodeId]);
   renderGraph();
-  renderProps(placement.nodeId);
   scheduleAutosave();
   schedulePreviewRefresh();
 }
@@ -4583,7 +4556,6 @@ function cancelReroutePlacement() {
   ix.selection = new Set((placement.previousSelection || []).filter((id) => graph.nodes[id]));
   clearHint();
   renderGraph();
-  renderProps(ix.selection.size === 1 ? [...ix.selection][0] : null);
 }
 
 
@@ -5016,7 +4988,6 @@ function onCanvasMousedown(e) {
     if (!e.shiftKey) {
       ix.selection.clear();
       updateSelectionVisuals();
-      renderProps(null);
     }
   }
 }
@@ -5243,7 +5214,6 @@ function onMouseup(e) {
         }
       }
       updateSelectionVisuals();
-      if (ix.selection.size === 1) renderProps([...ix.selection][0]);
     }
     ix.boxStart = null;
   }
@@ -5363,8 +5333,8 @@ const SHORTCUT_DEFINITIONS = [
   { id: "scaleNodes", group: "Graph", label: "Scale", description: "Resize selected nodes", default: "S" },
   { id: "placeReroute", group: "Graph", label: "Place reroute", description: "Sprout reroute from selection", default: "E" },
   { id: "muteNodes", group: "Graph", label: "Mute nodes", description: "Toggle selected or hovered nodes", default: "M" },
-  { id: "togglePalette", group: "Panels", label: "Node palette", description: "Toggle node palette", default: "T" },
-  { id: "toggleProperties", group: "Panels", label: "Properties", description: "Toggle properties panel", default: "P" },
+  { id: "togglePalette", group: "Panels", label: "Node menu", description: "Toggle node menu", default: "T" },
+
   { id: "openRuns", group: "Panels", label: "Runs", description: "Open runs page", default: "R" },
   { id: "toggleAgentPanel", group: "Panels", label: "Palette", description: "Toggle floating palette", default: "N" },
   { id: "cutSelection", group: "Edit", label: "Cut selection", description: "Copy and remove selected nodes", default: "Mod+X" },
@@ -5723,11 +5693,7 @@ function onKeydown(e) {
     togglePanel("palette");
     return;
   }
-  if (shortcutMatches(e, "toggleProperties")) {
-    e.preventDefault();
-    togglePanel("props");
-    return;
-  }
+
   if (shortcutMatches(e, "openRuns")) {
     e.preventDefault();
     togglePanel("runs");
@@ -5867,7 +5833,6 @@ function duplicateSelection() {
   ix.selection = new Set(newIds);
   renderGraph();
   updateSelectionVisuals();
-  if (newIds.length > 0) renderProps(newIds[0]);
   scheduleAutosave();
   
   startModal("G");
@@ -5908,24 +5873,13 @@ function togglePanel(which) {
   if (which === "palette") {
     shell.classList.toggle("hide-palette");
     applyPaletteLayout({ commitHandleSide: true });
-    setHint(shell.classList.contains("hide-palette") ? "palette hidden (T)" : "palette shown (T)");
-  } else if (which === "props") {
-    const willShow = shell.classList.contains("hide-props");
-    preserveCanvasRightEdge(() => {
-      if (willShow) {
-        shell.classList.remove("hide-props");
-      } else {
-        shell.classList.add("hide-props");
-      }
-    });
-    applyPaletteLayout({ commitHandleSide: true });
-    setHint(shell.classList.contains("hide-props") ? "properties hidden (P)" : "properties shown (P)");
+    setHint(shell.classList.contains("hide-palette") ? "node menu hidden (T)" : "node menu shown (T)");
   } else if (which === "n") {
-    shell.classList.toggle("hide-n");
-    paletteLayoutState().hidden = shell.classList.contains("hide-n");
-    applyPaletteLayout({ commitHandleSide: true });
+    const state = paletteLayoutState();
+    state.bodyCollapsed = !state.bodyCollapsed;
+    applyPaletteLayout();
     scheduleWebStoreSave();
-    setHint(shell.classList.contains("hide-n") ? "palette hidden (N)" : "palette shown (N)");
+    setHint(state.bodyCollapsed ? "palette collapsed (N)" : "palette expanded (N)");
   } else if (which === "runs") {
     setActiveView("runs");
     setHint("runs view (R)");
@@ -6112,155 +6066,7 @@ function hideAddMenu() {
 
 
 
-function renderProps(nodeId) {
-  const body = document.getElementById("propsBody");
-  const nameEl = document.getElementById("propsNodeName");
-  body.innerHTML = "";
 
-  if (!nodeId || !graph.nodes[nodeId]) {
-    nameEl.textContent = "— select a node —";
-    nameEl.title = "";
-    body.innerHTML = `<div class="ne-props-empty">
-      Click a node to inspect its properties.<br><br>
-      <span class="ne-shortcuts">
-        <b>Shift+A</b> add node · <b>Ctrl+X</b> cut · <b>Delete</b> remove<br>
-        <b>F2</b> rename · <b>G</b> grab · <b>S</b> scale<br>
-        <b>F</b> auto-connect · <b>E</b> reroute · <b>Alt+P</b> preview<br>
-        <b>Shift+D</b> duplicate · <b>A</b> select all<br>
-        <b>Home</b> frame all · <b>Ctrl+S</b> save<br>
-        <b>Ctrl+RMB drag</b> cut links<br>
-        <b>MMB / Alt+LMB drag</b> pan · <b>Wheel</b> zoom
-      </span>
-    </div>`;
-    return;
-  }
-
-  const node = graph.nodes[nodeId];
-  const def = NODE_BY_TYPE[node.type];
-  if (!def) return;
-  nameEl.textContent = nodeDisplayTitle(node);
-  nameEl.title = nodeDefaultLabel(node);
-
-  body.appendChild(buildNodeIdentitySection(nodeId, node, def));
-
-  
-  const sockSection = document.createElement("div");
-  sockSection.className = "ne-props-section";
-  sockSection.innerHTML = `<p class="ne-props-section-title">sockets</p>`;
-  const propSockets = (def.props || []).map((prop) => ({
-    id: prop.id,
-    label: prop.label,
-    type: socketTypeForProp(prop),
-    isProp: true,
-  }));
-  for (const sock of [...(def.outputs || []), ...(def.inputs || []), ...propSockets]) {
-    const isIn = (def.inputs || []).includes(sock) || sock.isProp;
-    const row = document.createElement("div");
-    row.className = "ne-props-socket-row";
-    if (sock.isProp) row.classList.add("is-prop");
-    row.innerHTML = `
-      <span class="ne-props-dot" style="background:${SOCKET_TYPES[sock.type]?.color || "#888"}"></span>
-      <span>${isIn ? "↦" : "↤"} ${escHtml(sock.label)}${sock.isProp ? " <small>prop</small>" : ""}</span>
-      <span class="ne-props-type">${escHtml(SOCKET_TYPES[sock.type]?.label || sock.type)}</span>`;
-    sockSection.appendChild(row);
-  }
-  body.appendChild(sockSection);
-
-  
-  if ((def.props || []).length > 0) {
-    const divider = document.createElement("div");
-    divider.className = "ne-props-divider";
-    body.appendChild(divider);
-    for (const propDef of def.props) {
-      body.appendChild(buildPropControl(nodeId, propDef, node.props[propDef.id]));
-    }
-  }
-
-  
-  if (node.lastResult) {
-    const divider = document.createElement("div");
-    divider.className = "ne-props-divider";
-    body.appendChild(divider);
-    const result = document.createElement("div");
-    result.className = "ne-props-section";
-    result.innerHTML = `<p class="ne-props-section-title">last result</p>
-      <pre class="ne-props-result">${escHtml(String(node.lastResult.value || "").slice(0, 800))}</pre>`;
-    body.appendChild(result);
-  }
-}
-
-function buildNodeIdentitySection(nodeId, node, def) {
-  const section = document.createElement("div");
-  section.className = "ne-props-section ne-props-identity";
-  section.innerHTML = `<p class="ne-props-section-title">node</p>`;
-
-  const titleWrap = document.createElement("div");
-  titleWrap.className = "ne-prop";
-  const titleLabel = document.createElement("label");
-  titleLabel.className = "ne-prop-label";
-  titleLabel.textContent = "Title";
-  const titleField = document.createElement("div");
-  titleField.className = "ne-prop-field";
-  const titleInput = document.createElement("input");
-  titleInput.type = "text";
-  titleInput.className = "ne-node-title-control";
-  titleInput.dataset.titleNode = nodeId;
-  titleInput.value = node.title || "";
-  titleInput.placeholder = def.label;
-  titleInput.addEventListener("input", () => setNodeTitle(nodeId, titleInput.value, titleInput));
-  titleInput.addEventListener("mousedown", (e) => {
-    e.stopPropagation();
-    if (!ix.selection.has(nodeId)) selectOnly(nodeId);
-  });
-  titleInput.addEventListener("click", (e) => e.stopPropagation());
-  titleField.appendChild(titleInput);
-  titleWrap.append(titleLabel, titleField);
-  section.appendChild(titleWrap);
-
-  const meta = document.createElement("div");
-  meta.className = "ne-props-node-meta";
-  meta.innerHTML = `
-    <span><b>type</b>${escHtml(def.label)}</span>
-    <span><b>category</b>${escHtml(def.category || "Node")}</span>`;
-  section.appendChild(meta);
-  return section;
-}
-
-function buildPropControl(nodeId, propDef, currentValue) {
-  const wrap = document.createElement("div");
-  wrap.className = "ne-prop";
-
-  
-  
-  const isWired = isPropWired(nodeId, propDef.id);
-  if (isWired) wrap.classList.add("is-disabled");
-
-  if (propDef.kind === "checkbox") {
-    const label = document.createElement("label");
-    label.className = "ne-prop-toggle";
-    const { control } = buildPropValueControl(nodeId, propDef, currentValue, { disabled: isWired });
-    const span = document.createElement("span");
-    span.className = "ne-prop-label";
-    span.textContent = propDef.label;
-    label.appendChild(control);
-    label.appendChild(span);
-    wrap.appendChild(label);
-    return wrap;
-  }
-
-  const lbl = document.createElement("label");
-  lbl.className = "ne-prop-label";
-  lbl.textContent = propDef.label;
-  wrap.appendChild(lbl);
-
-  const field = document.createElement("div");
-  field.className = "ne-prop-field";
-  const { control, valueDisplay } = buildPropValueControl(nodeId, propDef, currentValue, { disabled: isWired });
-  field.appendChild(control);
-  if (valueDisplay) field.appendChild(valueDisplay);
-  wrap.appendChild(field);
-  return wrap;
-}
 
 
 
@@ -8970,28 +8776,14 @@ function clampPaletteNumber(value, min, max, fallback) {
 }
 
 function paletteNodeViewportRect() {
-  const wrap = document.getElementById("canvasWrap");
-  const shell = document.querySelector(".ne-shell");
-  if (!wrap || !shell) {
-    return { left: 0, top: 52, width: window.innerWidth, height: Math.max(240, window.innerHeight - 52) };
+  const root = document.getElementById("agentPalette");
+  if (!root) {
+    return { width: window.innerWidth, height: Math.max(240, window.innerHeight - 52) };
   }
-  const wrapRect = wrap.getBoundingClientRect();
-  const shellRect = shell.getBoundingClientRect();
   return {
-    left: wrapRect.left - shellRect.left,
-    top: wrapRect.top - shellRect.top,
-    width: Math.max(0, wrapRect.width),
-    height: Math.max(0, wrapRect.height),
+    width: Math.max(0, root.offsetWidth || root.clientWidth),
+    height: Math.max(0, root.offsetHeight || root.clientHeight),
   };
-}
-
-function migratePaletteStateToNodeViewport(state, viewport) {
-  if (state.coordinateSpace === "node-viewport") return;
-  const storedLeft = Number(state.x);
-  const storedTop = Number(state.y);
-  if (Number.isFinite(storedLeft)) state.x = storedLeft - viewport.left;
-  if (Number.isFinite(storedTop)) state.y = storedTop - viewport.top;
-  state.coordinateSpace = "node-viewport";
 }
 
 function paletteViewportDefaults(viewport = paletteNodeViewportRect()) {
@@ -8999,7 +8791,7 @@ function paletteViewportDefaults(viewport = paletteNodeViewportRect()) {
   const availableWidth = Math.max(180, viewport.width - edgePadding * 2);
   const availableHeight = Math.max(160, viewport.height - edgePadding * 2);
   const minWidth = Math.min(260, availableWidth);
-  const minHeight = Math.min(220, availableHeight);
+  const minHeight = Math.min(96, availableHeight);
   const width = Math.min(350, Math.max(minWidth, availableWidth));
   const height = Math.min(350, Math.max(minHeight, Math.min(availableHeight, 350)));
   return {
@@ -9013,26 +8805,23 @@ function paletteViewportDefaults(viewport = paletteNodeViewportRect()) {
 function normalizedPaletteState() {
   const state = paletteLayoutState();
   const viewport = paletteNodeViewportRect();
-  migratePaletteStateToNodeViewport(state, viewport);
   const defaults = paletteViewportDefaults(viewport);
   const edgePadding = 8;
   const availableWidth = Math.max(180, viewport.width - edgePadding * 2);
   const availableHeight = Math.max(160, viewport.height - edgePadding * 2);
   const minWidth = Math.min(260, availableWidth);
-  const minHeight = Math.min(220, availableHeight);
-  const width = clampPaletteNumber(state.w, minWidth, availableWidth, defaults.w);
-  const height = clampPaletteNumber(state.h, minHeight, availableHeight, defaults.h);
-  const maxLeft = Math.max(edgePadding, viewport.width - width - edgePadding);
-  const maxTop = Math.max(edgePadding, viewport.height - height - edgePadding);
-  const left = clampPaletteNumber(state.x, edgePadding, maxLeft, defaults.x);
-  const top = clampPaletteNumber(state.y, edgePadding, maxTop, defaults.y);
-  state.w = Math.round(width);
-  state.h = Math.round(height);
-  state.x = Math.round(left);
-  state.y = Math.round(top);
-  state.conversationCollapsed = Boolean(state.conversationCollapsed);
-  state.fullscreen = Boolean(state.fullscreen);
-  return state;
+  const minHeight = Math.min(96, availableHeight);
+  return {
+    w: Math.round(clampPaletteNumber(state.w, minWidth, availableWidth, defaults.w)),
+    h: Math.round(clampPaletteNumber(state.h, minHeight, availableHeight, defaults.h)),
+    x: Number.isFinite(Number(state.x)) ? Number(state.x) : defaults.x,
+    y: Number.isFinite(Number(state.y)) ? Number(state.y) : defaults.y,
+    coordinateSpace: "node-viewport",
+    conversationCollapsed: Boolean(state.conversationCollapsed),
+    fullscreen: Boolean(state.fullscreen),
+    bodyCollapsed: state.bodyCollapsed === undefined ? true : Boolean(state.bodyCollapsed),
+    handleSide: state.handleSide,
+  };
 }
 
 function paletteHandleSide(state, viewport) {
@@ -9043,52 +8832,58 @@ function applyPaletteLayout(options = {}) {
   const root = document.getElementById("agentPalette");
   if (!root) return;
   const viewport = paletteNodeViewportRect();
-  const state = normalizedPaletteState();
-  const absoluteLeft = viewport.left + state.x;
-  const absoluteTop = viewport.top + state.y;
+  const snap = normalizedPaletteState();
+  const edgePadding = 8;
+  const maxLeft = Math.max(edgePadding, viewport.width - snap.w - edgePadding);
+  const maxTop = Math.max(edgePadding, viewport.height - snap.h - edgePadding);
+  const displayX = Math.round(Math.max(edgePadding, Math.min(snap.x, maxLeft)));
+  const displayY = Math.round(Math.max(edgePadding, Math.min(snap.y, maxTop)));
   const conversationGap = 8;
-  const paletteCenterY = state.y + state.h / 2;
+  const effectiveH = snap.bodyCollapsed ? 32 : snap.h;
+  const paletteCenterY = displayY + snap.h / 2;
   const conversationBelow = paletteCenterY < viewport.height / 2;
   const conversationHeight = Math.max(0, Math.floor(conversationBelow
-    ? viewport.height - (state.y + state.h) - conversationGap
-    : state.y - conversationGap));
-  const fullscreenInset = 12;
-  const fullscreenLeft = viewport.left + fullscreenInset;
-  const fullscreenTop = viewport.top + fullscreenInset;
-  const fullscreenWidth = Math.max(220, viewport.width - fullscreenInset * 2);
-  const fullscreenHeight = Math.max(260, viewport.height - fullscreenInset * 2);
-  const desiredHandleSide = paletteHandleSide(state, viewport);
-  if (options.commitHandleSide || !["left", "right"].includes(state.handleSide) || (!root.classList.contains("is-dragging") && !root.classList.contains("is-resizing"))) {
-    state.handleSide = desiredHandleSide;
+    ? viewport.height - (displayY + snap.h) - conversationGap
+    : displayY - conversationGap));
+  const desiredHandleSide = paletteHandleSide(snap, viewport);
+  let handleSide = snap.handleSide;
+  if (options.commitHandleSide || !["left", "right"].includes(handleSide) || (!root.classList.contains("is-dragging") && !root.classList.contains("is-resizing"))) {
+    handleSide = desiredHandleSide;
+    paletteLayoutState().handleSide = desiredHandleSide;
   }
-  root.style.setProperty("--agent-palette-w", `${state.w}px`);
-  root.style.setProperty("--agent-palette-h", `${state.h}px`);
-  root.style.setProperty("--agent-palette-x", `${absoluteLeft}px`);
-  root.style.setProperty("--agent-palette-y", `${absoluteTop}px`);
+  root.style.setProperty("--agent-palette-w", `${snap.w}px`);
+  root.style.setProperty("--agent-palette-h", `${effectiveH}px`);
+  const collapseToBottom = !conversationBelow;
+  const paletteDisplayY = snap.bodyCollapsed && collapseToBottom ? displayY + snap.h - 32 : displayY;
+  root.style.setProperty("--agent-palette-x", `${displayX}px`);
+  root.style.setProperty("--agent-palette-y", `${paletteDisplayY}px`);
   root.style.setProperty("--agent-conversation-h", `${conversationHeight}px`);
   root.style.setProperty("--agent-conversation-gap", `${conversationGap}px`);
-  root.style.setProperty("--agent-palette-full-x", `${fullscreenLeft}px`);
-  root.style.setProperty("--agent-palette-full-y", `${fullscreenTop}px`);
-  root.style.setProperty("--agent-palette-full-w", `${fullscreenWidth}px`);
-  root.style.setProperty("--agent-palette-full-h", `${fullscreenHeight}px`);
-  root.classList.toggle("is-conversation-collapsed", state.conversationCollapsed);
+  root.classList.toggle("is-body-collapsed", snap.bodyCollapsed);
+  root.classList.toggle("is-conversation-collapsed", snap.conversationCollapsed);
   root.classList.toggle("is-conversation-below", conversationBelow);
   root.classList.toggle("is-conversation-above", !conversationBelow);
   root.classList.toggle("is-conversation-cramped", conversationHeight < 44);
-  root.classList.toggle("is-fullscreen", state.fullscreen);
-  root.classList.toggle("is-handle-right", state.handleSide === "right");
-  root.classList.toggle("is-handle-left", state.handleSide !== "right");
+  root.classList.toggle("is-fullscreen", snap.fullscreen);
+  root.classList.toggle("is-handle-right", handleSide === "right");
+  root.classList.toggle("is-handle-left", handleSide !== "right");
   const collapse = document.getElementById("agentConversationToggle");
   if (collapse) {
-    collapse.setAttribute("aria-pressed", String(state.conversationCollapsed));
-    collapse.title = state.conversationCollapsed ? "Show conversation" : "Collapse conversation";
+    collapse.setAttribute("aria-pressed", String(snap.conversationCollapsed));
+    collapse.title = snap.conversationCollapsed ? "Show conversation" : "Collapse conversation";
     collapse.setAttribute("aria-label", collapse.title);
   }
   const fullscreen = document.getElementById("agentPaletteFullscreen");
   if (fullscreen) {
-    fullscreen.setAttribute("aria-pressed", String(state.fullscreen));
-    fullscreen.title = state.fullscreen ? "Exit fullscreen" : "Fullscreen palette";
+    fullscreen.setAttribute("aria-pressed", String(snap.fullscreen));
+    fullscreen.title = snap.fullscreen ? "Exit fullscreen" : "Fullscreen palette";
     fullscreen.setAttribute("aria-label", fullscreen.title);
+  }
+  const bodyToggle = document.getElementById("paletteBodyToggle");
+  if (bodyToggle) {
+    bodyToggle.setAttribute("aria-pressed", String(snap.bodyCollapsed));
+    bodyToggle.title = snap.bodyCollapsed ? "Expand palette" : "Collapse palette";
+    bodyToggle.setAttribute("aria-label", bodyToggle.title);
   }
 }
 
@@ -9137,6 +8932,8 @@ function updateAgentInputLines() {
 function setupAgentPalette() {
   const root = document.getElementById("agentPalette");
   if (!root) return;
+  root.addEventListener("mousedown", (e) => e.stopPropagation());
+  root.addEventListener("wheel", (e) => e.stopPropagation());
   applyPaletteLayout();
   setPalettePane("chat");
 
@@ -9171,6 +8968,12 @@ function setupAgentPalette() {
     applyPaletteLayout();
     scheduleWebStoreSave();
   });
+  document.getElementById("paletteBodyToggle")?.addEventListener("click", () => {
+    const state = paletteLayoutState();
+    state.bodyCollapsed = !state.bodyCollapsed;
+    applyPaletteLayout();
+    scheduleWebStoreSave();
+  });
 
   const drag = document.getElementById("agentPaletteDrag");
   if (drag) {
@@ -9200,28 +9003,36 @@ function setupAgentPalette() {
     });
   }
 
-  const resize = document.getElementById("agentPaletteResize");
-  if (resize) {
-    let start = null;
-    resize.addEventListener("mousedown", (e) => {
+  const edges = root.querySelectorAll(".ne-palette-edge[data-edge]");
+  if (edges.length) {
+    let edgeStart = null;
+    const onEdgeDown = (e) => {
       if (paletteLayoutState().fullscreen) return;
       e.preventDefault();
+      const edge = e.currentTarget.dataset.edge;
       const state = normalizedPaletteState();
-      start = { x: e.clientX, y: e.clientY, w: state.w, h: state.h };
+      edgeStart = { edge, mx: e.clientX, my: e.clientY, x: state.x, y: state.y, w: state.w, h: state.h };
       root.classList.add("is-resizing");
-      document.body.style.cursor = "nwse-resize";
-    });
+      document.body.style.cursor = (edge === "n" || edge === "s") ? "ns-resize" : "ew-resize";
+    };
+    edges.forEach((el) => el.addEventListener("mousedown", onEdgeDown));
     window.addEventListener("mousemove", (e) => {
-      if (!start) return;
+      if (!edgeStart) return;
       const state = paletteLayoutState();
-      state.w = start.w + (e.clientX - start.x);
-      state.h = start.h + (e.clientY - start.y);
+      const dx = e.clientX - edgeStart.mx;
+      const dy = e.clientY - edgeStart.my;
+      switch (edgeStart.edge) {
+        case "n": state.y = edgeStart.y + dy; state.h = edgeStart.h - dy; break;
+        case "s": state.h = edgeStart.h + dy; break;
+        case "w": state.x = edgeStart.x + dx; state.w = edgeStart.w - dx; break;
+        case "e": state.w = edgeStart.w + dx; break;
+      }
       applyPaletteLayout();
       updateAgentInputLines();
     });
     window.addEventListener("mouseup", () => {
-      if (!start) return;
-      start = null;
+      if (!edgeStart) return;
+      edgeStart = null;
       root.classList.remove("is-resizing");
       document.body.style.cursor = "";
       applyPaletteLayout({ commitHandleSide: true });
@@ -9397,7 +9208,6 @@ function applyTabToCanvas(tab) {
       graph.nodes = {}; graph.edges = []; graph._nextId = 1;
       ix.selection.clear();
       renderGraph();
-      renderProps(null);
     }
   } finally {
     tabsState._suspendDirty = false;
@@ -10113,7 +9923,6 @@ function loadGraphData(data) {
   const removedEdges = pruneInvalidEdges();
   ix.selection.clear();
   renderGraph();
-  renderProps(null);
   if (removedEdges > 0) {
     setHint(`removed ${removedEdges} incompatible link${removedEdges === 1 ? "" : "s"}`);
     setTimeout(clearHint, 1800);
@@ -10176,7 +9985,6 @@ async function clearGraph() {
   graph.nodes = {}; graph.edges = []; graph._nextId = 1;
   ix.selection.clear();
   renderGraph();
-  renderProps(null);
   scheduleAutosave();
 }
 
@@ -10395,7 +10203,7 @@ function applyAgentPatchOp(op) {
           node.props = node.props || {};
           node.props[k] = v;
         }
-        if (typeof renderProps === "function") renderProps(id);
+
         break;
       }
       case "move_node": {
@@ -10819,8 +10627,8 @@ function setupSidePanelResizers() {
   
   const layout = webLayoutState();
   if (layout.paletteW) shell.style.setProperty("--palette-w", layout.paletteW);
-  if (layout.propsW) shell.style.setProperty("--props-w", layout.propsW);
-  shell.classList.toggle("hide-n", Boolean(paletteLayoutState().hidden));
+
+  
 
   const bind = (resizerId, varName, layoutKey, side) => {
     const resizer = document.getElementById(resizerId);
@@ -10828,8 +10636,7 @@ function setupSidePanelResizers() {
     let dragging = false;
     const applyWidth = (w) => {
       const value = `${Math.round(w)}px`;
-      if (side === "right") preserveCanvasRightEdge(() => shell.style.setProperty(varName, value));
-      else shell.style.setProperty(varName, value);
+      shell.style.setProperty(varName, value);
       applyPaletteLayout({ commitHandleSide: true });
     };
     resizer.addEventListener("mousedown", (e) => {
@@ -10861,7 +10668,6 @@ function setupSidePanelResizers() {
   };
 
   bind("paletteResizer", "--palette-w", "paletteW", "left");
-  bind("propsResizer", "--props-w", "propsW", "right");
 }
 
 function setupExploreResizer() {
@@ -10902,7 +10708,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   loadState();
   renderPalette();
   applyViewport();
-  renderProps(null);
   setupSidePanelResizers();
   setupAgentPalette();
 

@@ -1,0 +1,64 @@
+.ne-shell {
+  height: 100vh;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ne-workbench {
+  display: grid;
+  grid-template-columns:
+    var(--palette-w, 210px) 6px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+
+
+.ne-workbench > .ne-palette       { grid-column: 1; }
+.ne-workbench > #paletteResizer   { grid-column: 2; }
+.ne-workbench > .ne-canvas-wrap   { grid-column: 3; }
+
+.ne-side-resizer {
+  background: var(--line);
+  cursor: col-resize;
+  position: relative;
+  transition: background var(--duration-fast);
+}
+.ne-side-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 -3px;
+}
+.ne-side-resizer:hover,
+.ne-side-resizer.is-active { background: var(--gold-soft); }
+
+.ne-shell.hide-palette .ne-workbench { grid-template-columns: 0 0 minmax(0, 1fr); }
+.ne-shell.hide-palette .ne-palette,
+.ne-shell.hide-palette #paletteResizer { display: none; }
+
+.ne-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.ne-view {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+.ne-view[hidden] { display: none !important; }
+
+#view-explore { grid-template-rows: minmax(0, 1fr); }

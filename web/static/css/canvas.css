@@ -1,0 +1,159 @@
+.ne-canvas-wrap {
+  position: relative;
+  overflow: hidden;
+  --ne-grid-size: 32px;
+  --ne-grid-major-size: 160px;
+  --ne-grid-x: 0px;
+  --ne-grid-y: 0px;
+  --ne-grid-major-x: 0px;
+  --ne-grid-major-y: 0px;
+  --ne-grid-opacity: 1;
+  background:
+    radial-gradient(ellipse 800px 500px at 30% 40%, oklch(16% 0.010 80 / 0.5) 0%, transparent 70%),
+    var(--bg-deep);
+  cursor: default;
+}
+.ne-canvas-wrap.is-panning { cursor: grabbing; }
+
+
+.ne-canvas-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, oklch(48% 0.012 88 / 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(48% 0.012 88 / 0.5) 1px, transparent 1px),
+    linear-gradient(to right, oklch(34% 0.008 80 / 0.7) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(34% 0.008 80 / 0.7) 1px, transparent 1px);
+  background-size:
+    var(--ne-grid-major-size) var(--ne-grid-major-size),
+    var(--ne-grid-major-size) var(--ne-grid-major-size),
+    var(--ne-grid-size) var(--ne-grid-size),
+    var(--ne-grid-size) var(--ne-grid-size);
+  background-position:
+    var(--ne-grid-major-x) var(--ne-grid-major-y),
+    var(--ne-grid-major-x) var(--ne-grid-major-y),
+    var(--ne-grid-x) var(--ne-grid-y),
+    var(--ne-grid-x) var(--ne-grid-y);
+  opacity: var(--ne-grid-opacity);
+  pointer-events: none;
+}
+
+.ne-canvas {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+}
+
+.ne-connections {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.ne-connections path {
+  vector-effect: non-scaling-stroke;
+}
+.ne-connections path.is-muted {
+  filter: none;
+}
+
+.ne-wire-temp {
+  vector-effect: non-scaling-stroke;
+  stroke: var(--gold);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  fill: none;
+  opacity: 0.8;
+  animation: wire-march 0.5s linear infinite;
+}
+
+@keyframes wire-march {
+  to { stroke-dashoffset: -7; }
+}
+
+.ne-box-select {
+  position: absolute;
+  border: 1px solid var(--gold-soft);
+  background: color-mix(in oklch, var(--gold) 8%, transparent);
+  pointer-events: none;
+}
+
+.ne-loop-region {
+  fill: color-mix(in oklch, oklch(70% 0.12 200) 8%, transparent);
+  stroke: color-mix(in oklch, oklch(70% 0.12 200) 55%, transparent);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+  pointer-events: none;
+}
+.ne-loop-region-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: color-mix(in oklch, oklch(70% 0.12 200) 80%, var(--text-soft));
+  pointer-events: none;
+  user-select: none;
+}
+
+.ne-modal-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  background: color-mix(in oklch, var(--bg-deep) 92%, transparent);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 6px 20px oklch(0% 0 0 / 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+
+.ne-cut-path {
+  fill: none;
+  stroke: oklch(68% 0.20 25);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 6;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 4px oklch(68% 0.20 25 / 0.55));
+  animation: cut-march 0.45s linear infinite;
+  pointer-events: none;
+}
+@keyframes cut-march {
+  to { stroke-dashoffset: -7; }
+}
+
+.ne-canvas-wrap {
+  --ne-grid-opacity: 0.26;
+  background: oklch(7.5% 0.004 80);
+}
+
+.ne-canvas-wrap::before {
+  background-image:
+    radial-gradient(circle at 0 0, oklch(61% 0.022 88 / 0.56) 0 1px, transparent 1.4px),
+    radial-gradient(circle at 0 0, oklch(48% 0.014 80 / 0.52) 0 1px, transparent 1.3px),
+    linear-gradient(to right, oklch(44% 0.012 80 / 0.24) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(44% 0.012 80 / 0.24) 1px, transparent 1px);
+  background-size:
+    var(--ne-grid-major-size) var(--ne-grid-major-size),
+    var(--ne-grid-size) var(--ne-grid-size),
+    var(--ne-grid-major-size) var(--ne-grid-major-size),
+    var(--ne-grid-major-size) var(--ne-grid-major-size);
+  background-position:
+    var(--ne-grid-major-x) var(--ne-grid-major-y),
+    var(--ne-grid-x) var(--ne-grid-y),
+    var(--ne-grid-major-x) var(--ne-grid-major-y),
+    var(--ne-grid-major-x) var(--ne-grid-major-y);
+  opacity: var(--ne-grid-opacity);
+}

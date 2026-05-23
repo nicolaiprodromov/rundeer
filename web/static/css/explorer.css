@@ -1,0 +1,132 @@
+.ex-shell {
+  display: grid;
+  grid-template-columns: var(--ex-split, 60%) 6px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+.ex-panel {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: var(--space-4) var(--space-5);
+  gap: var(--space-3);
+}
+.ex-explorer { border-right: 0; }
+.ex-preview {
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--bg);
+}
+
+.ex-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.ex-panel-head .ex-eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--whisper);
+}
+.ex-panel-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--quiet);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ex-panel-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+.ex-resizer {
+  background: var(--line);
+  cursor: col-resize;
+  position: relative;
+  transition: background var(--duration-fast);
+}
+.ex-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 -3px;
+}
+.ex-resizer:hover, .ex-resizer.is-active { background: var(--gold-soft); }
+
+.ex-preview-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  overflow: auto;
+  min-height: 0;
+}
+.ex-preview-body img,
+.ex-preview-body video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.ex-preview-body pre.ex-preview-text {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  padding: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-soft);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+  background: transparent;
+  border: 0;
+  align-self: stretch;
+}
+.ex-preview-empty {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--whisper);
+  padding: var(--space-6);
+  text-align: center;
+}
+
+#exFileTree {
+  background: var(--surface);
+}
+#exFileTree .tree-node {
+  position: relative;
+  --tree-indent: calc(var(--depth, 0) * 20px);
+}
+#exFileTree .tree-row {
+  --depth: inherit;
+  --tree-indent: calc(var(--depth, 0) * 20px);
+  position: relative;
+  min-height: 27px;
+  padding-left: calc(8px + var(--tree-indent));
+  padding-right: 8px;
+  border-left: 0;
+}
+#exFileTree .tree-row:hover {
+  background: color-mix(in oklch, var(--gold) 7%, var(--surface-2));
+}
+#exFileTree .tree-dir {
+  font-weight: 600;
+}
+#exFileTree .tree-file .tree-name {
+  color: color-mix(in oklch, var(--text-soft) 86%, var(--quiet));
+}
+
+.tree-row.tree-file.is-selected {
+  background: color-mix(in oklch, var(--gold) 12%, var(--surface));
+  color: var(--text);
+  border-left: 2px solid var(--gold-soft);
+}

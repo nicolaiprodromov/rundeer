@@ -12,7 +12,7 @@ The core user is iterating in a project folder, often with credits or rate limit
 
 ## Product Purpose
 
-rundeer turns a single creative direction into repeatable media runs. It organizes style brains under `brain/`, resolves references by numeric id, stores outputs and logs under `.rundeer/`, and exposes the same command engine through CLI commands, a curses TUI, the node workbench, the Explore file previewer, and the legacy `/classic` form UI.
+rundeer turns a single creative direction into repeatable media runs. It organizes style brains under `brain/`, resolves references by numeric id, stores outputs and logs under `.rundeer/`, and exposes the same command engine through CLI commands, a curses TUI, the node workbench, and the Explore file previewer.
 
 Success means the user reaches the first useful artifact quickly, understands where every output went, can reproduce the run with config or dry-run output, and can keep iterating without rebuilding the workflow from scratch.
 
@@ -26,7 +26,7 @@ The voice is direct and operational. It can have personality in the wordmark, te
 
 Do not make Rundeer feel like a SaaS landing page, a chat prompt toy, a pastel creator app, or a generic AI dashboard. Avoid oversized marketing hero sections, bubbly card grids, glassmorphism, neon-on-black cyberpunk cliches, purple-blue gradient wash, ornamental illustrations, and empty tutorial ceremony.
 
-Do not separate the CLI and webapp into different brands. The terminal banner, curses TUI, Nodes workbench, Explore view, and legacy `/classic` form should feel like the same instrument at different zoom levels.
+Do not separate the CLI and webapp into different brands. The terminal banner, curses TUI, Nodes workbench, and Explore view should feel like the same instrument at different zoom levels.
 
 ## Design Principles
 

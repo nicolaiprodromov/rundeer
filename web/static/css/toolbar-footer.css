@@ -1,0 +1,316 @@
+.ne-toolbar {
+  border-top: 1px solid var(--line);
+  padding: var(--space-3) var(--space-7);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: color-mix(in oklch, var(--bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.ne-toolbar-left { display: flex; align-items: center; gap: var(--space-3); flex: 1; }
+.ne-toolbar-right { display: flex; align-items: center; gap: var(--space-3); }
+
+.ne-toolbar-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+}
+
+.ne-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--quiet);
+}
+.ne-status.is-running { color: var(--violet); animation: pulse 1.2s ease-in-out infinite; }
+.ne-status.is-paused { color: color-mix(in oklch, var(--violet) 74%, var(--gold)); }
+.ne-status.is-done { color: var(--gold); }
+.ne-status.is-failed { color: oklch(72% 0.15 25); }
+.ne-status.is-cancelled { color: var(--quiet); }
+
+.ne-zoom-display {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--quiet);
+  min-width: 44px;
+  text-align: center;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--line-strong);
+  color: var(--text-soft);
+  background: var(--surface-2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast);
+}
+.mode-toggle:hover {
+  background: var(--surface-3);
+  color: var(--gold);
+  border-color: var(--gold);
+}
+.mode-toggle.is-active {
+  background: color-mix(in oklch, var(--gold) 12%, var(--surface));
+  color: var(--gold);
+  border-color: var(--gold-soft);
+}
+
+.ne-toolbar {
+  padding: 4px 12px;
+  gap: 6px;
+  font-size: 11px;
+  background: color-mix(in oklch, var(--bg) 78%, transparent);
+}
+.ne-toolbar .btn {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 10.5px;
+}
+.ne-toolbar .btn-tiny { height: 20px; padding: 0 6px; font-size: 10px; }
+.ne-toolbar-sep { height: 14px; }
+.ne-status { font-size: 10.5px; }
+.ne-zoom-display { font-size: 10.5px; }
+
+.ne-footer {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 70;
+  width: max-content;
+  max-width: calc(100vw - 28px);
+  min-height: 32px;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  border: 1px solid var(--line-strong);
+  background: color-mix(in oklch, var(--bg-deep) 96%, transparent);
+  box-shadow: 0 12px 34px oklch(0% 0 0 / 0.48);
+  backdrop-filter: blur(12px) saturate(115%);
+  transform: translateX(-50%);
+}
+
+.ne-run-control {
+  display: flex;
+  align-items: center;
+  min-width: 104px;
+  height: 26px;
+}
+
+.ne-footer-run {
+  min-width: 104px;
+  height: 26px;
+  padding: 0 10px;
+  justify-content: center;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+
+.ne-run-control[data-state="running"],
+.ne-run-control[data-state="paused"] {
+  min-width: 196px;
+}
+
+.ne-footer-stop,
+.ne-footer-pause {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 26px;
+  padding: 0 9px;
+  justify-content: center;
+  border-radius: 0;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.ne-footer-stop {
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
+  border: 1px solid color-mix(in oklch, oklch(72% 0.15 25) 66%, var(--line-strong));
+  background: color-mix(in oklch, oklch(72% 0.15 25) 82%, var(--surface-2));
+  color: var(--bg-deep);
+}
+.ne-footer-stop:hover {
+  background: color-mix(in oklch, oklch(72% 0.15 25) 92%, var(--text));
+}
+
+.ne-footer-pause {
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  border: 1px solid color-mix(in oklch, var(--violet) 64%, var(--line-strong));
+  border-left: 0;
+  background: color-mix(in oklch, var(--violet) 74%, var(--surface-2));
+  color: var(--bg-deep);
+}
+.ne-footer-pause:hover {
+  background: color-mix(in oklch, var(--violet) 86%, var(--text));
+}
+.ne-run-control[data-state="paused"] .ne-footer-pause {
+  background: var(--gold);
+  border-color: color-mix(in oklch, var(--gold) 72%, var(--line-strong));
+}
+
+.ne-current-tab {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.ne-current-tab::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  display: none;
+  width: min(420px, calc(100vw - 28px));
+  height: 12px;
+}
+.ne-current-tab:hover::before,
+.ne-current-tab:focus-within::before {
+  display: block;
+}
+
+.ne-current-tab-button {
+  height: 26px;
+  min-width: min(40vw, 240px);
+  max-width: min(52vw, 340px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-deep);
+  color: var(--text-soft);
+  text-align: left;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.ne-current-tab-button:hover,
+.ne-current-tab:focus-within .ne-current-tab-button {
+  color: var(--text);
+  border-color: var(--gold-soft);
+  background: color-mix(in oklch, var(--gold) 7%, var(--surface));
+}
+.ne-current-tab-label {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--quiet);
+}
+.ne-current-tab-button strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.ne-current-tab-state {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gold);
+}
+.ne-current-tab-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  width: min(420px, calc(100vw - 28px));
+  max-height: min(360px, calc(100vh - 120px));
+  display: none;
+  padding: 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-deep);
+  box-shadow: 0 18px 48px oklch(0% 0 0 / 0.55);
+  overflow: hidden;
+}
+.ne-current-tab:hover .ne-current-tab-menu,
+.ne-current-tab:focus-within .ne-current-tab-menu {
+  display: block;
+}
+
+
+.ne-graph-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(min(360px, 100vh - 120px) - 12px);
+  overflow-y: auto;
+}
+.ne-graph-tabs::-webkit-scrollbar { height: 4px; }
+.ne-graph-tabs::-webkit-scrollbar-thumb { background: var(--line); }
+.ne-graph-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  width: 100%;
+  padding: 0 6px 0 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--quiet);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  max-width: none;
+  white-space: nowrap;
+  transition: color var(--duration-fast), background var(--duration-fast), border-color var(--duration-fast);
+}
+.ne-graph-tab:hover { color: var(--text); }
+.ne-graph-tab.is-active {
+  color: var(--gold);
+  border-color: var(--gold-soft);
+  background: color-mix(in oklch, var(--gold) 10%, var(--surface-2));
+}
+.ne-graph-tab.is-running {
+  color: color-mix(in oklch, var(--violet) 74%, var(--text));
+  border-color: color-mix(in oklch, var(--violet) 52%, var(--line));
+  background: color-mix(in oklch, var(--violet) 12%, var(--surface));
+}
+.ne-graph-tab-run-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--violet);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--violet) 45%, transparent);
+  flex: 0 0 auto;
+}
+.ne-graph-tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: none;
+  flex: 1 1 auto;
+}
+.ne-graph-tab-dirty {
+  color: var(--gold);
+  font-weight: 700;
+  margin-left: 2px;
+}
+.ne-graph-tab-close {
+  background: transparent;
+  border: 0;
+  color: var(--whisper);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  height: 18px;
+}
+.ne-graph-tab-close:hover { color: var(--gold); background: var(--surface); }

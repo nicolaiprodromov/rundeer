@@ -100,7 +100,7 @@ components:
 
 rundeer is a dark, concentrated node workbench for generating visual media in batches. The design should feel like a local studio instrument: dense enough for repeated use, sharp enough for technical trust, and expressive only where identity or state needs it.
 
-The Nodes view, Explore view, curses TUI, plain terminal output, and legacy `/classic` form are one visual system. The browser surfaces use warm-tinted dark neutrals, thin structural lines, compact controls, and a restrained gold action color. The terminal carries the same identity through monospaced status text and a pink-to-violet deer banner.
+The Nodes view, Explore view, curses TUI, and plain terminal output are one visual system. The browser surfaces use warm-tinted dark neutrals, thin structural lines, compact controls, and a restrained gold action color. The terminal carries the same identity through monospaced status text and a pink-to-violet deer banner.
 
 The system rejects SaaS gloss, marketing page composition, rounded card sprawl, decorative glass, and generic neon cyberpunk styling. Rundeer should look like a tool a serious visual workflow hacker leaves open beside their editor.
 
