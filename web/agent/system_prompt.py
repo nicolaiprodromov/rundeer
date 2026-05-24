@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-from functools import lru_cache
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
-from rundeer.core.config import brain_dir
-
-from .tools import ALL_TOOLS
+from typing import Any
 
 
 CORE_PROMPT = """You are the **rundeer agent**, an in-app collaborator that helps the user design, debug, and run node-graph workflows for AI image and video generation.
@@ -62,114 +56,7 @@ Precise, nocturnal, studio-native. No emojis. No exclamation points. No marketin
 """
 
 
-BrainCacheKey = Tuple[str, Tuple[Tuple[str, int, int], ...]]
-
-
-def _brain_cache_key() -> BrainCacheKey:
-    bd = brain_dir()
-    if not bd.is_dir():
-        return (str(bd), tuple())
-    entries: List[Tuple[str, int, int]] = []
-    for child in sorted(bd.iterdir()):
-        if not child.is_dir():
-            continue
-        ref = child / "Reference"
-        child_mtime = child.stat().st_mtime_ns
-        ref_mtime = ref.stat().st_mtime_ns if ref.is_dir() else 0
-        entries.append((child.name, child_mtime, ref_mtime))
-    return (str(bd), tuple(entries))
-
-
-def _brain_summary() -> str:
-    return _brain_summary_cached(_brain_cache_key())
-
-
-@lru_cache(maxsize=16)
-def _brain_summary_cached(cache_key: BrainCacheKey) -> str:
-    bd = Path(cache_key[0])
-    if not bd.is_dir():
+def build_system_prompt(runtime: Any = None) -> str:
+    if runtime is None:
         return ""
-    lines: List[str] = []
-    for child in sorted(bd.iterdir()):
-        if not child.is_dir():
-            continue
-        ref = child / "Reference"
-        ref_count = 0
-        if ref.is_dir():
-            ref_count = sum(1 for p in ref.iterdir() if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"})
-        lines.append(f"  • {child.name} ({ref_count} reference image{'s' if ref_count != 1 else ''})")
-    if not lines:
-        return ""
-    return "Currently available brains:\n" + "\n".join(lines)
-
-
-@lru_cache(maxsize=1)
-def _tool_summary_cached() -> str:
-    return _build_tool_summary([spec.name for spec in ALL_TOOLS])
-
-
-def _build_tool_summary(allowed_names: List[str]) -> str:
-    from .tools import TOOLS_BY_NAME
-    allow = set(allowed_names)
-    by_cat: Dict[str, List[str]] = {}
-    for name in allowed_names:
-        spec = TOOLS_BY_NAME.get(name)
-        if spec is None:
-            continue
-        if name not in allow:
-            continue
-        by_cat.setdefault(spec.category, []).append(spec.name)
-    parts: List[str] = []
-    order = ["read", "vision", "mutate", "execute", "self_modify"]
-    labels = {
-        "read": "Read-only",
-        "vision": "Vision",
-        "mutate": "Graph mutation",
-        "execute": "Execution",
-        "self_modify": "Self-modify (gated)",
-    }
-    for cat in order:
-        if cat not in by_cat:
-            continue
-        parts.append(f"  • {labels.get(cat, cat)}: {', '.join(sorted(by_cat[cat]))}")
-
-    for cat in sorted(by_cat):
-        if cat in order:
-            continue
-        parts.append(f"  • {cat}: {', '.join(sorted(by_cat[cat]))}")
-    return "Tools available to you:\n" + "\n".join(parts)
-
-
-def _tool_summary(enabled_tool_names: Optional[List[str]] = None) -> str:
-    if enabled_tool_names is None:
-        return _tool_summary_cached()
-    return _build_tool_summary(list(enabled_tool_names))
-
-
-def build_system_prompt(
-    root: Path,
-    *,
-    project_name: str = "",
-    runtime: Any = None,
-    enabled_tool_names: Optional[List[str]] = None,
-) -> str:
-
-
-
-
-
-
-
-    base = ""
-    if runtime is not None:
-        base = str(getattr(runtime, "system_prompt", "") or "").strip()
-    if not base:
-        base = CORE_PROMPT.strip()
-    parts = [base]
-    if project_name:
-        parts.append(f"\n# Project\nWorking directory: `{project_name}`.")
-    brain = _brain_summary()
-    if brain:
-        parts.append("\n# Brains\n" + brain)
-    parts.append("\n# Tools\n" + _tool_summary(enabled_tool_names))
-    return "\n".join(parts).strip() + "\n"
+    return str(getattr(runtime, "system_prompt", "") or "").strip()

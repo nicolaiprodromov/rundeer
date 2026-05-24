@@ -87,7 +87,7 @@ const COMMAND_MEDIA_INPUT_PROPS = [
 ];
 
 const PROMPT_MODEL_PROPS = [
-  { id: "model", label: "Model override", kind: "text", default: "", placeholder: "uses env MODEL_NAME" },
+  { id: "model", label: "Model override", kind: "text", default: "", placeholder: "uses env RUNDEER_LLM_MODEL" },
   { id: "reasoning_effort", label: "Reasoning Effort", kind: "select", options: ["default", "none", "low", "medium", "high"], default: "default" },
 ];
 
@@ -457,166 +457,6 @@ function outputTypeForRenderedEdge(edge, seen = new Set()) {
 
 const NODE_CATALOG = [
   {
-    category: "Primitives",
-    nodes: [
-      {
-        type: "text-input", label: "String", desc: "Multi-line string value (markdown · @mentions)",
-        defaultWidth: 280,
-        defaultHeight: 240,
-        inputs: [],
-        outputs: [{ id: "out", label: "String", type: "text" }],
-        props: [
-          {
-            id: "value", label: "Value", kind: "textarea",
-            default: "",
-            placeholder: "Markdown — **bold**, _italic_, `code`, > quote, lists, @reference…",
-            mdEditor: true,
-          },
-          ...groupProps("highlights", [{
-            id: "highlight_pairs", label: "Word Colors", kind: "textarea",
-            default: "",
-            placeholder: "sun = rgb(255, 210, 80)\nshadow = 120, 170, 255",
-          }]),
-        ],
-      },
-      {
-        type: "number-input", label: "Number", desc: "Numeric value",
-        inputs: [],
-        outputs: [{ id: "out", label: "Number", type: "number" }],
-        props: [{ id: "value", label: "Value", kind: "number", default: 1 }],
-      },
-      {
-        type: "boolean-input", label: "Boolean", desc: "True or false value",
-        inputs: [],
-        outputs: [{ id: "out", label: "Boolean", type: "boolean" }],
-        props: [{ id: "value", label: "Value", kind: "checkbox", default: false }],
-      },
-      {
-        
-        
-        
-        type: "vector-input", label: "Vector", desc: "Constant 3-component vector (X, Y, Z).",
-        allInline: true,
-        inputs: [],
-        outputs: [{ id: "out", label: "Vector", type: "vector" }],
-        props: [
-          { id: "x", label: "X", kind: "number", default: 0.0 },
-          { id: "y", label: "Y", kind: "number", default: 0.0 },
-          { id: "z", label: "Z", kind: "number", default: 0.0 },
-        ],
-      },
-      {
-        
-        
-        
-        
-        type: "file", label: "File", desc: "Path to an image, video, or any file. Previews the artifact inline.",
-        inputs: [],
-        outputs: [{ id: "out", label: "Out", type: "any" }],
-        props: [{ id: "path", label: "Path", kind: "text", default: "", placeholder: "path/to/image.png · clip.mp4 · .rundeer/batch.json" }],
-        defaultWidth: 320,
-        defaultHeight: 260,
-        resizable: true,
-      },
-    ],
-  },
-  {
-    category: "Operations",
-    nodes: [
-      {
-        type: "text-join", label: "Join", desc: "Concatenate two values as strings",
-        inputs: [
-          { id: "a", label: "A", type: "any" },
-          { id: "b", label: "B", type: "any" },
-        ],
-        outputs: [{ id: "out", label: "Joined", type: "text" }],
-        props: [{ id: "sep", label: "Separator", kind: "text", default: " ", placeholder: " " }],
-      },
-      {
-        type: "compress-image", label: "Compress",
-        desc: "Compress images (re-encode), videos (re-encode), bundles (zip), or text (LLM summary)",
-        inputs: [
-          { id: "in", label: "Input", type: "any" },
-          { id: "instructions", label: "Compression Instructions", type: "text" },
-        ],
-        outputs: [{ id: "out", label: "Compressed", type: "any" }],
-        props: [
-          { id: "quality", label: "Quality (0–100)", kind: "range", min: 1, max: 100, step: 1, default: 75 },
-          { id: "max_dimension", label: "Max Dimension (px, 0=keep)", kind: "number", default: 0 },
-        ],
-      },
-      {
-        
-        
-        
-        
-        type: "blur-image", label: "Blur",
-        desc: "Gaussian blur an image (or bundle of images)",
-        inputs: [
-          { id: "in", label: "Image", type: "image" },
-        ],
-        outputs: [{ id: "out", label: "Blurred", type: "image" }],
-        props: [
-          { id: "radius", label: "Radius (px)", kind: "range", min: 0, max: 100, step: 0.5, default: 4 },
-        ],
-      },
-      {
-        type: "crop-media", label: "Crop",
-        desc: "Crop an image or video. Size and position use pixel vectors; position starts at the source bottom-left.",
-        inputs: [{ id: "in", label: "Media", type: "any" }],
-        outputs: [{ id: "out", label: "Cropped", type: "any" }],
-        props: [
-          { id: "size", label: "Size", kind: "text", default: "512,512", placeholder: "width,height", socketType: "vector", passthroughWired: true },
-          { id: "position", label: "Position", kind: "text", default: "0,0", placeholder: "x,y from bottom-left", socketType: "vector", passthroughWired: true },
-        ],
-      },
-      {
-        type: "resize-media", label: "Resize",
-        desc: "Resize an image or video to a target size with aspect handling.",
-        inputs: [{ id: "in", label: "Media", type: "any" }],
-        outputs: [{ id: "out", label: "Resized", type: "any" }],
-        props: [
-          { id: "size", label: "Size", kind: "text", default: "1024,1024", placeholder: "width,height", socketType: "vector", passthroughWired: true },
-          { id: "mode", label: "Integration", kind: "select", options: ["none", "fill", "stretch", "contain"], default: "contain", socketType: "text" },
-        ],
-      },
-      {
-        type: "math-op", label: "Math", desc: "Numeric operation",
-        inputs: [
-          { id: "a", label: "A", type: "number" },
-          { id: "b", label: "B", type: "number" },
-        ],
-        outputs: [{ id: "out", label: "Result", type: "number" }],
-        props: [
-          { id: "op", label: "Operation", kind: "select", options: ["add", "subtract", "multiply", "divide", "modulo", "power", "min", "max"], default: "add" },
-        ],
-      },
-      {
-        type: "text-op", label: "String Op", desc: "String transformation (also converts numbers to strings)",
-        inputs: [
-          { id: "a", label: "A", type: "any" },
-          { id: "b", label: "B", type: "any" },
-        ],
-        outputs: [{ id: "out", label: "Result", type: "text" }],
-        props: [
-          { id: "op", label: "Operation", kind: "select", options: ["to_string", "replace", "upper", "lower", "trim", "slice", "to_int", "to_float", "length", "format"], default: "to_string" },
-          { id: "extra", label: "Extra (replace=with, slice=start:end, format=tpl with {a}/{b})", kind: "text", default: "" },
-        ],
-      },
-      {
-        type: "random", label: "Random", desc: "Generate a random integer, float, or string",
-        inputs: [],
-        outputs: [{ id: "out", label: "Value", type: "any" }],
-        props: [
-          { id: "mode", label: "Mode", kind: "select", options: ["integer", "float", "string"], default: "integer", socketType: "text" },
-          { id: "min", label: "Min", kind: "number", default: 0 },
-          { id: "max", label: "Max", kind: "number", default: 100 },
-          { id: "charset", label: "Charset", kind: "select", options: ["alphanumeric", "alpha", "lower_alpha", "upper_alpha", "numeric", "hex", "special", "ascii"], default: "alphanumeric", socketType: "text" },
-        ],
-      },
-    ],
-  },
-  {
     category: "Layout",
     nodes: [
       {
@@ -669,7 +509,7 @@ const NODE_CATALOG = [
     ],
   },
   {
-    category: "Commands",
+    category: "Grok Imagine",
     nodes: [
       {
         type: "cmd-image", label: "Image", desc: "Generate images through a style brain",
@@ -1050,11 +890,31 @@ const NODE_CATALOG = [
           { id: "destructive", label: "Destructive override", kind: "select", options: ["", "true", "false"], default: "" },
         ],
       },
+      {
+        type: "time", label: "Time",
+        desc: "Injects the current timestamp when the agent runs. Connect into Brain sections (directly or via a Bundle).",
+        inputs: [],
+        outputs: [{ id: "out", label: "Time", type: "text" }],
+        props: [
+          { id: "format", label: "Format", kind: "select", options: ["iso", "unix", "human", "date", "time"], default: "iso" },
+        ],
+      },
+      {
+        type: "context", label: "Context",
+        desc: "Dynamic context for the agent. Graph Context = current graph snapshot. App Context = web-state JSON. Workspace Context = project file tree. Connect outputs into Brain sections.",
+        inputs: [],
+        outputs: [
+          { id: "graph_context", label: "Graph Context", type: "text" },
+          { id: "app_context", label: "App Context", type: "text" },
+          { id: "workspace_context", label: "Workspace Context", type: "text" },
+        ],
+        props: [],
+      },
     ],
   },
 ];
 
-const NODE_BY_TYPE = Object.fromEntries(
+let NODE_BY_TYPE = Object.fromEntries(
   NODE_CATALOG.flatMap((cat) => cat.nodes.map((n) => [n.type, { ...n, category: cat.category }]))
 );
 
@@ -4120,6 +3980,10 @@ function buildNodeFields(nodeId, node, def) {
   const groups = new Map();
   for (const propDef of allProps) {
     if (inlinePropIds.has(propDef.id)) continue;
+    if (propDef.group === null) {
+      fields.appendChild(buildInlinePropRow(nodeId, propDef, node.props[propDef.id]));
+      continue;
+    }
     const groupId = propGroupId(propDef);
     if (!groups.has(groupId)) groups.set(groupId, []);
     groups.get(groupId).push(propDef);
@@ -4710,6 +4574,11 @@ function nodeResizeMin(node) {
   if (props.length > 0) {
     const groups = new Map();
     for (const prop of props) {
+      if (prop.group === null) {
+        if (prop.mdEditor) contentH += stringEditorMinRowHeight(node, prop);
+        else contentH += prop.kind === "textarea" ? TEXTAREA_ROW : PROP_ROW;
+        continue;
+      }
       const gid = propGroupId(prop);
       if (!groups.has(gid)) groups.set(gid, []);
       groups.get(gid).push(prop);
@@ -7319,8 +7188,11 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   const work = traceNode ? beginNodeWork(nodeId) : null;
 
   try {
+  const _extResolver = (window.RundeerNodeResolvers || {})[node.type];
+  if (_extResolver) {
+    await _extResolver(node, inputs, outputs, props, { appendRunLog, graphFetchJSON, opts, formatBytes, nodeId, activeIncomingEdges, baseType, outputSocketDef, COMPRESS_HELPER_PROMPT, _vectorSocketUnparseableSource, _coerceVector2Value });
+  } else
   switch (node.type) {
-    case "text-input":     outputs.out = String(props.value || ""); break;
     case "tool-flag": {
       outputs.out = {
         tool_name: String(props.tool_name || ""),
@@ -7340,19 +7212,6 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         .filter(Boolean)
         .join("\n\n")
         .trim();
-      break;
-    }
-    case "number-input":   outputs.out = Number(props.value ?? 1); break;
-    case "boolean-input":  outputs.out = Boolean(props.value); break;
-    case "vector-input": {
-      outputs.out = [Number(props.x ?? 0), Number(props.y ?? 0), Number(props.z ?? 0)];
-      break;
-    }
-    case "image-input":
-    case "video-input":
-    case "filepath-input":
-    case "file": {
-      outputs.out = String(props.path ?? "");
       break;
     }
     case "folder-bundle": {
@@ -7417,179 +7276,6 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       outputs.count = chosen.length;
       break;
     }
-    case "text-join": {
-      const sep = props.sep ?? " ";
-      outputs.out = [inputs.a, inputs.b].filter((v) => v != null && v !== "").join(sep);
-      break;
-    }
-    case "compress-image": {
-      const v = inputs.in;
-      
-      if (Array.isArray(v)) {
-        const items = v.filter((x) => x != null && x !== "").map((x) => String(x));
-        if (items.length === 0) { outputs.out = ""; break; }
-        appendRunLog(`  ↳ Zipping bundle (${items.length} item${items.length === 1 ? "" : "s"})…\n`);
-        const result = await graphFetchJSON("/api/compress", {
-          method: "POST",
-          body: JSON.stringify({ kind: "bundle", paths: items }),
-        }, opts);
-        if (result.error) throw new Error(`compress: ${result.error}`);
-        appendRunLog(`  ↳ → ${result.path} (${formatBytes(result.bytes)})\n`);
-        outputs.out = result.path;
-        break;
-      }
-      const str = (v == null) ? "" : String(v);
-      if (!str) { outputs.out = ""; break; }
-      
-      
-      const looksLikePath =
-        /\.[A-Za-z0-9]{1,6}$/.test(str) &&
-        !str.includes("\n") &&
-        str.length < 512;
-      const inEdge = activeIncomingEdges(nodeId, "in")[0];
-      const inSockType = inEdge ? baseType(outputSocketDef(inEdge.fromNode, inEdge.fromSocket)?.type || "any") : "any";
-      const isText = inSockType === "text" || (!looksLikePath && inSockType === "any");
-      if (isText) {
-        const instructions = inputs.instructions || COMPRESS_HELPER_PROMPT;
-        appendRunLog(`  ↳ Compressing text via LLM…\n`);
-        const result = await graphFetchJSON("/api/filter-prompt", {
-          method: "POST",
-          body: JSON.stringify({
-            prompt: str,
-            instructions,
-            images: [],
-          }),
-        }, opts);
-        if (result.error) throw new Error(`compress(text): ${result.error}`);
-        outputs.out = result.filtered_prompt || str;
-        appendRunLog(`  ↳ → ${(outputs.out || "").length} chars (was ${str.length})\n`);
-        break;
-      }
-      
-      appendRunLog(`  ↳ Compressing ${str} (q=${props.quality})…\n`);
-      const result = await graphFetchJSON("/api/compress", {
-        method: "POST",
-        body: JSON.stringify({
-          kind: "auto",
-          path: str,
-          quality: Number(props.quality ?? 75),
-          max_dimension: Number(props.max_dimension ?? 0),
-        }),
-      }, opts);
-      if (result.error) throw new Error(`compress: ${result.error}`);
-      const ratio = result.originalBytes ? Math.round((result.bytes / result.originalBytes) * 100) : 0;
-      appendRunLog(`  ↳ → ${result.path} (${formatBytes(result.bytes)}, ${ratio}% of original)\n`);
-      outputs.out = result.path;
-      break;
-    }
-    case "blur-image": {
-      
-      
-      const radius = Math.max(0, Number(props.radius ?? 4));
-      const blurOne = async (path) => {
-        const p = String(path || "").trim();
-        if (!p) return "";
-        appendRunLog(`  ↳ Blurring ${p} (r=${radius})…\n`);
-        const result = await graphFetchJSON("/api/blur-image", {
-          method: "POST",
-          body: JSON.stringify({ path: p, radius }),
-        }, opts);
-        if (result.error) throw new Error(`blur: ${result.error}`);
-        appendRunLog(`  ↳ → ${result.path}\n`);
-        return result.path;
-      };
-      const v = inputs.in;
-      if (Array.isArray(v)) {
-        const out = [];
-        for (const item of v) {
-          const blurred = await blurOne(item);
-          if (blurred) out.push(blurred);
-        }
-        outputs.out = out;
-        break;
-      }
-      outputs.out = await blurOne(v);
-      break;
-    }
-    case "crop-media": {
-      
-      
-      
-      
-      
-      
-      const sizeWired = inputs.size;
-      const positionWired = inputs.position;
-      const sizeBad = _vectorSocketUnparseableSource(sizeWired);
-      const positionBad = _vectorSocketUnparseableSource(positionWired);
-      if (sizeBad) appendRunLog(`  ↳ ⚠ Crop size socket received "${sizeBad}" (not a vector) — using default\n`);
-      if (positionBad) appendRunLog(`  ↳ ⚠ Crop position socket received "${positionBad}" (not a vector) — using default\n`);
-      const size = _coerceVector2Value(sizeBad ? "" : props.size, [512, 512]);
-      const position = _coerceVector2Value(positionBad ? "" : props.position, [0, 0]);
-      const sizeTag = (sizeWired !== undefined && sizeWired !== "" && sizeWired !== null && !sizeBad) ? " [wired]" : "";
-      const posTag = (positionWired !== undefined && positionWired !== "" && positionWired !== null && !positionBad) ? " [wired]" : "";
-      const cropOne = async (path) => {
-        const p = String(path || "").trim();
-        if (!p) return "";
-        appendRunLog(`  ↳ Cropping ${p} ${Math.round(size[0])}×${Math.round(size[1])}${sizeTag} @ ${Math.round(position[0])},${Math.round(position[1])}${posTag}\n`);
-        const result = await graphFetchJSON("/api/media/crop", {
-          method: "POST",
-          body: JSON.stringify({ path: p, size, position }),
-        }, opts);
-        if (result.error) throw new Error(`crop: ${result.error}`);
-        appendRunLog(`  ↳ → ${result.path}\n`);
-        return result.path;
-      };
-      
-      
-      
-      const v = inputs.in;
-      if (Array.isArray(v)) {
-        const out = [];
-        for (const item of v) {
-          const cropped = await cropOne(item);
-          if (cropped) out.push(cropped);
-        }
-        outputs.out = out;
-        break;
-      }
-      outputs.out = await cropOne(v);
-      break;
-    }
-    case "resize-media": {
-      const sizeWired = inputs.size;
-      const modeWired = inputs.mode;
-      const sizeBad = _vectorSocketUnparseableSource(sizeWired);
-      if (sizeBad) appendRunLog(`  ↳ ⚠ Resize size socket received "${sizeBad}" (not a vector) — using default\n`);
-      const size = _coerceVector2Value(sizeBad ? "" : props.size, [1024, 1024]);
-      const mode = String(props.mode || "contain").trim().toLowerCase();
-      const sizeTag = (sizeWired !== undefined && sizeWired !== "" && sizeWired !== null && !sizeBad) ? " [wired]" : "";
-      const modeTag = (modeWired !== undefined && modeWired !== "" && modeWired !== null) ? " [wired]" : "";
-      const resizeOne = async (path) => {
-        const p = String(path || "").trim();
-        if (!p) return "";
-        appendRunLog(`  ↳ Resizing ${p} ${Math.round(size[0])}×${Math.round(size[1])}${sizeTag} (${mode}${modeTag})\n`);
-        const result = await graphFetchJSON("/api/media/resize", {
-          method: "POST",
-          body: JSON.stringify({ path: p, size, mode }),
-        }, opts);
-        if (result.error) throw new Error(`resize: ${result.error}`);
-        appendRunLog(`  ↳ → ${result.path}\n`);
-        return result.path;
-      };
-      const v = inputs.in;
-      if (Array.isArray(v)) {
-        const out = [];
-        for (const item of v) {
-          const resized = await resizeOne(item);
-          if (resized) out.push(resized);
-        }
-        outputs.out = out;
-        break;
-      }
-      outputs.out = await resizeOne(v);
-      break;
-    }
     case "prompt":
     case "prompt-filter": {
       const imageInputs = Array.isArray(inputs.input)
@@ -7628,7 +7314,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         presence_penalty: pf_num("presence_penalty"),
         stop: pf_str("stop"),
       };
-      const modelLabel = modelOverride || "MODEL_NAME";
+      const modelLabel = modelOverride || "RUNDEER_LLM_MODEL";
       const effortNote = payload.reasoning_effort ? ` (reasoning=${payload.reasoning_effort})` : "";
       appendRunLog(`  ↳ ${node.type === "prompt" ? "Prompting" : "Filtering prompt"} via ${modelLabel}${effortNote}${imageNote}…\n`);
       const result = await graphFetchJSON("/api/filter-prompt", {
@@ -7831,91 +7517,6 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       }, opts);
       if (result.error) throw new Error(`render: ${result.error}`);
       outputs.out = result.path;
-      break;
-    }
-    case "math-op": {
-      const a = Number(inputs.a ?? 0);
-      const b = Number(inputs.b ?? 0);
-      const op = props.op || "add";
-      let r = 0;
-      switch (op) {
-        case "add":      r = a + b; break;
-        case "subtract": r = a - b; break;
-        case "multiply": r = a * b; break;
-        case "divide":   r = b === 0 ? 0 : a / b; break;
-        case "modulo":   r = b === 0 ? 0 : a % b; break;
-        case "power":    r = Math.pow(a, b); break;
-        case "min":      r = Math.min(a, b); break;
-        case "max":      r = Math.max(a, b); break;
-      }
-      outputs.out = r;
-      break;
-    }
-    case "random": {
-      const pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : props[key];
-      const modeRaw = String(pick("mode") || "integer").trim().toLowerCase();
-      const mode = ({ int: "integer", integer: "integer", float: "float", number: "float", str: "string", string: "string", text: "string" })[modeRaw] || "integer";
-      let min = Number(pick("min") ?? 0);
-      let max = Number(pick("max") ?? 100);
-      if (!Number.isFinite(min)) min = 0;
-      if (!Number.isFinite(max)) max = mode === "string" ? 32 : 100;
-      if (max < min) [min, max] = [max, min];
-      if (mode === "float") {
-        outputs.out = min + Math.random() * (max - min);
-        break;
-      }
-      if (mode === "string") {
-        const charsets = {
-          alphanumeric: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
-          alpha: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
-          lower_alpha: "abcdefghijklmnopqrstuvwxyz",
-          upper_alpha: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-          numeric: "0123456789",
-          hex: "0123456789abcdef",
-          special: "!@#$%^&*()-_=+[]{};:,.<>/?",
-          ascii: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{};:,.<>/?",
-        };
-        const charsetKey = String(pick("charset") || "alphanumeric").trim().toLowerCase().replace(/[\s-]+/g, "_");
-        const alphabet = charsets[charsetKey] || charsets.alphanumeric;
-        const minLen = Math.max(0, Math.floor(min));
-        const maxLen = Math.max(minLen, Math.floor(max));
-        const length = minLen + Math.floor(Math.random() * (maxLen - minLen + 1));
-        let value = "";
-        for (let i = 0; i < length; i += 1) {
-          value += alphabet[Math.floor(Math.random() * alphabet.length)];
-        }
-        outputs.out = value;
-        break;
-      }
-      const lo = Math.ceil(min);
-      const hi = Math.floor(max);
-      outputs.out = hi < lo ? lo : lo + Math.floor(Math.random() * (hi - lo + 1));
-      break;
-    }
-    case "text-op": {
-      const a = String(inputs.a ?? "");
-      const b = String(inputs.b ?? "");
-      const op = props.op || "to_string";
-      const extra = String(props.extra ?? "");
-      switch (op) {
-        case "to_string": outputs.out = a; break;
-        case "format":   outputs.out = (extra || "{a}").replace(/\{a\}/g, a).replace(/\{b\}/g, b); break;
-        case "replace":  outputs.out = a.split(b).join(extra); break;
-        case "upper":    outputs.out = a.toUpperCase(); break;
-        case "lower":    outputs.out = a.toLowerCase(); break;
-        case "trim":     outputs.out = a.trim(); break;
-        case "slice": {
-          const m = extra.split(":");
-          const start = Number(m[0] || 0);
-          const end = m[1] === undefined || m[1] === "" ? undefined : Number(m[1]);
-          outputs.out = a.slice(start, end);
-          break;
-        }
-        case "to_int":   outputs.out = parseInt(a, 10) || 0; break;
-        case "to_float": outputs.out = parseFloat(a) || 0; break;
-        case "length":   outputs.out = a.length; break;
-        default:         outputs.out = a;
-      }
       break;
     }
     case "loop-decompose": {
@@ -8888,7 +8489,7 @@ function applyPaletteLayout(options = {}) {
 }
 
 function setPalettePane(name = "chat") {
-  const wanted = ["chat", "history", "agents", "tabs"].includes(name) ? name : "chat";
+  const wanted = ["chat", "history", "agents", "tabs", "models"].includes(name) ? name : "chat";
   document.querySelectorAll(".ne-palette-pane[data-palette-pane]").forEach((pane) => {
     const active = pane.dataset.palettePane === wanted;
     pane.hidden = !active;
@@ -8897,9 +8498,11 @@ function setPalettePane(name = "chat") {
   const historyOpen = wanted === "history";
   const agentsOpen = wanted === "agents";
   const tabsOpen = wanted === "tabs";
+  const modelsOpen = wanted === "models";
   document.getElementById("agentHistoryBtn")?.setAttribute("aria-expanded", String(historyOpen));
   document.getElementById("agentSelectorBtn")?.setAttribute("aria-expanded", String(agentsOpen));
   document.getElementById("currentTabButton")?.setAttribute("aria-expanded", String(tabsOpen));
+  document.getElementById("modelSelectorBtn")?.setAttribute("aria-expanded", String(modelsOpen));
 }
 
 function isPalettePaneOpen(name) {
@@ -8952,6 +8555,10 @@ function setupAgentPalette() {
     e.preventDefault();
     togglePalettePane("agents");
     if (window.AgentChat && typeof window.AgentChat.requestAgents === "function") window.AgentChat.requestAgents();
+  });
+  document.getElementById("modelSelectorBtn")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    togglePalettePane("models");
   });
   document.querySelectorAll("[data-palette-close]").forEach((btn) => {
     btn.addEventListener("click", () => setPalettePane("chat"));
@@ -10082,9 +9689,7 @@ async function loadState() {
     const projectEl = document.getElementById("projectRoot");
     if (projectEl) projectEl.textContent = data.projectRoot || "?";
     const env = data.env || {};
-    const keysOk = data.agent && typeof data.agent.api_key_present === "boolean"
-      ? Boolean(data.agent.api_key_present)
-      : Boolean(env.VISION_API_KEY || env.MODEL_API_KEY);
+    const keysOk = Boolean(env.GROK_IMAGINE_API_KEY || env.WXWAI_API_KEY || env.OPENAI_API_KEY || env.ANTHROPIC_API_KEY || env.RUNDEER_LLM_MODEL);
     const keyEl = document.getElementById("keyStatus");
     if (keyEl) {
       keyEl.textContent = keysOk ? "ok" : "missing";
@@ -10703,8 +10308,41 @@ function setupExploreResizer() {
 
 
 
+async function loadYamlNodeDefs() {
+  try {
+    const data = await fetchJSON("/api/node-defs");
+    const nodes = data && Array.isArray(data.nodes) ? data.nodes : [];
+    const scriptPromises = [];
+    for (const nodeDef of nodes) {
+      let cat = NODE_CATALOG.find((c) => c.category === nodeDef.category);
+      if (!cat) {
+        cat = { category: nodeDef.category, nodes: [] };
+        NODE_CATALOG.push(cat);
+      }
+      cat.nodes.push(nodeDef);
+      NODE_BY_TYPE[nodeDef.type] = { ...nodeDef, category: nodeDef.category };
+      if (nodeDef.src) {
+        const srcPath = nodeDef.src.startsWith("web/static/")
+          ? "/" + nodeDef.src.replace("web/static/", "static/")
+          : "/" + nodeDef.src;
+        scriptPromises.push(new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = srcPath;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error(`Failed to load node resolver: ${srcPath}`));
+          document.head.appendChild(s);
+        }));
+      }
+    }
+    await Promise.all(scriptPromises);
+  } catch (err) {
+    console.error("[yaml-nodes] Failed to load YAML node definitions:", err);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   await loadWebStore();
+  await loadYamlNodeDefs();
   loadState();
   renderPalette();
   applyViewport();

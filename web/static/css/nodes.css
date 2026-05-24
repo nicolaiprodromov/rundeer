@@ -258,7 +258,7 @@
 .ne-node[data-category="Primitives"] .ne-node-header { background: color-mix(in oklch, oklch(83% 0.130 88) 6%, var(--surface-3)); }
 .ne-node[data-category="Operations"] .ne-node-header { background: color-mix(in oklch, oklch(78% 0.150 190) 8%, var(--surface-3)); }
 .ne-node[data-category="Prompt"] .ne-node-header { background: color-mix(in oklch, oklch(70% 0.135 304) 8%, var(--surface-3)); }
-.ne-node[data-category="Commands"] .ne-node-header { background: color-mix(in oklch, oklch(72% 0.10 220) 8%, var(--surface-3)); }
+.ne-node[data-category="Grok Imagine"] .ne-node-header { background: color-mix(in oklch, oklch(72% 0.10 220) 8%, var(--surface-3)); }
 .ne-node[data-category="Coordinates"] .ne-node-header { background: color-mix(in oklch, oklch(74% 0.16 340) 9%, var(--surface-3)); }
 
 
@@ -336,7 +336,7 @@
 .ne-node[data-category="Primitives"] { --node-accent: oklch(72% 0.180 235); }
 .ne-node[data-category="Operations"] { --node-accent: oklch(78% 0.150 190); }
 .ne-node[data-category="Prompt"]     { --node-accent: oklch(72% 0.210 315); }
-.ne-node[data-category="Commands"]   { --node-accent: oklch(84% 0.190 82); }
+.ne-node[data-category="Grok Imagine"]   { --node-accent: oklch(84% 0.190 82); }
 .ne-node[data-category="Loop"]       { --node-accent: oklch(76% 0.180 165); }
 .ne-node[data-category="Output"]     { --node-accent: oklch(74% 0.180 35); }
 
@@ -344,7 +344,7 @@
 .ne-node[data-category="Primitives"] .ne-node-header,
 .ne-node[data-category="Operations"] .ne-node-header,
 .ne-node[data-category="Prompt"] .ne-node-header,
-.ne-node[data-category="Commands"] .ne-node-header,
+.ne-node[data-category="Grok Imagine"] .ne-node-header,
 .ne-node[data-category="Loop"] .ne-node-header,
 .ne-node[data-category="Output"] .ne-node-header {
   background: color-mix(in oklch, var(--node-accent) 18%, var(--surface-3));
@@ -554,8 +554,8 @@ body.is-resizing .ne-node-resize {
 [data-category="Operations"] { --node-accent: oklch(78% 0.150 190); }
 .ne-node[data-category="Prompt"],
 [data-category="Prompt"] { --node-accent: oklch(72% 0.210 315); }
-.ne-node[data-category="Commands"],
-[data-category="Commands"] { --node-accent: oklch(84% 0.190 82); }
+.ne-node[data-category="Grok Imagine"],
+[data-category="Grok Imagine"] { --node-accent: oklch(84% 0.190 82); }
 .ne-node[data-category="Loop"],
 [data-category="Loop"] { --node-accent: oklch(76% 0.180 165); }
 .ne-node[data-category="Output"],
@@ -579,7 +579,7 @@ body.is-resizing .ne-node-resize {
 .ne-node[data-category="Primitives"] .ne-node-header,
 .ne-node[data-category="Operations"] .ne-node-header,
 .ne-node[data-category="Prompt"] .ne-node-header,
-.ne-node[data-category="Commands"] .ne-node-header,
+.ne-node[data-category="Grok Imagine"] .ne-node-header,
 .ne-node[data-category="Loop"] .ne-node-header,
 .ne-node[data-category="Output"] .ne-node-header {
   padding: 7px 9px 7px 11px;

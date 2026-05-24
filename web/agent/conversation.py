@@ -10,6 +10,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional
 
 import litellm
 
+from rundeer.core.models import resolve_llm_api_key, GrokRawLLM
 from .config import AgentSettings
 from .profiles import DEFAULT_AGENT_ID, normalize_agent_id
 from .diff import diff_graphs, format_diff_note, has_changes
@@ -27,6 +28,71 @@ from .tools import (
 
 
 PATCH_EMITTING_CATEGORIES = {"mutate"}
+
+_TIME_FORMATS = {
+    "iso": "%Y-%m-%dT%H:%M:%SZ",
+    "unix": None,
+    "human": "%A, %B %d, %Y, %I:%M %p UTC",
+    "date": "%Y-%m-%d",
+    "time": "%H:%M:%S",
+}
+
+
+def _format_time(fmt: str) -> str:
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    if fmt == "unix":
+        return f"# Current Time\n{int(now.timestamp())}"
+    pattern = _TIME_FORMATS.get(fmt) or _TIME_FORMATS["iso"]
+    return f"# Current Time\n{now.strftime(pattern)}"
+
+
+def _app_context(root: Path) -> str:
+    from rundeer.core.paths import web_state_path
+    p = web_state_path(root)
+    if not p.is_file():
+        return "# App Context\n(no web-state.json found)"
+    try:
+        return f"# App Context\n{p.read_text(encoding='utf-8').strip()}"
+    except OSError:
+        return "# App Context\n(could not read web-state.json)"
+
+
+def _workspace_context(root: Path) -> str:
+    lines = ["# Workspace Context", f"root: {root}"]
+    try:
+        _walk_tree(root, root, lines, depth=0, max_depth=3, max_entries=200)
+    except OSError:
+        lines.append("(could not read workspace)")
+    return "\n".join(lines)
+
+
+_SKIP_DIRS = {".git", ".hg", ".svn", "node_modules", "__pycache__", ".repomix", ".venv", "venv", ".tox", ".mypy_cache", ".pytest_cache", "dist", "build", "egg-info"}
+
+
+def _walk_tree(root: Path, base: Path, lines: list, depth: int, max_depth: int, max_entries: int) -> None:
+    if len(lines) >= max_entries:
+        return
+    try:
+        children = sorted(base.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+    except OSError:
+        return
+    indent = "  " * depth
+    for child in children:
+        if len(lines) >= max_entries:
+            lines.append(f"{indent}  ... (truncated)")
+            return
+        name = child.name
+        if name.startswith(".") and name not in (".rundeer",):
+            continue
+        if child.is_dir():
+            if name in _SKIP_DIRS:
+                continue
+            lines.append(f"{indent}{name}/")
+            if depth < max_depth:
+                _walk_tree(root, child, lines, depth + 1, max_depth, max_entries)
+        elif child.is_file():
+            lines.append(f"{indent}{name}")
 
 
 
@@ -278,11 +344,9 @@ class Conversation:
         diff = self.update_snapshot(self.snapshot)
         user_content: List[Dict[str, Any]] = []
         if diff is not None:
-            user_content.append({"type": "text", "text": format_diff_note(diff)})
+            if getattr(self._runtime, "include_graph_context", False):
+                user_content.append({"type": "text", "text": format_diff_note(diff)})
             yield evt("graph_diff_note", diff=diff)
-        snap_note = self._snapshot_note()
-        if snap_note:
-            user_content.append({"type": "text", "text": snap_note})
         user_content.append({"type": "text", "text": user_text or ""})
 
         for url in attached_images or []:
@@ -302,12 +366,11 @@ class Conversation:
         yield evt("message_start", role="user")
 
 
-        system_msg = {"role": "system", "content": build_system_prompt(
-            self.root,
-            project_name=self.root.name,
-            runtime=self._runtime,
-            enabled_tool_names=enabled_tool_names(self.tool_overrides),
-        )}
+        system_content = build_system_prompt(self._runtime)
+        dynamic = self._build_dynamic_context()
+        if dynamic:
+            system_content = system_content + "\n\n" + dynamic if system_content else dynamic
+        system_msg = {"role": "system", "content": system_content}
 
         for iteration in range(self.effective_settings.max_tool_iterations):
             if self.cancel_event.is_set():
@@ -349,26 +412,53 @@ class Conversation:
         yield evt("message_start", role="assistant", id=msg_id)
 
         settings = self.effective_settings
-        if not settings.model:
-            yield evt("error", message="MODEL_NAME is not set in .env")
-            raise RuntimeError("MODEL_NAME is not set in .env")
+        model = settings.model
+        if not model:
+            yield evt("error", message="RUNDEER_LLM_MODEL is not set in .env")
+            raise RuntimeError("RUNDEER_LLM_MODEL is not set in .env")
+
+        if model.startswith("grok_raw/"):
+            grok_raw = GrokRawLLM(model=model)
+            messages_for_llm = [system_msg, *self._messages_for_llm()]
+            try:
+                data = await grok_raw.acompletion(messages_for_llm)
+            except Exception as exc:
+                yield evt("error", message=f"grok_raw call failed: {exc}")
+                raise
+            choice = data["choices"][0]["message"]
+            accumulated_text = choice.get("content") or ""
+            accumulated_reasoning = choice.get("reasoning_content") or ""
+            if accumulated_text:
+                yield evt("token", id=msg_id, delta=accumulated_text)
+            if accumulated_reasoning:
+                yield evt("reasoning", id=msg_id, delta=accumulated_reasoning)
+            assistant_msg = {"role": "assistant", "content": accumulated_text or None}
+            if accumulated_reasoning:
+                assistant_msg["_reasoning"] = accumulated_reasoning
+            self.messages.append(assistant_msg)
+            self._persist()
+            yield evt("message_end", role="assistant", id=msg_id, finish_reason="stop", tool_call_count=0)
+            usage = data.get("usage") or {}
+            prompt_tokens = usage.get("prompt_tokens") or 0
+            completion_tokens = usage.get("completion_tokens") or 0
+            total_tokens = usage.get("total_tokens") or (prompt_tokens + completion_tokens)
+            if total_tokens:
+                self.total_tokens_used += total_tokens
+                yield evt("usage", prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, total_tokens=total_tokens, session_total=self.total_tokens_used)
+            return
+
+        tools = build_litellm_tools(self.tool_overrides)
         call_kwargs: Dict[str, Any] = {
-            "model": settings.model,
+            "model": model,
             "messages": [system_msg, *self._messages_for_llm()],
-            "tools": build_litellm_tools(self.tool_overrides),
-            "tool_choice": "auto",
             "stream": True,
         }
-        if settings.api_key:
-            call_kwargs["api_key"] = settings.api_key
-        if settings.base_url:
-            call_kwargs["api_base"] = settings.base_url
-
-
-
-
-        if "/" not in settings.model and settings.base_url:
-            call_kwargs["custom_llm_provider"] = "openai"
+        if tools:
+            call_kwargs["tools"] = tools
+            call_kwargs["tool_choice"] = "auto"
+        api_key = resolve_llm_api_key(model)
+        if api_key:
+            call_kwargs["api_key"] = api_key
         temp = settings.extra.get("temperature") if settings.extra else None
         if isinstance(temp, (int, float)):
             call_kwargs["temperature"] = float(temp)
@@ -623,6 +713,29 @@ class Conversation:
 
 
 
+
+    def _build_dynamic_context(self) -> str:
+        rt = self._runtime
+        if rt is None:
+            return ""
+        parts: List[str] = []
+
+        if getattr(rt, "include_time", None):
+            fmt = rt.include_time
+            parts.append(_format_time(fmt))
+
+        if getattr(rt, "include_graph_context", False):
+            note = self._snapshot_note()
+            if note:
+                parts.append(f"# Graph Context\n{note}")
+
+        if getattr(rt, "include_app_context", False):
+            parts.append(_app_context(self.root))
+
+        if getattr(rt, "include_workspace_context", False):
+            parts.append(_workspace_context(self.root))
+
+        return "\n\n".join(p for p in parts if p)
 
     def _snapshot_note(self) -> Optional[str]:
 

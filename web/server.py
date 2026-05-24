@@ -25,6 +25,7 @@ from rundeer.core import paths as rpaths
 from rundeer.core.bootstrap import ensure_rundeer_dir
 from rundeer.core.config import brain_dir, normalize_config, normalize_rate_limits, normalize_web_settings
 from rundeer.web.animator import log_line, run_console
+from web.node_defs import get_node_defs
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -234,6 +235,11 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(_agent_profiles_state(self.server.project_root, getattr(self.server, "agent_settings", None)))
             elif path == "/api/agent/brain-list":
                 self._send_json({"brains": _brain_list(self.server.project_root)})
+            elif path == "/api/node-defs":
+                self._send_json({"nodes": get_node_defs()})
+            elif path == "/api/available-models":
+                from rundeer.core.models import available_llm_providers
+                self._send_json({"providers": available_llm_providers()})
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not found")
         except PermissionError as exc:
@@ -852,14 +858,13 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     prompt_text = str(payload.get("prompt") or "")
     instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
     model_override = str(payload.get("model") or "").strip()
-    model_name = model_override or (os.environ.get("MODEL_NAME") or "").strip()
-    api_key = os.environ.get("MODEL_API_KEY", "")
-    base_url = os.environ.get("BASE_URL", "https://api.x.ai/v1")
+    model_name = model_override or (os.environ.get("RUNDEER_LLM_MODEL") or os.environ.get("MODEL_NAME") or "").strip()
 
     if not model_name:
-        return {"error": "MODEL_NAME not set (provide via .env or model prop)", "filtered_prompt": prompt_text}
-    if not api_key:
-        return {"error": "MODEL_API_KEY not set in project .env", "filtered_prompt": prompt_text}
+        return {"error": "RUNDEER_LLM_MODEL not set (provide via .env or model prop)", "filtered_prompt": prompt_text}
+
+    from rundeer.core.models import resolve_llm_api_key
+    api_key = resolve_llm_api_key(model_name)
 
     try:
         image_urls = filter_prompt_image_urls(root, payload.get("images") or payload.get("image_urls") or payload.get("input"))
@@ -880,69 +885,55 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         v = _opt_num(key)
         return None if v is None else int(v)
 
-    request_body: Dict[str, Any] = {
+    import litellm
+    call_kwargs: Dict[str, Any] = {
         "model": model_name,
         "messages": filter_prompt_messages(prompt_text, instructions, image_urls),
     }
+    if api_key:
+        call_kwargs["api_key"] = api_key
 
     reasoning_effort = str(payload.get("reasoning_effort") or "").strip().lower()
     is_reasoning = reasoning_effort in {"none", "low", "medium", "high", "xhigh"}
     if is_reasoning:
-        request_body["reasoning_effort"] = reasoning_effort
+        call_kwargs["reasoning_effort"] = reasoning_effort
 
     temperature = _opt_num("temperature")
     if temperature is not None:
-        request_body["temperature"] = temperature
+        call_kwargs["temperature"] = temperature
     top_p = _opt_num("top_p")
     if top_p is not None:
-        request_body["top_p"] = top_p
+        call_kwargs["top_p"] = top_p
     max_tokens = _opt_int("max_tokens")
     if max_tokens is not None and max_tokens > 0:
-        request_body["max_tokens"] = max_tokens
+        call_kwargs["max_tokens"] = max_tokens
     else:
-        request_body["max_tokens"] = 1024
+        call_kwargs["max_tokens"] = 1024
     seed = _opt_int("seed")
     if seed is not None:
-        request_body["seed"] = seed
-
+        call_kwargs["seed"] = seed
 
     if not is_reasoning:
         fp = _opt_num("frequency_penalty")
         if fp is not None:
-            request_body["frequency_penalty"] = fp
+            call_kwargs["frequency_penalty"] = fp
         pp = _opt_num("presence_penalty")
         if pp is not None:
-            request_body["presence_penalty"] = pp
+            call_kwargs["presence_penalty"] = pp
         stop_raw = payload.get("stop")
         if isinstance(stop_raw, str) and stop_raw.strip():
             stop_list = [s.strip() for s in stop_raw.split(",") if s.strip()]
             if stop_list:
-                request_body["stop"] = stop_list if len(stop_list) > 1 else stop_list[0]
+                call_kwargs["stop"] = stop_list if len(stop_list) > 1 else stop_list[0]
         elif isinstance(stop_raw, list):
             stop_list = [str(s).strip() for s in stop_raw if str(s).strip()]
             if stop_list:
-                request_body["stop"] = stop_list
+                call_kwargs["stop"] = stop_list
 
-    chat_url = chat_completions_url(base_url)
-    body = json.dumps(request_body).encode("utf-8")
-
-    req = urllib.request.Request(
-        chat_url,
-        data=body,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-        method="POST",
-    )
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        filtered = data["choices"][0]["message"]["content"]
+        response = litellm.completion(**call_kwargs)
+        filtered = response.choices[0].message.content
         return {"filtered_prompt": filtered}
-    except urllib.error.HTTPError as exc:
-        body_err = exc.read().decode("utf-8", errors="replace")[:300]
-        return {"error": f"HTTP {exc.code}: {body_err}", "filtered_prompt": prompt_text}
     except Exception as exc:
         return {"error": str(exc), "filtered_prompt": prompt_text}
 
@@ -1302,7 +1293,7 @@ def _compress_bundle(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def env_summary(root: Path) -> Dict[str, bool]:
-    keys = ["VISION_API_KEY", "MODEL_API_KEY", "BASE_URL"]
+    keys = ["GROK_IMAGINE_API_KEY", "WXWAI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "RUNDEER_LLM_MODEL"]
     return {key: bool(os.environ.get(key) or env_file_has_key(root, key)) for key in keys}
 
 

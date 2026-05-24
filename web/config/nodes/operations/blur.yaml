@@ -1,9 +1,22 @@
-# if a socket is not under a category it means it's simply rendered in the body of the node with no category dropdown
-# color type is also compatible with vector and uv
-Blur:
-  out:
-    Color: color # socket type
+blur-image:
+  label: Blur
+  category: Operations
+  desc: "Gaussian blur an image (or bundle of images)"
   in:
-    Color: color # socket type
-    Radius: slider:[0,100] # type:range
-  src: web/static/nodes/operations/blur.js # the actual functionality of the node
+    - id: in
+      label: Image
+      type: image
+  out:
+    - id: out
+      label: Image
+      type: image
+  props:
+    - id: radius
+      label: "Radius"
+      kind: range
+      min: 0
+      max: 400
+      step: 0.1
+      default: 0
+  src: web/static/nodes/operations/blur.js
+  api: /api/blur-image

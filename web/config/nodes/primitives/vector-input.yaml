@@ -1,0 +1,24 @@
+vector-input:
+  label: Vector
+  category: Primitives
+  desc: "Constant 3-component vector (X, Y, Z)."
+  allInline: true
+  in: []
+  out:
+    - id: out
+      label: Vector
+      type: vector
+  props:
+    - id: x
+      label: X
+      kind: number
+      default: 0.0
+    - id: y
+      label: Y
+      kind: number
+      default: 0.0
+    - id: z
+      label: Z
+      kind: number
+      default: 0.0
+  src: web/static/nodes/primitives/vector-input.js

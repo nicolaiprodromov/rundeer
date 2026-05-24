@@ -122,7 +122,7 @@
             </div>
             <div class="ne-agent-disabled" id="agentDisabledBody">
               <div class="ne-agent-empty-msg">
-                Agent disabled. Set <code>MODEL_API_KEY</code> in <code>.env</code> and restart <code>rundeer web</code>.
+                Agent disabled. Set an LLM API key and <code>RUNDEER_LLM_MODEL</code> in <code>.env</code> and restart <code>rundeer web</code>.
               </div>
             </div>
           </section>
@@ -147,6 +147,10 @@
               <button class="ne-agent-selector" id="agentSelectorBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="paletteAgentsPane" title="Choose agent">
                 <span class="ne-agent-selector-label" id="agentModel">agent</span>
                 <span class="ne-agent-selector-caret" aria-hidden="true">⌄</span>
+              </button>
+              <button class="ne-model-selector" id="modelSelectorBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="paletteModelsPane" title="Choose model">
+                <span class="ne-model-selector-label" id="modelSelectorLabel">model</span>
+                <span class="ne-model-selector-caret" aria-hidden="true">⌄</span>
               </button>
               <div class="ne-palette-header-right">
                 <button class="ne-agent-icon-btn" id="agentBrainBtn" type="button" title="Edit selected agent brain" aria-label="Edit selected agent brain">
@@ -205,6 +209,14 @@
                   <button class="ne-palette-pane-close" type="button" data-palette-close aria-label="Close agents">×</button>
                 </div>
                 <div class="ne-agent-list" id="agentList" role="listbox" aria-label="Agents"></div>
+              </div>
+
+              <div class="ne-palette-pane" id="paletteModelsPane" data-palette-pane="models" hidden>
+                <div class="ne-palette-pane-head">
+                  <span>models</span>
+                  <button class="ne-palette-pane-close" type="button" data-palette-close aria-label="Close models">×</button>
+                </div>
+                <div class="ne-model-list" id="modelList" role="listbox" aria-label="Models"></div>
               </div>
 
               <div class="ne-palette-pane" id="paletteTabsPane" data-palette-pane="tabs" hidden>

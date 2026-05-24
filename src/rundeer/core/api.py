@@ -30,8 +30,8 @@ class GrokClient:
             from xai_sdk import Client
 
             kwargs: Dict[str, Any] = {}
-            api_key = os.environ.get("VISION_API_KEY")
-            api_host = _api_host_from_base_url(os.environ.get("BASE_URL"))
+            api_key = os.environ.get("GROK_IMAGINE_API_KEY") or os.environ.get("VISION_API_KEY")
+            api_host = _api_host_from_base_url(os.environ.get("GROK_IMAGINE_BASE_URL") or os.environ.get("BASE_URL"))
             if api_key:
                 kwargs["api_key"] = api_key
             if api_host:

@@ -625,7 +625,7 @@
 }
 
 .ne-palette-header {
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   border-bottom: 1px solid var(--line);
 }
 
@@ -673,6 +673,40 @@
   letter-spacing: 0.03em;
 }
 .ne-agent-selector-caret { color: var(--quiet); font-size: 11px; }
+
+.ne-model-selector {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid var(--line); border-radius: 4px;
+  padding: 2px 8px; background: transparent; color: var(--text-soft);
+  font: inherit; font-size: 11px; cursor: pointer; white-space: nowrap;
+  max-width: 140px; overflow: hidden; text-overflow: ellipsis;
+}
+.ne-model-selector:hover,
+.ne-model-selector[aria-expanded="true"] { border-color: var(--gold); color: var(--text); }
+.ne-model-selector-label { overflow: hidden; text-overflow: ellipsis; }
+.ne-model-selector-caret { color: var(--quiet); font-size: 11px; }
+.ne-model-list { padding: 4px 0; overflow-y: auto; max-height: 300px; }
+.ne-model-group { border-bottom: 1px solid color-mix(in oklch, var(--surface) 85%, var(--text)); }
+.ne-model-group:last-child { border-bottom: none; }
+.ne-model-group-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 10px 5px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--quiet); cursor: pointer; user-select: none;
+}
+.ne-model-group-head:hover { color: var(--text-soft); background: color-mix(in oklch, var(--surface) 95%, var(--text)); }
+.ne-model-group-caret { font-size: 9px; width: 10px; flex-shrink: 0; text-align: center; }
+.ne-model-group-count {
+  margin-left: auto; font-size: 9px; padding: 1px 5px; border-radius: 8px;
+  background: color-mix(in oklch, var(--surface) 85%, var(--text)); color: var(--quiet);
+}
+.ne-model-group-body { }
+.ne-model-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px 5px 26px; cursor: pointer; font-size: 12px; color: var(--text-soft);
+}
+.ne-model-row:hover { background: color-mix(in oklch, var(--surface) 92%, var(--text)); }
+.ne-model-row.is-active { border-left: 2px solid var(--gold); background: color-mix(in oklch, var(--surface) 88%, var(--text)); color: var(--text); }
+.ne-model-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .ne-palette-middle {
   position: relative;

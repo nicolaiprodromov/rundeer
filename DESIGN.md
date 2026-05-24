@@ -21,7 +21,7 @@ colors:
   violet-soft: "oklch(58% 0.105 304)"
   category-primitives: "oklch(72% 0.180 235)"
   category-prompt: "oklch(72% 0.210 315)"
-  category-commands: "oklch(84% 0.190 82)"
+  category-grok-imagine: "oklch(84% 0.190 82)"
   category-coordinates: "oklch(74% 0.16 340)"
   category-loop: "oklch(76% 0.180 165)"
   category-output: "oklch(74% 0.180 35)"

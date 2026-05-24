@@ -10,24 +10,12 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
+from web.node_defs import node_defs_socket_map
 
 SocketMap = Dict[str, str]
 
 
 NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = {
-    "text-input": {"inputs": {}, "outputs": {"out": "text"}},
-    "number-input": {"inputs": {}, "outputs": {"out": "number"}},
-    "boolean-input": {"inputs": {}, "outputs": {"out": "boolean"}},
-    "vector-input": {"inputs": {}, "outputs": {"out": "vector"}},
-    "file": {"inputs": {}, "outputs": {"out": "any"}},
-    "text-join": {"inputs": {"a": "any", "b": "any"}, "outputs": {"out": "text"}},
-    "compress-image": {"inputs": {"in": "any", "instructions": "text"}, "outputs": {"out": "any"}},
-    "blur-image": {"inputs": {"in": "image"}, "outputs": {"out": "image"}},
-    "crop-media": {"inputs": {"in": "any", "size": "vector", "position": "vector"}, "outputs": {"out": "any"}},
-    "resize-media": {"inputs": {"in": "any", "size": "vector", "mode": "text"}, "outputs": {"out": "any"}},
-    "math-op": {"inputs": {"a": "number", "b": "number"}, "outputs": {"out": "number"}},
-    "text-op": {"inputs": {"a": "any", "b": "any"}, "outputs": {"out": "text"}},
-    "random": {"inputs": {"mode": "text", "min": "number", "max": "number", "charset": "text"}, "outputs": {"out": "any"}},
     "reroute": {"inputs": {"in": "any"}, "outputs": {"out": "any"}},
     "prompt": {"inputs": {"prompt": "text", "input": "image"}, "outputs": {"out": "text"}},
     "prompt-filter": {"inputs": {"prompt": "text", "instructions": "text", "input": "image"}, "outputs": {"out": "text"}},
@@ -52,6 +40,7 @@ NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = {
     "uv-render": {"inputs": {"pixel": "image", "uv": "vector-map", "interp": "text", "extension": "text"}, "outputs": {"out": "image"}},
 }
 
+NODE_SOCKETS.update(node_defs_socket_map())
 
 NODE_SOCKET_ALIASES: Dict[Tuple[str, str], Dict[str, str]] = {
     ("cmd-image", "inputs"): {"run": "trigger", "prompt": "subject", "text": "subject", "description": "subject", "references": "input", "reference": "input"},

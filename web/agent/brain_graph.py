@@ -26,7 +26,11 @@ BRAIN_NODE_TYPES = {
     "agent",
     "brain",
     "tool-flag",
+    "time",
+    "context",
 }
+
+DYNAMIC_SOURCE_TYPES = {"time", "context"}
 
 
 
@@ -53,11 +57,14 @@ class ToolOverride:
 @dataclass
 class AgentRuntimeConfig:
 
-
     system_prompt: str = ""
     settings: Dict[str, Any] = field(default_factory=dict)
     tool_overrides: Dict[str, ToolOverride] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
+    include_time: Optional[str] = None
+    include_graph_context: bool = False
+    include_app_context: bool = False
+    include_workspace_context: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -75,6 +82,10 @@ class AgentRuntimeConfig:
             },
             "warnings": list(self.warnings),
             "compiled_at": time.time(),
+            "include_time": self.include_time,
+            "include_graph_context": self.include_graph_context,
+            "include_app_context": self.include_app_context,
+            "include_workspace_context": self.include_workspace_context,
         }
 
 
@@ -412,6 +423,61 @@ def _collect_text_sources(
     return out
 
 
+def _detect_dynamic_sources(
+    graph: Dict[str, Any],
+    brain_id: str,
+) -> Dict[str, Any]:
+    reaching: set = set()
+    queue: List[Tuple[str, str]] = [(brain_id, "sections")]
+    edges = graph.get("edges") or []
+    nodes_map = graph.get("nodes") or {}
+    while queue:
+        tid, tsock = queue.pop(0)
+        for edge in edges:
+            if not isinstance(edge, dict):
+                continue
+            if edge.get("toNode") == tid and edge.get("toSocket") == tsock:
+                src = edge.get("fromNode")
+                if src and src not in reaching:
+                    reaching.add(src)
+                    node = nodes_map.get(src)
+                    if isinstance(node, dict) and node.get("type") in BUNDLE_PASSTHROUGH_TYPES:
+                        queue.append((src, "items"))
+
+    flags: Dict[str, Any] = {
+        "include_time": None,
+        "include_graph_context": False,
+        "include_app_context": False,
+        "include_workspace_context": False,
+    }
+
+    for nid in reaching:
+        node = nodes_map.get(nid)
+        if not isinstance(node, dict) or _node_is_muted(node):
+            continue
+        t = node.get("type")
+        if t == "time":
+            props = node.get("props") or {}
+            flags["include_time"] = str(props.get("format") or "iso")
+        elif t == "context":
+            for edge in edges:
+                if not isinstance(edge, dict):
+                    continue
+                if edge.get("fromNode") != nid:
+                    continue
+                to_node = edge.get("toNode")
+                from_socket = edge.get("fromSocket")
+                if to_node == brain_id or to_node in reaching:
+                    if from_socket == "graph_context":
+                        flags["include_graph_context"] = True
+                    elif from_socket == "app_context":
+                        flags["include_app_context"] = True
+                    elif from_socket == "workspace_context":
+                        flags["include_workspace_context"] = True
+
+    return flags
+
+
 def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
 
 
@@ -455,12 +521,18 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
 
 
 
+    dynamic = _detect_dynamic_sources(graph, brain_id)
+    cfg.include_time = dynamic.get("include_time")
+    cfg.include_graph_context = dynamic.get("include_graph_context", False)
+    cfg.include_app_context = dynamic.get("include_app_context", False)
+    cfg.include_workspace_context = dynamic.get("include_workspace_context", False)
+
     section_nodes = _collect_text_sources(graph, brain_id, "sections")
     chunks: List[str] = []
     for node in section_nodes:
+        if node.get("type") in DYNAMIC_SOURCE_TYPES:
+            continue
         props = node.get("props") or {}
-
-
         text = props.get("value")
         if text is None:
             text = props.get("body")
@@ -503,16 +575,6 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
 
 
 
-
-    wired_ids = {n.get("id") for n in tool_source_nodes if n.get("type") == "tool-flag"}
-    for tf in _nodes_of(graph, "tool-flag"):
-        if tf.get("id") in wired_ids:
-            continue
-        props = tf.get("props") or {}
-        name = str(props.get("tool_name") or "").strip()
-        if not name or name in cfg.tool_overrides:
-            continue
-        cfg.tool_overrides[name] = ToolOverride(enabled=False)
 
     return cfg
 
@@ -611,13 +673,14 @@ def save_brain_graph(root: Path, graph: Dict[str, Any], agent_id: Optional[str] 
 
 def load_runtime_config(root: Path, agent_id: Optional[str] = None) -> AgentRuntimeConfig:
 
+    graph = load_brain_graph(root, agent_id)
+    if graph is not None:
+        return compile_brain_graph(graph)
+
     data = _read_json(runtime_path(root, agent_id))
     if isinstance(data, dict):
         return _runtime_from_dict(data)
 
-    graph = load_brain_graph(root, agent_id)
-    if graph is not None:
-        return compile_brain_graph(graph)
     return AgentRuntimeConfig()
 
 
@@ -626,6 +689,10 @@ def _runtime_from_dict(data: Dict[str, Any]) -> AgentRuntimeConfig:
         system_prompt=str(data.get("system_prompt") or ""),
         settings=dict(data.get("settings") or {}),
         warnings=list(data.get("warnings") or []),
+        include_time=data.get("include_time"),
+        include_graph_context=bool(data.get("include_graph_context")),
+        include_app_context=bool(data.get("include_app_context")),
+        include_workspace_context=bool(data.get("include_workspace_context")),
     )
     for name, ov in (data.get("tool_overrides") or {}).items():
         if not isinstance(ov, dict):

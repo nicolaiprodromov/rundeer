@@ -1,0 +1,26 @@
+text-op:
+  label: String Op
+  category: Operations
+  desc: "String transformation (also converts numbers to strings)"
+  in:
+    - id: a
+      label: A
+      type: any
+    - id: b
+      label: B
+      type: any
+  out:
+    - id: out
+      label: Result
+      type: text
+  props:
+    - id: op
+      label: Operation
+      kind: select
+      options: [to_string, replace, upper, lower, trim, slice, to_int, to_float, length, format]
+      default: to_string
+    - id: extra
+      label: "Extra (replace=with, slice=start:end, format=tpl with {a}/{b})"
+      kind: text
+      default: ""
+  src: web/static/nodes/operations/text-op.js

@@ -64,9 +64,7 @@ def get_agent_settings(root: Path) -> AgentSettings:
     agent_cfg = cfg.get("agent") if isinstance(cfg.get("agent"), dict) else {}
 
 
-    api_key = os.environ.get("MODEL_API_KEY") or ""
-    base_url = os.environ.get("BASE_URL") or None
-    model = (os.environ.get("MODEL_NAME") or "").strip()
+    model = (os.environ.get("RUNDEER_LLM_MODEL") or os.environ.get("MODEL_NAME") or "").strip()
 
     enabled_raw = agent_cfg.get("enabled", True)
     if isinstance(enabled_raw, str):
@@ -77,8 +75,8 @@ def get_agent_settings(root: Path) -> AgentSettings:
     return AgentSettings(
         enabled=enabled,
         model=model,
-        api_key=api_key or None,
-        base_url=str(base_url) if base_url else None,
+        api_key=None,
+        base_url=None,
         ws_host=str(agent_cfg.get("ws_host") or "127.0.0.1"),
         ws_port=int(os.environ.get("AGENT_PORT") or agent_cfg.get("ws_port") or 0),
         max_tool_iterations=int(agent_cfg.get("max_tool_iterations") or 32),

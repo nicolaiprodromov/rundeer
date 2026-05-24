@@ -17,6 +17,8 @@
   let currentConv = null;
   let agents = [];
   let currentAgent = null;
+  let availableModels = [];
+  let selectedModel = null;
   let stickToBottom = true;
   let sessionTokens = 0;
   let modelEl, streamEl, inputEl, attachBtnEl, fileInputEl;
@@ -139,8 +141,12 @@
         if (modelEl && ev.settings && ev.settings.model) modelEl.textContent = ev.settings.model;
         if (Array.isArray(ev.agents)) agents = ev.agents;
         if (ev.agent) currentAgent = ev.agent;
+        if (Array.isArray(ev.available_models)) availableModels = ev.available_models;
+        if (ev.settings && ev.settings.model) selectedModel = ev.settings.model;
         updateAgentSelector();
         renderAgents();
+        updateModelSelector();
+        renderModels();
         emitAgentSelected();
         break;
       case "agent_list":
@@ -162,6 +168,10 @@
         emitAgentSelected();
         if (window.RundeerPalette && typeof window.RundeerPalette.showPane === "function") window.RundeerPalette.showPane("chat");
         sendWS({ type: "list_conversations" });
+        break;
+      case "model_changed":
+        selectedModel = ev.model || selectedModel;
+        updateModelSelector();
         break;
       case "conversation_list":
         history = ev.items || [];
@@ -897,6 +907,77 @@
   function updateAgentSelector() {
     if (!currentAgent && agents.length) currentAgent = agents[0];
     if (modelEl) modelEl.textContent = (currentAgent && currentAgent.name) || cfg.model || "agent";
+  }
+
+  function updateModelSelector() {
+    const label = document.getElementById("modelSelectorLabel");
+    if (label) {
+      const short = selectedModel ? selectedModel.split("/").pop() : "model";
+      label.textContent = short;
+      label.title = selectedModel || "";
+    }
+  }
+
+  function renderModels() {
+    const listEl = document.getElementById("modelList");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+    if (!availableModels || !availableModels.length) {
+      const empty = document.createElement("div");
+      empty.className = "ne-agent-empty";
+      empty.textContent = "no models configured";
+      listEl.appendChild(empty);
+      return;
+    }
+    for (const provider of availableModels) {
+      if (!provider.key_set || !provider.models || !provider.models.length) continue;
+      const hasSelected = provider.models.includes(selectedModel);
+      const group = document.createElement("div");
+      group.className = "ne-model-group" + (hasSelected ? " is-expanded" : "");
+      const head = document.createElement("div");
+      head.className = "ne-model-group-head";
+      const caret = document.createElement("span");
+      caret.className = "ne-model-group-caret";
+      caret.textContent = hasSelected ? "▾" : "▸";
+      const label = document.createElement("span");
+      label.textContent = provider.name || provider.id;
+      const count = document.createElement("span");
+      count.className = "ne-model-group-count";
+      count.textContent = String(provider.models.length);
+      head.appendChild(caret);
+      head.appendChild(label);
+      head.appendChild(count);
+      const body = document.createElement("div");
+      body.className = "ne-model-group-body";
+      if (!hasSelected) body.hidden = true;
+      head.addEventListener("click", () => {
+        const open = !body.hidden;
+        body.hidden = open;
+        group.classList.toggle("is-expanded", !open);
+        caret.textContent = open ? "▸" : "▾";
+      });
+      for (const model of provider.models) {
+        const row = document.createElement("div");
+        row.className = "ne-model-row" + (model === selectedModel ? " is-active" : "");
+        row.setAttribute("role", "option");
+        row.setAttribute("aria-selected", String(model === selectedModel));
+        const name = document.createElement("span");
+        name.className = "ne-model-row-name";
+        name.textContent = model;
+        row.appendChild(name);
+        row.addEventListener("click", () => {
+          selectedModel = model;
+          sendWS({ type: "set_model", model });
+          updateModelSelector();
+          renderModels();
+          if (window.RundeerPalette && typeof window.RundeerPalette.showPane === "function") window.RundeerPalette.showPane("chat");
+        });
+        body.appendChild(row);
+      }
+      group.appendChild(head);
+      group.appendChild(body);
+      listEl.appendChild(group);
+    }
   }
 
   function emitAgentSelected() {

@@ -42,6 +42,7 @@ from docopt import docopt
 
 from rundeer import __version__
 from rundeer.core.api import GrokClient
+from rundeer.core.models import load_vision_config, make_vision_client
 from rundeer.core.bootstrap import ensure_rundeer_dir
 from rundeer.core.config import (
     load_project_env,
@@ -345,7 +346,7 @@ def _format_rate_limits(rate_limits: Dict[str, Any]) -> str:
 
 def _make_client(common: Dict[str, Any]) -> GrokClient:
     root = Path(common["project_root"])
-    return GrokClient(
+    return make_vision_client(
         rate_limits=common.get("rate_limits") or {},
         rate_limit_state_path=rate_limit_state_path(root),
     )
@@ -353,7 +354,7 @@ def _make_client(common: Dict[str, Any]) -> GrokClient:
 
 def _make_client_for_config(cfg: Dict[str, Any]) -> GrokClient:
     root = _project_root(cfg)
-    return GrokClient(
+    return make_vision_client(
         rate_limits=cfg.get("rate_limits") or {},
         rate_limit_state_path=rate_limit_state_path(root),
     )

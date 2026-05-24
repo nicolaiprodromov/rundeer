@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional
 import websockets
 from websockets.exceptions import ConnectionClosed
 
+from rundeer.core.models import available_llm_providers
 from .config import AgentSettings, resolve_ws_port
 from .conversation import Conversation, evt
 from .persistence import (
@@ -149,6 +150,7 @@ class AgentWSServer:
             agents=list_agent_profiles(root, model=self.settings.model),
             ws_port=self.ws_port,
             project=str(root),
+            available_models=available_llm_providers(),
         ))
 
         async for raw in ws:
@@ -292,6 +294,26 @@ class AgentWSServer:
                     "approved": bool(msg.get("approved")),
                     "call_id": msg.get("call_id"),
                 })
+                continue
+
+            if kind == "set_model":
+                new_model = str(msg.get("model") or "").strip()
+                if new_model:
+                    self.settings = AgentSettings(
+                        enabled=self.settings.enabled,
+                        model=new_model,
+                        api_key=self.settings.api_key,
+                        base_url=self.settings.base_url,
+                        ws_host=self.settings.ws_host,
+                        ws_port=self.settings.ws_port,
+                        max_tool_iterations=self.settings.max_tool_iterations,
+                        max_file_bytes=self.settings.max_file_bytes,
+                        max_list_entries=self.settings.max_list_entries,
+                        max_web_search_per_turn=self.settings.max_web_search_per_turn,
+                        vision_enabled=self.settings.vision_enabled,
+                        extra=dict(self.settings.extra),
+                    )
+                    await send(evt("model_changed", model=new_model))
                 continue
 
             if kind == "cancel":

@@ -1,0 +1,15 @@
+boolean-input:
+  label: Boolean
+  category: Primitives
+  desc: "True or false value"
+  in: []
+  out:
+    - id: out
+      label: Boolean
+      type: boolean
+  props:
+    - id: value
+      label: Value
+      kind: checkbox
+      default: false
+  src: web/static/nodes/primitives/boolean-input.js
