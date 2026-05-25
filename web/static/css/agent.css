@@ -996,6 +996,14 @@
 .ne-agent-palette.is-body-collapsed .ne-palette-edge { display: none; }
 .ne-agent-palette.is-body-collapsed .ne-agent-conversation { display: none; }
 
+.ne-agent-queue-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--whisper);
+  border-left: 2px solid color-mix(in oklch, var(--violet) 50%, var(--line));
+  padding: 4px var(--space-3);
+}
+
 .ne-palette-body-toggle { width: 24px; height: 24px; }
 .ne-palette-body-toggle svg { transition: transform 0.15s ease; }
 .ne-agent-palette.is-body-collapsed .ne-palette-body-toggle svg { transform: rotate(180deg); }

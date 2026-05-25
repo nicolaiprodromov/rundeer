@@ -1,0 +1,20 @@
+brain:
+  label: Brain
+  category: Agent Brain
+  desc: "Composes the agent's system prompt + tool list. Plug strings (or bundles of strings) into Sections, and Tool Flag nodes (or bundles of them) into Tools. The compiled brain text comes out as the Brain output."
+  defaultWidth: 280
+  in:
+    - id: sections
+      label: Sections
+      type: text
+      multi: true
+    - id: tools
+      label: Tools
+      type: any
+      multi: true
+  out:
+    - id: out
+      label: Brain
+      type: text
+  props: []
+  src: web/static/nodes/agent-brain/brain.js

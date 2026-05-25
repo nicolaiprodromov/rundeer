@@ -818,3 +818,192 @@ body.is-resizing .ne-node-resize {
   min-height: 0;
   flex-direction: column;
 }
+
+.ne-toolbox-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.ne-toolbox-loading {
+  padding: 20px 13px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--quiet);
+}
+
+.ne-toolbox-master {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-bottom: 1px solid color-mix(in oklch, var(--line) 60%, transparent);
+  background: color-mix(in oklch, var(--surface-2) 60%, transparent);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 620;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  flex-shrink: 0;
+}
+.ne-toolbox-master input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.ne-toolbox-master-label {
+  font-variant-numeric: tabular-nums;
+}
+
+.ne-toolbox-cats {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--quiet) 28%, transparent) transparent;
+}
+
+.ne-toolbox-cat {
+  position: relative;
+  border-top: 1px solid color-mix(in oklch, var(--line) 40%, transparent);
+}
+.ne-toolbox-cat:first-child { border-top: 0; }
+
+.ne-toolbox-cat-head {
+  width: 100%;
+  height: 28px;
+  display: grid;
+  grid-template-columns: 12px 15px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  transition: background 80ms ease-out, color 80ms ease-out;
+}
+.ne-toolbox-cat-head:hover {
+  background: color-mix(in oklch, var(--surface-3) 40%, transparent);
+  color: var(--text-soft);
+}
+.ne-toolbox-cat.is-open > .ne-toolbox-cat-head {
+  background: color-mix(in oklch, var(--surface) 30%, transparent);
+}
+
+.ne-toolbox-caret {
+  font-size: 8px;
+  line-height: 1;
+  text-align: center;
+  color: var(--quiet);
+  transition: color 80ms ease-out, transform 120ms ease-out;
+}
+.ne-toolbox-cat.is-open .ne-toolbox-caret { transform: rotate(90deg); color: var(--muted); }
+.ne-toolbox-cat-head:hover .ne-toolbox-caret { color: var(--text-soft); }
+
+.ne-toolbox-cat-head input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.ne-toolbox-cat-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ne-toolbox-cat-head:hover .ne-toolbox-cat-label { color: var(--text-soft); }
+.ne-toolbox-cat.is-open .ne-toolbox-cat-label { color: color-mix(in oklch, var(--text-soft) 80%, var(--muted)); }
+.ne-toolbox-cat.all-disabled .ne-toolbox-cat-label {
+  color: var(--quiet);
+}
+
+.ne-toolbox-cat-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--quiet);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.ne-toolbox-cat.has-disabled .ne-toolbox-cat-count {
+  color: color-mix(in oklch, var(--gold) 58%, var(--muted));
+}
+.ne-toolbox-cat.all-disabled .ne-toolbox-cat-count {
+  color: var(--whisper);
+}
+
+.ne-toolbox-cat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 168px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--quiet) 22%, transparent) transparent;
+  padding: 3px 6px 5px 10px;
+  background: color-mix(in oklch, var(--bg-deep) 60%, transparent);
+  border-top: 1px solid color-mix(in oklch, var(--line) 22%, transparent);
+}
+
+.ne-toolbox-tool {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 5px 0 8px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: var(--text-soft);
+  border-radius: 2px;
+  transition: background 60ms ease-out, color 60ms ease-out;
+}
+.ne-toolbox-tool:hover {
+  color: var(--text);
+  background: color-mix(in oklch, var(--surface) 50%, transparent);
+}
+.ne-toolbox-tool input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.ne-toolbox-tool-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ne-toolbox-tool.is-disabled {
+  opacity: 0.48;
+}
+.ne-toolbox-tool.is-disabled .ne-toolbox-tool-name {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in oklch, var(--quiet) 50%, transparent);
+}

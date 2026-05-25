@@ -17,6 +17,7 @@ text-input:
       placeholder: "Markdown — **bold**, _italic_, `code`, > quote, lists, @reference…"
       mdEditor: true
     - id: highlight_pairs
+      category: Settings
       label: "Word Colors"
       kind: textarea
       default: ""

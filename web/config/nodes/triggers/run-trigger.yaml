@@ -1,0 +1,13 @@
+run-trigger:
+  label: Run
+  category: Triggers
+  desc: "Press play to run the connected command(s) and their upstream + downstream nodes."
+  defaultWidth: 200
+  defaultHeight: 170
+  in: []
+  out:
+    - id: run
+      label: Run
+      type: run
+  props: []
+  src: web/static/nodes/triggers/run-trigger.js

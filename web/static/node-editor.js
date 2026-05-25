@@ -52,64 +52,7 @@ function canConnect(typeA, typeB) {
   return false;
 }
 
-const COMMAND_COMMON_PROPS = [
-  { id: "style", label: "Style", kind: "text", default: "Moebius", placeholder: "Moebius" },
-  { id: "iterations", label: "Iterations", kind: "number", default: 1 },
-  { id: "concurrency", label: "Concurrency", kind: "number", default: null, placeholder: "auto" },
-  { id: "output_dir", label: "Output Dir", kind: "text", default: ".rundeer/data/outputs" },
-  { id: "output_name", label: "Output Name", kind: "text", default: "output" },
-];
 
-const COMMAND_IMAGE_MODEL_PROP = { id: "model", label: "Image Model", kind: "text", default: "grok-imagine-image" };
-const COMMAND_VIDEO_MODEL_PROP = { id: "model", label: "Video Model", kind: "text", default: "grok-imagine-video" };
-const COMMAND_AUTO_MODEL_PROP = { id: "model", label: "Model", kind: "text", default: "", placeholder: "auto by type" };
-
-const COMMAND_IMAGE_PROPS = [
-  { id: "aspect_ratio", label: "Aspect Ratio", kind: "text", default: "1:1" },
-  { id: "resolution", label: "Resolution", kind: "text", default: "", placeholder: "1k or 2k" },
-];
-
-const COMMAND_VIDEO_PROPS = [
-  { id: "aspect_ratio", label: "Aspect Ratio", kind: "text", default: "16:9" },
-  { id: "duration", label: "Duration (s)", kind: "number", default: 6 },
-  { id: "resolution", label: "Resolution", kind: "text", default: "720p", placeholder: "480p, 720p, 1080p" },
-];
-
-const COMMAND_REFERENCE_PROPS = [
-  { id: "reference_ids", label: "Style Reference IDs", kind: "text", default: "", placeholder: "e.g. 0,1,2" },
-  { id: "pad_reference", label: "Pad References", kind: "checkbox", default: true },
-  { id: "ref_quality", label: "JPEG Quality", kind: "number", default: 85 },
-];
-
-const COMMAND_MEDIA_INPUT_PROPS = [
-  { id: "pad_reference", label: "Pad Inputs", kind: "checkbox", default: true },
-  { id: "ref_quality", label: "JPEG Quality", kind: "number", default: 85 },
-];
-
-const PROMPT_MODEL_PROPS = [
-  { id: "model", label: "Model override", kind: "text", default: "", placeholder: "uses env RUNDEER_LLM_MODEL" },
-  { id: "reasoning_effort", label: "Reasoning Effort", kind: "select", options: ["default", "none", "low", "medium", "high"], default: "default" },
-];
-
-const PROMPT_SAMPLING_PROPS = [
-  { id: "temperature", label: "Temperature", kind: "number", default: 0.7, placeholder: "0.0 - 2.0" },
-  { id: "top_p", label: "Top P", kind: "number", default: "", placeholder: "0.0 - 1.0 (unset)" },
-  { id: "max_tokens", label: "Max Tokens", kind: "number", default: 1024 },
-  { id: "seed", label: "Seed", kind: "number", default: "", placeholder: "optional" },
-  { id: "frequency_penalty", label: "Frequency Penalty", kind: "number", default: "", placeholder: "-2.0 - 2.0 (non-reasoning only)" },
-  { id: "presence_penalty", label: "Presence Penalty", kind: "number", default: "", placeholder: "-2.0 - 2.0 (non-reasoning only)" },
-  { id: "stop", label: "Stop", kind: "text", default: "", placeholder: "comma-separated (non-reasoning only)" },
-];
-
-const COMMAND_CHAIN_PROPS = [
-  { id: "chain", label: "Chain Edits", kind: "checkbox", default: false },
-  { id: "chain_compose", label: "Mask Compose", kind: "checkbox", default: false },
-  { id: "chain_threshold", label: "Threshold", kind: "number", default: 12 },
-  { id: "chain_override", label: "Override", kind: "number", default: 50 },
-  { id: "chain_dilate", label: "Dilate", kind: "number", default: 6 },
-  { id: "chain_feather", label: "Feather", kind: "number", default: 8 },
-  { id: "chain_min_region", label: "Min Region", kind: "number", default: 64 },
-];
 
 const PROP_GROUPS = {
   settings: { label: "settings" },
@@ -120,11 +63,11 @@ const PROP_GROUPS = {
   chain: { label: "chain" },
   model: { label: "model" },
   sampling: { label: "sampling" },
+  location: { label: "location" },
+  rotation: { label: "rotation" },
+  scale: { label: "scale" },
+  pivot: { label: "pivot" },
 };
-
-function groupProps(group, props) {
-  return props.map((prop) => ({ ...prop, group }));
-}
 
 
 
@@ -455,468 +398,184 @@ function outputTypeForRenderedEdge(edge, seen = new Set()) {
 
 
 
-const NODE_CATALOG = [
-  {
-    category: "Layout",
-    nodes: [
-      {
-        type: "reroute", label: "Reroute", desc: "Pass a value through a compact routing point",
-        defaultWidth: 88,
-        defaultHeight: 30,
-        inputs: [{ id: "in", label: "In", type: "any" }],
-        outputs: [{ id: "out", label: "Out", type: "any" }],
-        props: [],
-      },
-    ],
-  },
-  {
-    category: "Prompt",
-    nodes: [
-      {
-        type: "prompt", label: "Prompt", desc: "Prompt a model with optional image context",
-        inputs: [
-          { id: "prompt", label: "Prompt In", type: "text" },
-          { id: "input", label: "Context Images", type: "image", multi: true },
-        ],
-        outputs: [{ id: "out", label: "Response", type: "text" }],
-        props: [
-          ...groupProps("model", PROMPT_MODEL_PROPS),
-          ...groupProps("sampling", PROMPT_SAMPLING_PROPS),
-        ],
-      },
-      {
-        type: "prompt-filter", label: "Prompt Filter", desc: "Use a model to transform a prompt",
-        inputs: [
-          { id: "prompt", label: "Prompt In", type: "text" },
-          { id: "instructions", label: "Instructions", type: "text" },
-          { id: "input", label: "Context Images", type: "image", multi: true },
-        ],
-        outputs: [{ id: "out", label: "Prompt Out", type: "text" }],
-        props: [
-          ...groupProps("model", PROMPT_MODEL_PROPS),
-          ...groupProps("sampling", PROMPT_SAMPLING_PROPS),
-        ],
-      },
-      {
-        type: "definition", label: "Definition", desc: "Emit a rundeer @definition token",
-        inputs: [{ id: "args", label: "Args", type: "text" }],
-        outputs: [{ id: "out", label: "@token", type: "text" }],
-        props: [
-          { id: "name", label: "Definition Name", kind: "text", default: "", placeholder: "my_definition" },
-          { id: "file", label: "Definition File", kind: "text", default: "", placeholder: ".rundeer/def/my_def.py" },
-        ],
-      },
-    ],
-  },
-  {
-    category: "Grok Imagine",
-    nodes: [
-      {
-        type: "cmd-image", label: "Image", desc: "Generate images through a style brain",
-        inputs: [
-          { id: "trigger", label: "Run", type: "run" },
-          { id: "subject", label: "Subject", type: "text" },
-          { id: "input", label: "Reference Images", type: "image", multi: true },
-        ],
-        outputs: [{ id: "out", label: "Run →", type: "image" }],
-        props: [
-          ...groupProps("run", [...COMMAND_COMMON_PROPS, COMMAND_IMAGE_MODEL_PROP]),
-          ...groupProps("media", COMMAND_IMAGE_PROPS),
-          ...groupProps("references", COMMAND_REFERENCE_PROPS),
-        ],
-      },
-      {
-        type: "cmd-video", label: "Video", desc: "Generate video clips",
-        inputs: [
-          { id: "trigger", label: "Run", type: "run" },
-          { id: "subject", label: "Subject", type: "text" },
-          { id: "motion", label: "Motion", type: "text" },
-          { id: "start_frame", label: "Start Frame", type: "image" },
-          { id: "input", label: "Reference Images", type: "image", multi: true },
-        ],
-        outputs: [{ id: "out", label: "Run →", type: "video" }],
-        props: [
-          ...groupProps("run", [...COMMAND_COMMON_PROPS, COMMAND_VIDEO_MODEL_PROP]),
-          ...groupProps("media", COMMAND_VIDEO_PROPS),
-          ...groupProps("references", COMMAND_REFERENCE_PROPS),
-        ],
-      },
-      {
-        type: "cmd-edit", label: "Edit", desc: "Apply targeted edits",
-        inputs: [
-          { id: "trigger", label: "Run", type: "run" },
-          { id: "input", label: "Input Images", type: "image", multi: true },
-          { id: "subject", label: "Edit Instructions", type: "text" },
-          { id: "motion", label: "Motion", type: "text" },
-        ],
-        outputs: [{ id: "out", label: "Run →", type: "any" }],
-        props: [
-          ...groupProps("run", [...COMMAND_COMMON_PROPS, COMMAND_AUTO_MODEL_PROP]),
-          ...groupProps("media", [
-            { id: "edit_type", label: "Type", kind: "select", options: ["image", "video"], default: "image" },
-            { id: "aspect_ratio", label: "Aspect Ratio", kind: "text", default: "1:1" },
-            { id: "resolution", label: "Resolution", kind: "text", default: "", placeholder: "1k/2k or 480p/720p/1080p" },
-            { id: "duration", label: "Duration (s)", kind: "number", default: 6 },
-          ]),
-          ...groupProps("references", COMMAND_REFERENCE_PROPS),
-          ...groupProps("chain", COMMAND_CHAIN_PROPS),
-        ],
-      },
-      {
-        type: "cmd-merge", label: "Merge", desc: "Composite multiple images",
-        inputs: [
-          { id: "trigger", label: "Run", type: "run" },
-          { id: "input", label: "Input Images", type: "image", multi: true },
-          { id: "subject", label: "Subject", type: "text" },
-        ],
-        outputs: [{ id: "out", label: "Run →", type: "image" }],
-        props: [
-          ...groupProps("run", [...COMMAND_COMMON_PROPS, COMMAND_IMAGE_MODEL_PROP]),
-          ...groupProps("media", COMMAND_IMAGE_PROPS),
-          ...groupProps("references", COMMAND_MEDIA_INPUT_PROPS),
-        ],
-      },
-      {
-        type: "cmd-extend", label: "Extend", desc: "Extend an existing video clip",
-        inputs: [
-          { id: "trigger", label: "Run", type: "run" },
-          { id: "source", label: "Source Clip", type: "video" },
-          { id: "subject", label: "Subject", type: "text" },
-          { id: "motion", label: "Motion", type: "text" },
-        ],
-        outputs: [{ id: "out", label: "Run →", type: "video" }],
-        props: [
-          ...groupProps("run", [...COMMAND_COMMON_PROPS, COMMAND_VIDEO_MODEL_PROP]),
-          ...groupProps("media", [
-            { id: "duration", label: "Duration (s)", kind: "number", default: 6 },
-          ]),
-        ],
-      },
-    ],
-  },
-  {
-    category: "Bundle",
-    nodes: [
-      {
-        type: "folder-bundle", label: "Bundle", desc: "Emit a bundle from a folder, or extract frames from a video / animated image",
-        defaultWidth: 280,
-        inputs: [],
-        outputs: [{ id: "out", label: "Bundle", type: "any" }],
-        props: [
-          { id: "path", label: "Path", kind: "text", default: "", placeholder: "folder/ or clip.mp4 / .mov / .webm / .gif / .webp" },
-          ...groupProps("settings", [
-            { id: "kind", label: "Folder Filter", kind: "select", options: ["all", "image", "video", "media"], default: "all" },
-            { id: "recursive", label: "Recursive (folder)", kind: "checkbox", default: false },
-          ]),
-          ...groupProps("media", [
-            { id: "fps", label: "Frames / sec (0 = native)", kind: "number", default: 0 },
-            { id: "modulo", label: "Modulo (every Nth, 1 = all)", kind: "number", default: 1 },
-            { id: "start", label: "Start (item/frame #, 0 = first)", kind: "number", default: 0 },
-            { id: "end", label: "End (item/frame #, 0 = all)", kind: "number", default: 0 },
-            { id: "format", label: "Frame Format", kind: "select", options: ["png", "jpg", "webp"], default: "png" },
-          ]),
-        ],
-      },
-      {
-        
-        
-        
-        type: "create-bundle", label: "Create Bundle", desc: "Combine multiple inputs of the same type into a bundle. Plug into the dotted socket — a new slot appears automatically.",
-        defaultWidth: 240,
-        inputs: [{ id: "items", label: "Item", type: "any", multi: true }],
-        outputs: [{ id: "out", label: "Bundle", type: "any" }],
-        props: [],
-      },
-      {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        type: "sample-bundle", label: "Sample Bundle", desc: "Pick indices, slices, or a sub-bundle from a bundle. Single index → scalar, multiple → bundle.",
-        defaultWidth: 260,
-        inputs: [{ id: "bundle", label: "Bundle", type: "any" }],
-        outputs: [
-          { id: "out", label: "Out", type: "any" },
-          { id: "count", label: "Count", type: "number" },
-        ],
-        props: [
-          { id: "expression", label: "Indices", kind: "text", default: "0", placeholder: "0 · -1 · 0,2,4 · 1:5 · 1:5:2 · *" },
-        ],
-      },
-    ],
-  },
-  {
-    category: "Loop",
-    nodes: [
-      {
-        type: "loop-decompose", label: "Loop · Decompose", desc: "Iterate over each item of a bundle",
-        inputs: [{ id: "bundle", label: "Bundle", type: "any" }],
-        outputs: [
-          { id: "item", label: "Item", type: "any" },
-          { id: "index", label: "Index", type: "number" },
-          { id: "count", label: "Count", type: "number" },
-        ],
-        props: [
-          { id: "loop_id", label: "Loop ID", kind: "text", default: "loop1", placeholder: "unique loop name" },
-        ],
-      },
-      {
-        type: "loop-output", label: "Loop · Output", desc: "Collect each iteration's value back into a bundle",
-        inputs: [{ id: "item", label: "Item", type: "any" }],
-        outputs: [{ id: "out", label: "Bundle", type: "any" }],
-        props: [
-          { id: "loop_id", label: "Loop ID", kind: "text", default: "loop1", placeholder: "matches Decompose" },
-        ],
-      },
-    ],
-  },
-  {
-    category: "Triggers",
-    nodes: [
-      {
-        
-        
-        
-        type: "run-trigger", label: "Run", desc: "Press play to run the connected command(s) and their upstream + downstream nodes.",
-        defaultWidth: 200,
-        defaultHeight: 170,
-        inputs: [],
-        outputs: [{ id: "run", label: "Run", type: "run" }],
-        props: [],
-      },
-      {
-        type: "pause", label: "Pause", desc: "Pause graph execution at this passthrough point, then resume from the node or footer.",
-        defaultWidth: 220,
-        defaultHeight: 170,
-        inputs: [{ id: "in", label: "In", type: "any" }],
-        outputs: [{ id: "out", label: "Out", type: "any" }],
-        props: [],
-      },
-    ],
-  },
-  {
-    category: "Coordinates",
-    nodes: [
-      {
-        
-        
-        
-        
-        
-        type: "coordinate", label: "Coordinate",
-        desc: "Generate a bottom-left UV coordinate map (R=u, G=v in [0,1]). Acts as both a vector field and an image - wire into Mapping, Vector, Render, Preview, or any command's image input.",
-        defaultWidth: 260,
-        defaultHeight: 240,
-        resizable: true,
-        inputs: [],
-        outputs: [{ id: "uv", label: "UV", type: "vector-map" }],
-        props: [
-          { id: "width", label: "Width (px)", kind: "number", default: 1024 },
-          { id: "height", label: "Height (px)", kind: "number", default: 1024 },
-          { id: "dpi", label: "DPI", kind: "number", default: 72 },
-          { id: "space", label: "Space", kind: "select", options: ["uv", "screen"], default: "uv" },
-        ],
-      },
-      {
-        
-        type: "mapping", label: "Mapping",
-        desc: "Transform a UV map: scale, rotate (deg), then translate, around a configurable pivot.",
-        inputs: [{ id: "uv", label: "UV", type: "vector-map" }],
-        outputs: [{ id: "out", label: "UV", type: "vector-map" }],
-        props: [
-          ...groupProps("location", [
-            { id: "location_x", label: "X", kind: "number", default: 0.0 },
-            { id: "location_y", label: "Y", kind: "number", default: 0.0 },
-          ]),
-          ...groupProps("rotation", [
-            { id: "rotation", label: "Rotation (deg)", kind: "number", default: 0.0 },
-          ]),
-          ...groupProps("scale", [
-            { id: "scale_x", label: "X", kind: "number", default: 1.0 },
-            { id: "scale_y", label: "Y", kind: "number", default: 1.0 },
-          ]),
-          ...groupProps("pivot", [
-            { id: "pivot_x", label: "X", kind: "number", default: 0.5 },
-            { id: "pivot_y", label: "Y", kind: "number", default: 0.5 },
-          ]),
-        ],
-      },
-    ],
-  },
-  {
-    category: "Vector",
-    nodes: [
-      {
-        
-        
-        
-        
-        
-        
-        type: "vector-op", label: "Vector",
-        desc: "Per-pixel vector op between two fields (image, UV map, vector, or scalar). Mirrors Blender's Vector Math node.",
-        inputs: [
-          { id: "a", label: "A", type: "any" },
-          { id: "b", label: "B", type: "any" },
-        ],
-        outputs: [{ id: "out", label: "Out", type: "any" }],
-        props: [
-          {
-            id: "op", label: "Operation", kind: "select",
-            options: ["add", "subtract", "multiply", "divide", "scale", "dot", "cross", "normalize", "length", "floor", "fract", "min", "max", "mix"],
-            default: "add",
-          },
-        ],
-      },
-      {
-        
-        
-        type: "mix", label: "Mix",
-        desc: "Blend two inputs by a factor. A/B default to color controls; factor can be a number or an image/map. Mirrors Blender's Mix node.",
-        inputs: [],
-        outputs: [{ id: "out", label: "Out", type: "any" }],
-        props: [
-          { id: "factor", label: "Factor", kind: "range", min: 0, max: 1, step: 0.01, default: 0.5, socketType: "any", passthroughWired: true },
-          { id: "a", label: "A", kind: "color", default: "#000000", socketType: "any" },
-          { id: "b", label: "B", kind: "color", default: "#ffffff", socketType: "any" },
-          { id: "mode", label: "Mode", kind: "select", options: ["mix", "add", "multiply", "screen", "overlay"], default: "mix" },
-          { id: "clamp", label: "Clamp Factor", kind: "checkbox", default: true },
-        ],
-      },
-    ],
-  },
-  {
-    category: "Output",
-    nodes: [
-      {
-        type: "preview", label: "Preview", desc: "Display upstream image, video, or string inline. Auto-refreshes from upstream values; click ⟳ to force refresh.",
-        inputs: [{ id: "in", label: "In", type: "any" }],
-        outputs: [{ id: "out", label: "Out", type: "any" }],
-        props: [],
-        defaultWidth: 320,
-        defaultHeight: 260,
-        resizable: true,
-      },
-      {
-        type: "canvas", label: "Canvas", desc: "Composite multiple images on a sized canvas. Each image can be paired with a bottom-left position vector.",
-        inputs: [
-          { id: "images", label: "Image", type: "image", multi: true },
-          { id: "positions", label: "Position", type: "vector", multi: true },
-        ],
-        outputs: [{ id: "out", label: "Image", type: "image" }],
-        props: [
-          { id: "size", label: "Size", kind: "text", default: "1024,1024", placeholder: "width,height", socketType: "vector", passthroughWired: true },
-        ],
-        defaultWidth: 360,
-        defaultHeight: 300,
-        resizable: true,
-      },
-      {
-        
-        
-        
-        
-        type: "uv-render", label: "Render",
-        desc: "Sample a pixel image using a bottom-left UV coordinate map. Like Blender's Image Texture sampled by a custom UV.",
-        inputs: [
-          { id: "pixel", label: "Pixel", type: "image" },
-          { id: "uv", label: "UV", type: "vector-map" },
-        ],
-        outputs: [{ id: "out", label: "Image", type: "image" }],
-        props: [
-          { id: "interp", label: "Interpolation", kind: "select", options: ["bilinear", "nearest"], default: "bilinear" },
-          { id: "extension", label: "Extension", kind: "select", options: ["clamp", "repeat", "mirror"], default: "clamp" },
-        ],
-        defaultWidth: 320,
-        defaultHeight: 260,
-        resizable: true,
-      },
-    ],
-  },
-
-  
-  
-  
-  
-  
-  
-  
-  {
-    category: "Agent Brain",
-    nodes: [
-      {
-        type: "brain", label: "Brain",
-        desc: "Composes the agent's system prompt + tool list. Plug strings (or bundles of strings) into Sections, and Tool Flag nodes (or bundles of them) into Tools. The compiled brain text comes out as the Brain output.",
-        defaultWidth: 280,
-        inputs: [
-          { id: "sections", label: "Sections", type: "text", multi: true },
-          { id: "tools", label: "Tools", type: "any", multi: true },
-        ],
-        outputs: [{ id: "out", label: "Brain", type: "text" }],
-        props: [],
-      },
-      {
-        type: "agent", label: "Agent",
-        desc: "The chat agent itself. Connect a Brain into its input. Props are runtime overrides (model, temperature, iteration & rate caps, vision).",
-        defaultWidth: 320,
-        inputs: [{ id: "brain", label: "Brain", type: "text" }],
-        outputs: [],
-        props: [
-          { id: "model", label: "Model", kind: "text", default: "", placeholder: "inherits global agent.model" },
-          { id: "temperature", label: "Temperature", kind: "number", default: null, placeholder: "leave blank for default" },
-          { id: "max_tool_iterations", label: "Max Tool Iterations", kind: "number", default: null, placeholder: "default 12" },
-          { id: "max_web_search_per_turn", label: "Max Web Searches / Turn", kind: "number", default: null },
-          { id: "max_file_bytes", label: "Max File Bytes", kind: "number", default: null },
-          { id: "max_list_entries", label: "Max List Entries", kind: "number", default: null },
-          { id: "vision_enabled", label: "Vision Enabled", kind: "checkbox", default: true },
-        ],
-      },
-      {
-        type: "tool-flag", label: "Tool Flag",
-        desc: "Enable/disable a tool and optionally override its description, category, or destructive flag. Connect into the Brain's Tools input (directly or via a Bundle).",
-        defaultWidth: 320,
-        inputs: [],
-        outputs: [{ id: "out", label: "Tool", type: "any" }],
-        props: [
-          { id: "tool_name", label: "Tool Name", kind: "text", default: "" },
-          { id: "enabled", label: "Enabled", kind: "checkbox", default: true },
-          { id: "description", label: "Description override", kind: "textarea", default: "", placeholder: "leave blank for built-in" },
-          { id: "category", label: "Category override", kind: "select", options: ["", "read", "mutate", "execute", "vision", "self_modify"], default: "" },
-          { id: "destructive", label: "Destructive override", kind: "select", options: ["", "true", "false"], default: "" },
-        ],
-      },
-      {
-        type: "time", label: "Time",
-        desc: "Injects the current timestamp when the agent runs. Connect into Brain sections (directly or via a Bundle).",
-        inputs: [],
-        outputs: [{ id: "out", label: "Time", type: "text" }],
-        props: [
-          { id: "format", label: "Format", kind: "select", options: ["iso", "unix", "human", "date", "time"], default: "iso" },
-        ],
-      },
-      {
-        type: "context", label: "Context",
-        desc: "Dynamic context for the agent. Graph Context = current graph snapshot. App Context = web-state JSON. Workspace Context = project file tree. Connect outputs into Brain sections.",
-        inputs: [],
-        outputs: [
-          { id: "graph_context", label: "Graph Context", type: "text" },
-          { id: "app_context", label: "App Context", type: "text" },
-          { id: "workspace_context", label: "Workspace Context", type: "text" },
-        ],
-        props: [],
-      },
-    ],
-  },
-];
+const NODE_CATALOG = [];
 
 let NODE_BY_TYPE = Object.fromEntries(
   NODE_CATALOG.flatMap((cat) => cat.nodes.map((n) => [n.type, { ...n, category: cat.category }]))
 );
+
+let _toolboxToolsCache = null;
+
+async function ensureToolboxCache() {
+  if (_toolboxToolsCache) return _toolboxToolsCache;
+  try {
+    const data = await fetchJSON("/api/tools");
+    _toolboxToolsCache = data;
+    return data;
+  } catch (_) {
+    return null;
+  }
+}
+
+function buildToolboxBody(nodeId, node) {
+  const wrap = document.createElement("div");
+  wrap.className = "ne-toolbox-body";
+
+  const data = _toolboxToolsCache;
+  if (!data || !data.categories) {
+    const msg = document.createElement("div");
+    msg.className = "ne-toolbox-loading";
+    msg.textContent = "Loading tools\u2026";
+    wrap.appendChild(msg);
+    ensureToolboxCache().then(() => {
+      const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+      if (el) { el.dataset.signature = "stale"; renderNodes(); }
+    });
+    return wrap;
+  }
+
+  const disabledStr = String(node.props.disabled_tools || "");
+  const disabledSet = new Set(
+    disabledStr.split(",").map((s) => s.trim()).filter(Boolean)
+  );
+  const allToolNames = data.tools.map((t) => t.name);
+  const totalCount = allToolNames.length;
+  const enabledCount = totalCount - [...disabledSet].filter((n) => allToolNames.includes(n)).length;
+
+  function updateDisabledProp(newSet) {
+    const val = [...newSet].filter((n) => allToolNames.includes(n)).join(",");
+    node.props.disabled_tools = val;
+    scheduleAutosave();
+    schedulePreviewRefresh();
+  }
+
+  function refreshConnections() {
+    requestAnimationFrame(renderConnections);
+  }
+
+  wrap.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+  wrap.addEventListener("mousedown", (e) => e.stopPropagation());
+
+  const master = document.createElement("div");
+  master.className = "ne-toolbox-master";
+  const masterCb = document.createElement("input");
+  masterCb.type = "checkbox";
+  masterCb.checked = enabledCount === totalCount;
+  masterCb.indeterminate = enabledCount > 0 && enabledCount < totalCount;
+  const masterLabel = document.createElement("span");
+  masterLabel.className = "ne-toolbox-master-label";
+  masterLabel.textContent = `All (${enabledCount}/${totalCount})`;
+  master.append(masterCb, masterLabel);
+
+  masterCb.addEventListener("mousedown", (e) => e.stopPropagation());
+  masterCb.addEventListener("change", (e) => {
+    e.stopPropagation();
+    masterCb.indeterminate = false;
+    if (masterCb.checked) disabledSet.clear();
+    else allToolNames.forEach((n) => disabledSet.add(n));
+    updateDisabledProp(disabledSet);
+    const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+    if (el) { el.dataset.signature = "stale"; renderNodes(); }
+  });
+
+  wrap.appendChild(master);
+
+  const catList = document.createElement("div");
+  catList.className = "ne-toolbox-cats";
+
+  for (let catIdx = 0; catIdx < data.categories.length; catIdx++) {
+    const cat = data.categories[catIdx];
+    const catTools = cat.tools || [];
+    const catTotal = catTools.length;
+    const catEnabled = catTools.filter((n) => !disabledSet.has(n)).length;
+    const startOpen = catIdx < 2;
+
+    const panel = document.createElement("div");
+    const catCls = ["ne-toolbox-cat"];
+    if (catEnabled < catTotal) catCls.push("has-disabled");
+    if (catEnabled === 0) catCls.push("all-disabled");
+    if (startOpen) catCls.push("is-open");
+    panel.className = catCls.join(" ");
+
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "ne-toolbox-cat-head";
+    const caret = document.createElement("span");
+    caret.className = "ne-toolbox-caret";
+    caret.textContent = "\u25b6";
+    const catCb = document.createElement("input");
+    catCb.type = "checkbox";
+    catCb.checked = catEnabled === catTotal;
+    catCb.indeterminate = catEnabled > 0 && catEnabled < catTotal;
+    const catLabel = document.createElement("span");
+    catLabel.className = "ne-toolbox-cat-label";
+    catLabel.textContent = cat.label;
+    const catCount = document.createElement("span");
+    catCount.className = "ne-toolbox-cat-count";
+    catCount.textContent = `${catEnabled}/${catTotal}`;
+    head.append(caret, catCb, catLabel, catCount);
+
+    const body = document.createElement("div");
+    body.className = "ne-toolbox-cat-body";
+    body.hidden = !startOpen;
+
+    head.addEventListener("mousedown", (e) => e.stopPropagation());
+    head.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (e.target === catCb || e.target.closest("input")) return;
+      const wasOpen = panel.classList.contains("is-open");
+      panel.classList.toggle("is-open");
+      body.hidden = wasOpen;
+      refreshConnections();
+    });
+
+    catCb.addEventListener("mousedown", (e) => e.stopPropagation());
+    catCb.addEventListener("click", (e) => e.stopPropagation());
+    catCb.addEventListener("change", (e) => {
+      e.stopPropagation();
+      const checked = catCb.checked;
+      catCb.indeterminate = false;
+      for (const toolName of catTools) {
+        if (checked) disabledSet.delete(toolName);
+        else disabledSet.add(toolName);
+      }
+      updateDisabledProp(disabledSet);
+      const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+      if (el) { el.dataset.signature = "stale"; renderNodes(); }
+    });
+
+    for (const toolName of catTools) {
+      const isDisabled = disabledSet.has(toolName);
+      const row = document.createElement("label");
+      row.className = "ne-toolbox-tool" + (isDisabled ? " is-disabled" : "");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !isDisabled;
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "ne-toolbox-tool-name";
+      nameSpan.textContent = toolName;
+      row.append(cb, nameSpan);
+
+      cb.addEventListener("mousedown", (e) => e.stopPropagation());
+      cb.addEventListener("change", (e) => {
+        e.stopPropagation();
+        if (cb.checked) disabledSet.delete(toolName);
+        else disabledSet.add(toolName);
+        updateDisabledProp(disabledSet);
+        const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+        if (el) { el.dataset.signature = "stale"; renderNodes(); }
+      });
+
+      body.appendChild(row);
+    }
+
+    panel.append(head, body);
+    catList.appendChild(panel);
+  }
+
+  wrap.appendChild(catList);
+  return wrap;
+}
 
 const PREVIEW_TYPES = new Set(["preview", "file", "uv-render", "coordinate", "canvas"]);
 const LIVE_UPDATE_TYPES = new Set(["mix"]);
@@ -2110,7 +1769,7 @@ function buildNodeElement(id, node) {
   el.dataset.signature = nodeSignature(node);
   el.classList.toggle("is-minimized", Boolean(node.minimized));
   el.classList.toggle("is-muted", Boolean(node.muted));
-  el.style.width = `${node.width || 220}px`;
+  el.style.width = `${node.width || def.defaultWidth || 220}px`;
   const fixedHeight = !node.minimized ? (node.height || (node.type === "text-input" ? def.defaultHeight : null)) : null;
   if (fixedHeight) {
     el.style.height = `${fixedHeight}px`;
@@ -2207,7 +1866,9 @@ function buildNodeElement(id, node) {
       }
     }
 
-    if ((def.props || []).length > 0) {
+    if (node.type === "toolbox") {
+      body.appendChild(buildToolboxBody(id, node));
+    } else if ((def.props || []).length > 0) {
       body.appendChild(buildNodeFields(id, node, def));
     }
 
@@ -7190,425 +6851,17 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   try {
   const _extResolver = (window.RundeerNodeResolvers || {})[node.type];
   if (_extResolver) {
-    await _extResolver(node, inputs, outputs, props, { appendRunLog, graphFetchJSON, opts, formatBytes, nodeId, activeIncomingEdges, baseType, outputSocketDef, COMPRESS_HELPER_PROMPT, _vectorSocketUnparseableSource, _coerceVector2Value });
-  } else
-  switch (node.type) {
-    case "tool-flag": {
-      outputs.out = {
-        tool_name: String(props.tool_name || ""),
-        enabled: props.enabled !== false,
-        description: String(props.description || ""),
-        category: String(props.category || ""),
-        destructive: props.destructive ?? "",
-      };
-      break;
-    }
-    case "brain": {
-      const sections = Array.isArray(inputs.sections)
-        ? inputs.sections
-        : (inputs.sections != null && inputs.sections !== "" ? [inputs.sections] : []);
-      outputs.out = sections
-        .map((value) => String(value == null ? "" : value).trim())
-        .filter(Boolean)
-        .join("\n\n")
-        .trim();
-      break;
-    }
-    case "folder-bundle": {
-      
-      
-      const folderPath = String(props.path || "").trim();
-      if (!folderPath) { outputs.out = []; break; }
-      const kind = String(props.kind || "all");
-      const recursive = props.recursive ? "1" : "0";
-      const params = { path: folderPath, kind, recursive };
-      const fps = Number(props.fps);
-      if (Number.isFinite(fps) && fps > 0) params.fps = String(fps);
-      const modulo = Number(props.modulo);
-      if (Number.isFinite(modulo) && modulo > 1) params.modulo = String(Math.round(modulo));
-      const start = Number(props.start);
-      if (Number.isFinite(start) && start > 0) params.start = String(Math.round(start));
-      const end = Number(props.end);
-      if (Number.isFinite(end) && end > 0) params.end = String(Math.round(end));
-      const fmt = String(props.format || "").trim();
-      if (fmt) params.format = fmt;
-      const qs = new URLSearchParams(params).toString();
-      appendRunLog(`  ↳ Bundle ${folderPath}…\n`);
-      const result = await graphFetchJSON(`/api/folder-list?${qs}`, {}, opts);
-      if (result.error) throw new Error(`bundle: ${result.error}`);
-      const paths = Array.isArray(result.paths) ? result.paths : [];
-      const tag = result.source === "frames" ? `frames${result.cached ? ", cached" : ""}` : "files";
-      appendRunLog(`  ↳ → ${paths.length} ${tag}\n`);
-      outputs.out = paths;
-      break;
-    }
-    case "create-bundle": {
-      
-      
-      
-      
-      const collected = Array.isArray(inputs.items) ? inputs.items.slice() : [];
-      outputs.out = collected;
-      break;
-    }
-    case "sample-bundle": {
-      const v = inputs.bundle;
-      const items = Array.isArray(v) ? v : (v !== undefined && v !== null && v !== "" ? [v] : []);
-      const expr = String(props.expression ?? "").trim();
-      const picked = parseSampleBundleExpression(expr, items.length);
-      let chosen;
-      if (picked === null) {
-        
-        chosen = items.slice();
-      } else {
-        chosen = picked.map((i) => items[i]);
-      }
-      
-      
-      
-      
-      const exprIsSingle = !!expr && expr !== "*" && !expr.includes(",") && !expr.includes(":");
-      if (exprIsSingle && chosen.length === 1) {
-        outputs.out = chosen[0];
-      } else {
-        outputs.out = chosen;
-      }
-      outputs.count = chosen.length;
-      break;
-    }
-    case "prompt":
-    case "prompt-filter": {
-      const imageInputs = Array.isArray(inputs.input)
-        ? inputs.input.filter((v) => v).map((v) => String(v))
-        : (inputs.input ? [String(inputs.input)] : []);
-      const imageNote = imageInputs.length
-        ? ` + ${imageInputs.length} image${imageInputs.length === 1 ? "" : "s"}`
-        : "";
-      
-      const pf_pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : props[key];
-      const pf_str = (key) => {
-        const v = pf_pick(key);
-        return (v == null) ? "" : String(v).trim();
-      };
-      const pf_num = (key) => {
-        const v = pf_pick(key);
-        if (v === "" || v == null) return null;
-        const n = Number(v);
-        return Number.isFinite(n) ? n : null;
-      };
-      const modelOverride = pf_str("model");
-      const reasoningEffort = pf_str("reasoning_effort");
-      const payload = {
-        prompt: inputs.prompt || "",
-        instructions: node.type === "prompt"
-          ? "Answer the user's prompt directly. Return only the response text."
-          : (inputs.instructions || ""),
-        images: imageInputs,
-        model: modelOverride,
-        reasoning_effort: (reasoningEffort && reasoningEffort !== "default") ? reasoningEffort : "",
-        temperature: pf_num("temperature"),
-        top_p: pf_num("top_p"),
-        max_tokens: pf_num("max_tokens"),
-        seed: pf_num("seed"),
-        frequency_penalty: pf_num("frequency_penalty"),
-        presence_penalty: pf_num("presence_penalty"),
-        stop: pf_str("stop"),
-      };
-      const modelLabel = modelOverride || "RUNDEER_LLM_MODEL";
-      const effortNote = payload.reasoning_effort ? ` (reasoning=${payload.reasoning_effort})` : "";
-      appendRunLog(`  ↳ ${node.type === "prompt" ? "Prompting" : "Filtering prompt"} via ${modelLabel}${effortNote}${imageNote}…\n`);
-      const result = await graphFetchJSON("/api/filter-prompt", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }, opts);
-      if (result.error) throw new Error(`${node.type === "prompt" ? "prompt" : "filter-prompt"}: ${result.error}`);
-      outputs.out = result.filtered_prompt || inputs.prompt || "";
-      appendRunLog(`  ↳ "${(outputs.out || "").slice(0, 80).replace(/\n/g, " ")}${outputs.out.length > 80 ? "…" : ""}"\n`);
-      break;
-    }
-    case "definition": {
-      const name = String(props.name || "").trim().replace(/^@+/, "");
-      if (!name) throw new Error("Definition node has no name");
-      const args = String(inputs.args || "").trim();
-      let token = `@${name}`;
-      if (args) token += `:${args}`;
-      outputs.out = token;
-      break;
-    }
-    case "reroute":
-      outputs.out = inputs.in;
-      
-      
-      {
-        const inc = activeIncomingEdges(nodeId, "in")[0];
-        const src = inc ? graph.nodes[inc.fromNode] : null;
-        const alias = src?._uvImage || src?.lastResult?.image || "";
-        if (alias) node._uvImage = alias;
-      }
-      break;
-    case "preview":
-      outputs.out = inputs.in;
-      outputs.in = inputs.in;
-      {
-        const inc = activeIncomingEdges(nodeId, "in")[0];
-        const src = inc ? graph.nodes[inc.fromNode] : null;
-        const alias = src?._uvImage || src?.lastResult?.image || "";
-        if (alias) node._uvImage = alias;
-      }
-      break;
-    case "canvas": {
-      const images = _mediaPathList(inputs.images);
-      if (images.length === 0) { outputs.out = ""; break; }
-      const rawPositions = Array.isArray(inputs.positions) ? inputs.positions : (inputs.positions ? [inputs.positions] : []);
-      
-      
-      
-      
-      const positions = images.map((_, i) => {
-        const raw = rawPositions[i];
-        const bad = _vectorSocketUnparseableSource(raw);
-        if (bad) appendRunLog(`  ↳ ⚠ Canvas position[${i}] received "${bad}" (not a vector) — using [0,0]\n`);
-        return _coerceVector2Value(bad ? "" : raw, [0, 0]);
-      });
-      const sizeWired = inputs.size;
-      const sizeBad = _vectorSocketUnparseableSource(sizeWired);
-      if (sizeBad) appendRunLog(`  ↳ ⚠ Canvas size socket received "${sizeBad}" (not a vector) — using default\n`);
-      const size = _coerceVector2Value(sizeBad ? "" : props.size, [1024, 1024]);
-      const sizeTag = (sizeWired !== undefined && sizeWired !== "" && sizeWired !== null && !sizeBad) ? " [wired]" : "";
-      const wiredPosCount = rawPositions.filter((p) => p !== undefined && p !== "" && p !== null).length;
-      const posSummary = wiredPosCount > 0 ? ` (${wiredPosCount}/${images.length} positions wired)` : "";
-      appendRunLog(`  ↳ Canvas ${images.length} image${images.length === 1 ? "" : "s"} ${Math.round(size[0])}×${Math.round(size[1])}${sizeTag}${posSummary}\n`);
-      const result = await graphFetchJSON("/api/media/canvas", {
-        method: "POST",
-        body: JSON.stringify({ images, positions, size }),
-      }, opts);
-      if (result.error) throw new Error(`canvas: ${result.error}`);
-      outputs.out = result.path;
-      break;
-    }
-    case "pause": {
-      outputs.out = inputs.in;
-      outputs.in = inputs.in;
-      await pauseGraphAtNode(nodeId, outputs, opts);
-      break;
-    }
-    case "coordinate": {
-      const w = Math.max(1, Math.round(Number(props.width ?? 1024)));
-      const h = Math.max(1, Math.round(Number(props.height ?? 1024)));
-      const dpi = Math.max(1, Math.round(Number(props.dpi ?? 72)));
-      const space = String(props.space || "uv");
-      appendRunLog(`  ↳ Coord ${w}×${h}${space === "screen" ? " (screen)" : ""}\n`);
-      const result = await graphFetchJSON("/api/uv/coordinate", {
-        method: "POST",
-        body: JSON.stringify({ width: w, height: h, dpi, space }),
-      }, opts);
-      if (result.error) throw new Error(`coordinate: ${result.error}`);
-      outputs.uv = result.path;
-      
-      
-      node._uvImage = result.image || result.preview || "";
-      break;
-    }
-    case "vector-op": {
-      const op = String(props.op || "add");
-      const payload = {
-        op,
-        a: _coerceVectorInput(inputs.a),
-        b: _coerceVectorInput(inputs.b),
-      };
-      appendRunLog(`  ↳ Vector ${op}\n`);
-      const result = await graphFetchJSON("/api/uv/vector", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }, opts);
-      if (result.error) throw new Error(`vector: ${result.error}`);
-      
-      
-      
-      outputs.out = (result.value != null) ? result.value : result.path;
-      node._uvImage = result.image || result.preview || "";
-      break;
-    }
-    case "mapping": {
-      const uv = inputs.uv;
-      if (!uv) throw new Error("mapping: UV input required");
-      const payload = {
-        uv: { path: String(uv) },
-        location_x: Number(props.location_x ?? 0),
-        location_y: Number(props.location_y ?? 0),
-        rotation: Number(props.rotation ?? 0),
-        scale_x: Number(props.scale_x ?? 1),
-        scale_y: Number(props.scale_y ?? 1),
-        pivot_x: Number(props.pivot_x ?? 0.5),
-        pivot_y: Number(props.pivot_y ?? 0.5),
-      };
-      appendRunLog(`  ↳ Mapping rot=${payload.rotation}° scale=(${payload.scale_x},${payload.scale_y})\n`);
-      const result = await graphFetchJSON("/api/uv/mapping", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }, opts);
-      if (result.error) throw new Error(`mapping: ${result.error}`);
-      outputs.out = result.path;
-      node._uvImage = result.image || result.preview || "";
-      break;
-    }
-    case "mix": {
-      const mode = String(props.mode || "mix");
-      const clamp = props.clamp !== false;
-      const factorRaw = inputs.factor !== undefined && inputs.factor !== "" && inputs.factor !== null
-        ? inputs.factor
-        : Number(props.factor ?? 0.5);
-      const aRaw = inputs.a !== undefined && inputs.a !== "" && inputs.a !== null
-        ? inputs.a
-        : (props.a ?? props.color_a ?? "#000000");
-      const bRaw = inputs.b !== undefined && inputs.b !== "" && inputs.b !== null
-        ? inputs.b
-        : (props.b ?? props.color_b ?? "#ffffff");
-
-      const factor = _coerceMixInput(factorRaw, { isFactor: true });
-      const a = _coerceMixInput(aRaw, {});
-      const b = _coerceMixInput(bRaw, {});
-
-      
-      if (!factor.isPath && !a.isPath && !b.isPath) {
-        const f = clamp ? Math.max(0, Math.min(1, Number(factor.scalar ?? factor.color?.[0] ?? 0))) : Number(factor.scalar ?? factor.color?.[0] ?? 0);
-        const colA = a.color || [Number(a.scalar) || 0, Number(a.scalar) || 0, Number(a.scalar) || 0, 1];
-        const colB = b.color || [Number(b.scalar) || 0, Number(b.scalar) || 0, Number(b.scalar) || 0, 1];
-        const blended = _jsBlend(colA, colB, mode);
-        const out = colA.map((v, i) => (1 - f) * v + f * (blended[i] ?? v));
-        outputs.out = _rgbaToHex(out);
-        appendRunLog(`  ↳ Mix(${mode}) → ${outputs.out} (scalar)\n`);
-        break;
-      }
-
-      const payload = {
-        mode,
-        clamp,
-        factor: factor.payload,
-        a: a.payload,
-        b: b.payload,
-      };
-      appendRunLog(`  ↳ Mix ${mode}\n`);
-      const result = await graphFetchJSON("/api/uv/mix", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }, opts);
-      if (result.error) throw new Error(`mix: ${result.error}`);
-      if (result.path) outputs.out = result.path;
-      else if (result.color) outputs.out = _rgbaToHex(result.color);
-      else outputs.out = "";
-      break;
-    }
-    case "uv-render": {
-      const pixel = inputs.pixel;
-      const uv = inputs.uv;
-      if (!pixel) throw new Error("render: pixel input required");
-      if (!uv) throw new Error("render: UV input required");
-      const payload = {
-        pixel: String(pixel),
-        uv: { path: String(uv) },
-        interp: String(props.interp || "bilinear"),
-        extension: String(props.extension || "clamp"),
-      };
-      appendRunLog(`  ↳ Render (${payload.interp}, ${payload.extension})\n`);
-      const result = await graphFetchJSON("/api/uv/render", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }, opts);
-      if (result.error) throw new Error(`render: ${result.error}`);
-      outputs.out = result.path;
-      break;
-    }
-    case "loop-decompose": {
-      const loopId = String(node.props.loop_id || "loop1");
-      const ctx = loopCtx[loopId];
-      const bundle = inputs.bundle;
-      const items = Array.isArray(bundle) ? bundle : (bundle ? [bundle] : []);
-      const i = ctx ? ctx.i : 0;
-      outputs.item = items[i] !== undefined ? items[i] : "";
-      outputs.index = i;
-      outputs.count = items.length;
-      break;
-    }
-    case "loop-output": {
-      const loopId = String(node.props.loop_id || "loop1");
-      
-      const decomposeNodeId = Object.keys(graph.nodes).find((id) => {
-        const n = graph.nodes[id];
-        return n.type === "loop-decompose" && String(n.props.loop_id || "loop1") === loopId;
-      });
-      if (!decomposeNodeId) throw new Error(`loop-output: no matching loop-decompose with loop_id="${loopId}"`);
-      
-      
-      const decomposeBundleEdges = activeIncomingEdges(decomposeNodeId, "bundle");
-      let bundleValue = [];
-      if (decomposeBundleEdges.length > 0) {
-        const edge = decomposeBundleEdges[0];
-        const src = await resolveNodeWithPausedWork(work, edge.fromNode, cache, loopCtx, opts);
-        const v = src[edge.fromSocket];
-        bundleValue = Array.isArray(v) ? v : (v ? [v] : []);
-      }
-      
-      
-      
-      const itemEdges = activeIncomingEdges(nodeId, "item");
-      const collected = [];
-      for (let i = 0; i < bundleValue.length; i++) {
-        await waitForGraphRunReady(opts);
-        const subCtx = { ...loopCtx, [loopId]: { i, total: bundleValue.length, items: bundleValue } };
-        const subCache = {};
-        if (itemEdges.length > 0) {
-          const edge = itemEdges[0];
-          const r = await resolveNodeWithPausedWork(work, edge.fromNode, subCache, subCtx, opts);
-          
-          
-          
-          
-          
-          const v = r[edge.fromSocket];
-          if (Array.isArray(v)) collected.push(...v);
-          else collected.push(v);
-        } else {
-          collected.push(node.props.item ?? "");
-        }
-      }
-      
-      
-      
-      if (itemEdges.length > 0) {
-        const srcNodeId = itemEdges[0].fromNode;
-        const srcNode = graph.nodes[srcNodeId];
-        if (srcNode) {
-          let bk = "any";
-          const first = collected.find((v) => v != null && v !== "");
-          if (typeof first === "string") {
-            if (/\.(mp4|mov|webm|mkv)$/i.test(first)) bk = "video-bundle";
-            else if (/\.(png|jpe?g|webp|gif)$/i.test(first)) bk = "image-bundle";
-          }
-          srcNode.lastResult = { kind: bk, value: collected.slice() };
-          for (const v of collected) if (v) artifactURL.bump(String(v));
-          const el = document.querySelector(`[data-node-id="${srcNodeId}"]`);
-          if (el) el.dataset.signature = "stale";
-        }
-      }
-      outputs.out = collected;
-      break;
-    }
-    default: {
-      if (COMMAND_TYPES.has(node.type)) {
-        const result = await executeCommandNode(node, inputs, opts);
-        
-        if (Array.isArray(result.artifacts) && result.artifacts.length > 1) {
-          outputs.out = result.artifacts;
-        } else {
-          
-          
-          
-          
-          outputs.out = result.firstArtifact || "";
-        }
-      }
-    }
+    await _extResolver(node, inputs, outputs, props, {
+      appendRunLog, graphFetchJSON, opts, formatBytes, nodeId,
+      activeIncomingEdges, baseType, outputSocketDef,
+      COMPRESS_HELPER_PROMPT, _vectorSocketUnparseableSource, _coerceVector2Value,
+      graph, cache, loopCtx, work,
+      resolveNode, resolveNodeWithPausedWork,
+      waitForGraphRunReady, pauseGraphAtNode,
+      executeCommandNode, collectDefinitionMapForCommand,
+      _coerceVectorInput, _coerceMixInput, _jsBlend, _rgbaToHex,
+      _mediaPathList, parseSampleBundleExpression, artifactURL,
+    });
   }
   } catch (err) {
     finishNodeWork(work, err instanceof GraphRunCancelled ? "cancelled" : "failed");
@@ -9619,19 +8872,27 @@ function setGraphStatus(text, cls) {
 
 function paletteCategoriesForDisplay() {
   return NODE_CATALOG.map((cat) => {
-    if (cat.category !== "Loop") return cat;
-    return {
-      ...cat,
-      nodes: [
-        {
-          type: "loop", label: "Loop",
-          desc: "Iterate a subgraph once per item of an incoming bundle (creates a paired Decompose + Output)",
-          inputs: [{ id: "bundle", label: "Bundle", type: "any" }],
-          outputs: [{ id: "out", label: "Bundle", type: "any" }],
-          props: [],
-        },
-      ],
-    };
+    if (cat.category === "Loop") {
+      return {
+        ...cat,
+        nodes: [
+          {
+            type: "loop", label: "Loop",
+            desc: "Iterate a subgraph once per item of an incoming bundle (creates a paired Decompose + Output)",
+            inputs: [{ id: "bundle", label: "Bundle", type: "any" }],
+            outputs: [{ id: "out", label: "Bundle", type: "any" }],
+            props: [],
+          },
+        ],
+      };
+    }
+    if (cat.category === "Agent Brain") {
+      return {
+        ...cat,
+        nodes: cat.nodes.filter((n) => n.type !== "tool-flag"),
+      };
+    }
+    return cat;
   });
 }
 
@@ -10343,6 +9604,7 @@ async function loadYamlNodeDefs() {
 document.addEventListener("DOMContentLoaded", async () => {
   await loadWebStore();
   await loadYamlNodeDefs();
+  ensureToolboxCache();
   loadState();
   renderPalette();
   applyViewport();

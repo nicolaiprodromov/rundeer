@@ -1,0 +1,17 @@
+preview:
+  label: Preview
+  category: Output
+  desc: "Display upstream image, video, or string inline. Auto-refreshes from upstream values; click ⟳ to force refresh."
+  defaultWidth: 320
+  defaultHeight: 260
+  resizable: true
+  in:
+    - id: in
+      label: In
+      type: any
+  out:
+    - id: out
+      label: Out
+      type: any
+  props: []
+  src: web/static/nodes/output/preview.js

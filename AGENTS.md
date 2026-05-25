@@ -45,15 +45,16 @@ Primary user workflows are image generation, video generation, image/video edit,
 4. Reason about the task.
 5. Make a clear ordered TODO plan with the exact steps to resolve.
 6. **Execute code changes or complete the task**. Whenever possible, delegate parallel tasks to subagents to read sections or to implement parts of the task.
-7. Test your implementation with smoke tests and actual testing. When working on the frontend you must use playwright and actually make sure the app is still functional and that what was implemented works. Be careful to never work in an existing graph when trying things with nodes, make a new graph and delete it after or keep it if it's useful for the user to see something you made.
+7. ~~Test your implementation with smoke tests and actual testing. When working on the frontend you must use playwright and actually make sure the app is still functional and that what was implemented works. Be careful to never work in an existing graph when trying things with nodes, make a new graph and delete it after or keep it if it's useful for the user to see something you made.~~ - THIS STEP SHOULD BE DONE ONLY IF THE USER ASKS DIRECTLY FOR TESTING, IF THE USER DOES NOT MENTION TESTING DIRECTLY SKIP THIS PART
 8. Final response to user must include all touched files and explanation of the reasoning behind the task.
 9. Throughout the task you should update the user on your reasoning and understanding of the task and what you are currently doing.
 
 ## Working Style
 1. Read the current files before editing, especially if the worktree is dirty.
-2. Use existing helpers and conventions.
+2. Use existing helpers and good modular coding conventions.
 3. Use `src/rundeer/core/paths.py` for `.rundeer` paths.
-4. Use `src/rundeer/core/bootstrap.py` for bootstrap and migration behavior.
+5. DO NOT CODE FALLBACKS AND HALF-BAKED PATCHES. The user is an experienced coder and only needs the implementation to be done, if any fallbacks or safety for production ready code is needed to keep the app alive you will be told before, there is no need to code extra fallbacks to "not break the app", focus on building good, not on maintaining old conventions and structures.
+6. For UI work, use `impeccable.md` as the onboarding map and consult `.grok/skills/impeccable/SKILL.md` when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality. Respect `PRODUCT.md` and `DESIGN.md` for product register, audience, visual tokens, typography, colors, and interaction principles.
 
 ## Useful Validation
 - Python syntax: `python3 -m compileall -q src web rundeer.py __init__.py`.
@@ -61,8 +62,3 @@ Primary user workflows are image generation, video generation, image/video edit,
 - Dry-run generation smoke test: `python3 rundeer.py image --dry-run --no-tui --iterations=1`.
 - Web command smoke test: `python3 rundeer.py web --help`.
 - JavaScript syntax when web static code changes: `rg --files -g '*.js' -g '*.mjs' | xargs -r -n 1 node --check`.
-
-## Frontend Design Context
-For UI work, use `impeccable.md` as the onboarding map and consult `.grok/skills/impeccable/SKILL.md` when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality.
-
-Treat Rundeer as a product UI and operational media workflow tool, not a landing page. Keep the web app dense, dark, precise, graph-native, and built for repeated action. Respect `PRODUCT.md` and `DESIGN.md` for product register, audience, visual tokens, typography, colors, and interaction principles.

@@ -231,6 +231,8 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(_brain_graph_payload(self.server.project_root, agent_id=agent_id))
             elif path == "/api/agent/tools-catalog":
                 self._send_json({"tools": _tools_catalog()})
+            elif path == "/api/tools":
+                self._send_json(_tools_endpoint())
             elif path == "/api/agent/agents":
                 self._send_json(_agent_profiles_state(self.server.project_root, getattr(self.server, "agent_settings", None)))
             elif path == "/api/agent/brain-list":
@@ -659,6 +661,40 @@ def _tools_catalog() -> List[Dict[str, Any]]:
         }
         for t in ALL_TOOLS
     ]
+
+
+def _tools_endpoint() -> Dict[str, Any]:
+    from .agent.tools import ALL_TOOLS
+    tools = []
+    cat_map: Dict[str, List[str]] = {}
+    for t in ALL_TOOLS:
+        tools.append({
+            "name": t.name,
+            "description": t.description,
+            "category": t.category,
+            "destructive": bool(t.destructive),
+        })
+        cat_map.setdefault(t.category, []).append(t.name)
+    cat_labels = {
+        "read": "Read",
+        "docs": "Docs",
+        "artifacts": "Artifacts",
+        "graph_read": "Graph Read",
+        "graph_mutate": "Graph Mutate",
+        "mutate": "Mutate",
+        "execute": "Execute",
+        "vision": "Vision",
+        "search": "Search",
+        "self_modify": "Self Modify",
+    }
+    categories = []
+    for cat_id, tool_names in cat_map.items():
+        categories.append({
+            "id": cat_id,
+            "label": cat_labels.get(cat_id, cat_id.replace("_", " ").title()),
+            "tools": tool_names,
+        })
+    return {"tools": tools, "categories": categories}
 
 
 def _brain_list(root: Path) -> List[str]:

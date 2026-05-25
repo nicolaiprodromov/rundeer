@@ -423,6 +423,7 @@ VIEW_IMAGE = ToolSpec(
     ),
     parameters=_obj({
         "path": {"type": "string"},
+        "question": {"type": "string"},
         "max_bytes": {"type": "integer"},
     }, required=["path"]),
     category="vision",

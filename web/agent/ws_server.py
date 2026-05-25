@@ -7,7 +7,7 @@ import threading
 import time
 import traceback
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import websockets
 from websockets.exceptions import ConnectionClosed
@@ -130,6 +130,7 @@ class AgentWSServer:
         root: Path = self.server.project_root
         conv: Optional[Conversation] = None
         turn_task: Optional[asyncio.Task] = None
+        message_queue: List[Dict[str, Any]] = []
         active_agent = get_active_agent_profile(root, model=self.settings.model)
         current_agent_id = str(active_agent.get("id") or "default")
 
@@ -316,8 +317,22 @@ class AgentWSServer:
                     await send(evt("model_changed", model=new_model))
                 continue
 
-            if kind == "cancel":
+            if kind == "pause":
                 if conv is not None:
+                    conv.pause()
+                await send(evt("paused"))
+                continue
+
+            if kind == "resume":
+                if conv is not None:
+                    conv.resume()
+                await send(evt("resumed"))
+                continue
+
+            if kind == "cancel":
+                message_queue.clear()
+                if conv is not None:
+                    conv.resume()
                     conv.cancel()
                 if turn_task is not None and not turn_task.done():
                     turn_task.cancel()
@@ -325,16 +340,9 @@ class AgentWSServer:
 
             if kind == "user_message":
                 if turn_task is not None and not turn_task.done():
-
-
-
-                    try:
-                        await asyncio.wait_for(asyncio.shield(turn_task), timeout=0.2)
-                    except (asyncio.TimeoutError, asyncio.CancelledError):
-                        pass
-                    if turn_task is not None and not turn_task.done():
-                        await send(evt("error", message="a turn is already running; cancel first"))
-                        continue
+                    message_queue.append(msg)
+                    await send(evt("message_queued", text=str(msg.get("text") or "")[:80], position=len(message_queue)))
+                    continue
                 if conv is None:
                     rec = new_conversation(root, model=agent_model(), agent_id=current_agent_id)
                     conv = Conversation.from_record(self.settings, root, self.server, rec, agent_id=current_agent_id)
@@ -348,14 +356,29 @@ class AgentWSServer:
                 images = [str(u) for u in images if isinstance(u, str) and u.startswith(("data:", "http://", "https://", "/api/"))]
 
                 async def _run_turn():
-                    try:
-                        async for event in conv.run_turn(text, attached_images=images):
-                            await send(event)
-                    except asyncio.CancelledError:
-                        await send(evt("cancelled"))
-                    except Exception as exc:
-                        log.error("turn crashed: %s\n%s", exc, traceback.format_exc())
-                        await send(evt("error", message=f"turn crashed: {exc}"))
+                    t, im = text, images
+                    while True:
+                        try:
+                            async for event in conv.run_turn(t, attached_images=im):
+                                await send(event)
+                        except asyncio.CancelledError:
+                            await send(evt("cancelled"))
+                            message_queue.clear()
+                            return
+                        except Exception as exc:
+                            log.error("turn crashed: %s\n%s", exc, traceback.format_exc())
+                            await send(evt("error", message=f"turn crashed: {exc}"))
+                        if not message_queue:
+                            return
+                        next_msg = message_queue.pop(0)
+                        t = str(next_msg.get("text") or "")
+                        im = next_msg.get("images") or []
+                        if not isinstance(im, list):
+                            im = []
+                        im = [str(u) for u in im if isinstance(u, str) and u.startswith(("data:", "http://", "https://", "/api/"))]
+                        if isinstance(next_msg.get("graph"), dict):
+                            conv.update_snapshot(next_msg["graph"])
+                        await send(evt("queue_turn_start", text=t[:80], remaining=len(message_queue)))
 
                 turn_task = asyncio.create_task(_run_turn())
                 continue

@@ -21,8 +21,11 @@
   let selectedModel = null;
   let stickToBottom = true;
   let sessionTokens = 0;
+  let turnActive = false;
+  let isPaused = false;
+  let queueCount = 0;
   let modelEl, streamEl, inputEl, attachBtnEl, fileInputEl;
-  let composerEl, sendBtnEl, cancelBtnEl, newBtnEl, historyBtnEl, historyEl, historyListEl;
+  let composerEl, sendBtnEl, cancelBtnEl, pauseBtnEl, resumeBtnEl, newBtnEl, historyBtnEl, historyEl, historyListEl;
   let attachmentsEl, mentionPopEl, agentRootEl, agentDisabledEl, agentListEl, agentCreateBtnEl;
 
   
@@ -50,6 +53,8 @@
     inputEl = document.getElementById("agentInput");
     sendBtnEl = document.getElementById("agentSendBtn");
     cancelBtnEl = document.getElementById("agentCancelBtn");
+    pauseBtnEl = document.getElementById("agentPauseBtn");
+    resumeBtnEl = document.getElementById("agentResumeBtn");
     attachBtnEl = document.getElementById("agentAttachBtn");
     fileInputEl = document.getElementById("agentFileInput");
     newBtnEl = document.getElementById("agentNewBtn");
@@ -69,6 +74,8 @@
     inputEl.addEventListener("input", onInputChange);
     sendBtnEl.addEventListener("click", (e) => { e.preventDefault(); onSend(e); });
     cancelBtnEl.addEventListener("click", () => sendWS({ type: "cancel" }));
+    pauseBtnEl.addEventListener("click", () => sendWS({ type: "pause" }));
+    resumeBtnEl.addEventListener("click", () => sendWS({ type: "resume" }));
     newBtnEl.addEventListener("click", () => sendWS({ type: "new_conversation" }));
     historyBtnEl.addEventListener("click", toggleHistory);
     if (agentCreateBtnEl) agentCreateBtnEl.addEventListener("click", onCreateAgent);
@@ -257,21 +264,48 @@
         break;
       case "done":
         setStatus("ready");
-        cancelBtnEl.hidden = true;
-        sendBtnEl.hidden = false;
+        if (queueCount <= 0) {
+          turnActive = false;
+          isPaused = false;
+          updateActionButtons();
+        }
         sendWS({ type: "list_conversations" });
         break;
       case "error":
         appendError(ev.message || "unknown error");
         setStatus("error");
-        cancelBtnEl.hidden = true;
-        sendBtnEl.hidden = false;
+        if (queueCount <= 0) {
+          turnActive = false;
+          isPaused = false;
+          updateActionButtons();
+        }
         break;
       case "cancelled":
         appendError("turn cancelled");
         setStatus("ready");
-        cancelBtnEl.hidden = true;
-        sendBtnEl.hidden = false;
+        queueCount = 0;
+        turnActive = false;
+        isPaused = false;
+        updateActionButtons();
+        break;
+      case "paused":
+        isPaused = true;
+        updateActionButtons();
+        break;
+      case "resumed":
+        isPaused = false;
+        updateActionButtons();
+        break;
+      case "message_queued":
+        queueCount++;
+        appendQueueNote("queued", ev.text, ev.position);
+        break;
+      case "queue_turn_start":
+        queueCount = Math.max(0, queueCount - 1);
+        appendQueueNote("processing", ev.text, ev.remaining);
+        turnActive = true;
+        isPaused = false;
+        updateActionButtons();
         break;
       case "replay_user":
         renderUserMsg(ev.text || "", ev.images || []);
@@ -301,6 +335,10 @@
     sessionTokens = 0;
     updateTokenDisplay(0);
     showEmptyPlaceholder();
+    queueCount = 0;
+    turnActive = false;
+    isPaused = false;
+    updateActionButtons();
   }
   function updateTokenDisplay(tokens) {
     const el = document.getElementById("agentTokenCount");
@@ -318,6 +356,36 @@
   function hideEmptyPlaceholder() {
     const empty = streamEl.querySelector(".ne-agent-empty");
     if (empty) empty.remove();
+  }
+  function updateActionButtons() {
+    if (!sendBtnEl) return;
+    if (!turnActive) {
+      sendBtnEl.hidden = false;
+      if (pauseBtnEl) pauseBtnEl.hidden = true;
+      if (resumeBtnEl) resumeBtnEl.hidden = true;
+      cancelBtnEl.hidden = true;
+    } else if (isPaused) {
+      sendBtnEl.hidden = true;
+      if (pauseBtnEl) pauseBtnEl.hidden = true;
+      if (resumeBtnEl) resumeBtnEl.hidden = false;
+      cancelBtnEl.hidden = false;
+    } else {
+      sendBtnEl.hidden = true;
+      if (pauseBtnEl) pauseBtnEl.hidden = false;
+      if (resumeBtnEl) resumeBtnEl.hidden = true;
+      cancelBtnEl.hidden = false;
+    }
+  }
+  function appendQueueNote(kind, text, extra) {
+    const el = document.createElement("div");
+    el.className = "ne-agent-queue-note";
+    if (kind === "queued") {
+      el.textContent = "queued (position " + extra + ")";
+    } else {
+      el.textContent = "processing queued message" + (extra > 0 ? " \u00b7 " + extra + " remaining" : "");
+    }
+    streamEl.appendChild(el);
+    autoscroll();
   }
   function isNearBottom() {
     return !streamEl || (streamEl.scrollHeight - streamEl.scrollTop - streamEl.clientHeight) < 32;
@@ -701,8 +769,11 @@
     if (window.RundeerPalette && typeof window.RundeerPalette.updateInputLines === "function") window.RundeerPalette.updateInputLines();
     attachments = [];
     renderAttachments();
-    cancelBtnEl.hidden = false;
-    sendBtnEl.hidden = true;
+    if (!turnActive) {
+      turnActive = true;
+      isPaused = false;
+      updateActionButtons();
+    }
     setStatus("streaming");
   }
 

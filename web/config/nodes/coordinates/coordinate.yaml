@@ -1,0 +1,32 @@
+coordinate:
+  label: Coordinate
+  category: Coordinates
+  desc: "Generate a bottom-left UV coordinate map (R=u, G=v in [0,1]). Acts as both a vector field and an image - wire into Mapping, Vector, Render, Preview, or any command's image input."
+  defaultWidth: 260
+  defaultHeight: 240
+  resizable: true
+  in: []
+  out:
+    - id: uv
+      label: UV
+      type: vector-map
+  props:
+    - id: width
+      label: "Width (px)"
+      kind: number
+      default: 1024
+    - id: height
+      label: "Height (px)"
+      kind: number
+      default: 1024
+    - id: dpi
+      label: DPI
+      kind: number
+      default: 72
+    - id: space
+      label: Space
+      kind: select
+      options: [uv, screen]
+      default: uv
+  src: web/static/nodes/coordinates/coordinate.js
+  api: /api/uv/coordinate

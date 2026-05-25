@@ -1,0 +1,24 @@
+definition:
+  label: Definition
+  category: Prompt
+  desc: "Emit a rundeer @definition token"
+  in:
+    - id: args
+      label: Args
+      type: text
+  out:
+    - id: out
+      label: "@token"
+      type: text
+  props:
+    - id: name
+      label: Definition Name
+      kind: text
+      default: ""
+      placeholder: "my_definition"
+    - id: file
+      label: Definition File
+      kind: text
+      default: ""
+      placeholder: ".rundeer/def/my_def.py"
+  src: web/static/nodes/prompt/definition.js

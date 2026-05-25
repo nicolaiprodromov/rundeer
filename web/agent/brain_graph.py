@@ -26,6 +26,7 @@ BRAIN_NODE_TYPES = {
     "agent",
     "brain",
     "tool-flag",
+    "toolbox",
     "time",
     "context",
 }
@@ -294,42 +295,22 @@ def seed_default_graph(
         sy += 220.0
 
 
-    tools_bundle_id = next_id()
-    nodes[tools_bundle_id] = {
-        "id": tools_bundle_id,
-        "type": "create-bundle",
-        "x": X_BUNDLE,
+    toolbox_id = next_id()
+    nodes[toolbox_id] = {
+        "id": toolbox_id,
+        "type": "toolbox",
+        "x": X_SOURCES,
         "y": sy + 60.0,
-        "props": {"label": "tools"},
+        "width": 320,
+        "props": {
+            "disabled_tools": "",
+        },
     }
     edges.append({
-        "id": f"e{tools_bundle_id}-{brain_id}-tools",
-        "fromNode": tools_bundle_id, "fromSocket": "out",
+        "id": f"e{toolbox_id}-{brain_id}-tools",
+        "fromNode": toolbox_id, "fromSocket": "out",
         "toNode": brain_id, "toSocket": "tools",
     })
-
-    tool_y = sy + 60.0
-    for spec in all_tools:
-        tid = next_id()
-        nodes[tid] = {
-            "id": tid,
-            "type": "tool-flag",
-            "x": X_SOURCES,
-            "y": tool_y,
-            "props": {
-                "tool_name": spec.name,
-                "enabled": True,
-                "description": "",
-                "category": "",
-                "destructive": "",
-            },
-        }
-        edges.append({
-            "id": f"e{tid}-{tools_bundle_id}",
-            "fromNode": tid, "fromSocket": "out",
-            "toNode": tools_bundle_id, "toSocket": "items",
-        })
-        tool_y += 60.0
 
     return {
         "version": 3,
@@ -548,7 +529,17 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
     tool_source_nodes = _collect_text_sources(graph, brain_id, "tools")
     seen_names: set = set()
     for node in tool_source_nodes:
-        if node.get("type") != "tool-flag":
+        ntype = node.get("type")
+        if ntype == "toolbox":
+            props = node.get("props") or {}
+            disabled_raw = str(props.get("disabled_tools") or "")
+            for dname in disabled_raw.split(","):
+                dname = dname.strip()
+                if dname and dname not in seen_names:
+                    seen_names.add(dname)
+                    cfg.tool_overrides[dname] = ToolOverride(enabled=False)
+            continue
+        if ntype != "tool-flag":
             continue
         props = node.get("props") or {}
         name = str(props.get("tool_name") or "").strip()

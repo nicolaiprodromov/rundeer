@@ -17,12 +17,9 @@ def view_image_tool(
     root: Path,
     *,
     path: str,
+    question: str = "Describe this image in detail.",
     max_bytes: int = DEFAULT_MAX_BYTES,
 ) -> Dict[str, Any]:
-
-
-
-
 
     target = resolve_within(root, path)
     assert_readable(root, target)
@@ -47,8 +44,6 @@ def view_image_tool(
         "size": size,
         "mime": mime,
         "data_url": f"data:{mime};base64,{b64}",
-
-
-
+        "_vision_question": question,
         "_attach_vision": True,
     }

@@ -1,0 +1,16 @@
+pause:
+  label: Pause
+  category: Triggers
+  desc: "Pause graph execution at this passthrough point, then resume from the node or footer."
+  defaultWidth: 220
+  defaultHeight: 170
+  in:
+    - id: in
+      label: In
+      type: any
+  out:
+    - id: out
+      label: Out
+      type: any
+  props: []
+  src: web/static/nodes/triggers/pause.js

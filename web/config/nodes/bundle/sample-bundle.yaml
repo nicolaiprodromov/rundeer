@@ -1,0 +1,23 @@
+sample-bundle:
+  label: Sample Bundle
+  category: Bundle
+  desc: "Pick indices, slices, or a sub-bundle from a bundle. Single index → scalar, multiple → bundle."
+  defaultWidth: 260
+  in:
+    - id: bundle
+      label: Bundle
+      type: any
+  out:
+    - id: out
+      label: Out
+      type: any
+    - id: count
+      label: Count
+      type: number
+  props:
+    - id: expression
+      label: Indices
+      kind: text
+      default: "0"
+      placeholder: "0 · -1 · 0,2,4 · 1:5 · 1:5:2 · *"
+  src: web/static/nodes/bundle/sample-bundle.js
