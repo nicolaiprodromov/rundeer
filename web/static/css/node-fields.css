@@ -314,7 +314,7 @@
 .ne-node[data-node-type="text-input"] .ne-node-panel.is-settings.is-collapsed {
   flex: 0 0 auto;
 }
-.ne-node[data-node-type="text-input"] .ne-node-panel.is-settings .ne-node-panel-body,
+.ne-node[data-node-type="text-input"] .ne-node-panel.is-settings:not(.is-collapsed) .ne-node-panel-body,
 .ne-node[data-node-type="text-input"] .ne-inline-prop-row.has-md-editor,
 .ne-node[data-node-type="text-input"] .ne-inline-prop-row.has-md-editor .ne-node-field,
 .ne-node[data-node-type="text-input"] .ne-string-editor {
@@ -323,7 +323,7 @@
   min-height: 0;
   flex-direction: column;
 }
-.ne-node[data-node-type="text-input"] .ne-node-panel.is-settings .ne-node-panel-body {
+.ne-node[data-node-type="text-input"] .ne-node-panel.is-settings:not(.is-collapsed) .ne-node-panel-body {
   padding-bottom: 9px;
 }
 .ne-node[data-node-type="text-input"] .ne-inline-prop-row.has-md-editor {

@@ -1,15 +1,15 @@
 blur-image:
   label: Blur
   category: Operations
-  desc: "Gaussian blur an image (or bundle of images)"
+  desc: "Gaussian blur an image or video (or bundle)"
   in:
     - id: in
-      label: Image
-      type: image
+      label: Media
+      type: any
   out:
     - id: out
-      label: Image
-      type: image
+      label: Media
+      type: any
   props:
     - id: radius
       label: "Radius"

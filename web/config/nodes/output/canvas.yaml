@@ -26,5 +26,12 @@ canvas:
       placeholder: "width,height"
       socketType: vector
       passthroughWired: true
+  traits: [preview]
+  aliases:
+    inputs:
+      image: images
+    outputs:
+      image: out
+      result: out
   src: web/static/nodes/output/canvas.js
   api: /api/media/canvas

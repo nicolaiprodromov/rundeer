@@ -12,4 +12,8 @@ number-input:
       label: Value
       kind: number
       default: 1
+  aliases:
+    outputs:
+      number: out
+      value: out
   src: web/static/nodes/primitives/number-input.js

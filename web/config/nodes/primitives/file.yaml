@@ -16,4 +16,5 @@ file:
       kind: text
       default: ""
       placeholder: "path/to/image.png · clip.mp4 · .rundeer/batch.json"
+  traits: [preview]
   src: web/static/nodes/primitives/file.js

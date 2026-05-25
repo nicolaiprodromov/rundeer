@@ -49,16 +49,30 @@ def _resolve_input(root: Path, value: Any) -> Any:
         if "scalar" in value:
             return float(value["scalar"])
         if "color" in value:
-            return [float(x) for x in value["color"]]
+            return [float(x if x is not None else 0.0) for x in value["color"]]
         return None
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, (list, tuple)):
-        return [float(x) for x in value]
+        return [float(x if x is not None else 0.0) for x in value]
     if isinstance(value, str):
-
+        if value.startswith("#"):
+            return _parse_hex_color(value)
         return uv_ops.load_map(_safe_path(root, value))
     return value
+
+
+def _parse_hex_color(hex_str: str) -> list:
+    h = hex_str.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) == 6:
+        h += "ff"
+    r = int(h[0:2], 16) / 255.0
+    g = int(h[2:4], 16) / 255.0
+    b = int(h[4:6], 16) / 255.0
+    a = int(h[6:8], 16) / 255.0
+    return [r, g, b, a]
 
 
 def _shape_meta(arr: np.ndarray) -> Dict[str, int]:
@@ -156,7 +170,7 @@ def mix(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
             **_shape_meta(result),
         }
 
-    return {"color": list(result)}
+    return {"color": [float(x) for x in result]}
 
 
 def render(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:

@@ -10,4 +10,8 @@ run-trigger:
       label: Run
       type: run
   props: []
+  aliases:
+    outputs:
+      trigger: run
+      output: run
   src: web/static/nodes/triggers/run-trigger.js

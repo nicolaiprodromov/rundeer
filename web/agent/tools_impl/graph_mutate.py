@@ -10,56 +10,14 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from web.node_defs import node_defs_socket_map
+from web.node_defs import node_defs_alias_map, node_defs_socket_map
 
 SocketMap = Dict[str, str]
 
 
-NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = {
-    "reroute": {"inputs": {"in": "any"}, "outputs": {"out": "any"}},
-    "prompt": {"inputs": {"prompt": "text", "input": "image"}, "outputs": {"out": "text"}},
-    "prompt-filter": {"inputs": {"prompt": "text", "instructions": "text", "input": "image"}, "outputs": {"out": "text"}},
-    "definition": {"inputs": {"args": "text"}, "outputs": {"out": "text"}},
-    "cmd-image": {"inputs": {"trigger": "run", "subject": "text", "input": "image"}, "outputs": {"out": "image"}},
-    "cmd-video": {"inputs": {"trigger": "run", "subject": "text", "motion": "text", "start_frame": "image", "input": "image"}, "outputs": {"out": "video"}},
-    "cmd-edit": {"inputs": {"trigger": "run", "input": "image", "subject": "text", "motion": "text"}, "outputs": {"out": "any"}},
-    "cmd-merge": {"inputs": {"trigger": "run", "input": "image", "subject": "text"}, "outputs": {"out": "image"}},
-    "cmd-extend": {"inputs": {"trigger": "run", "source": "video", "subject": "text", "motion": "text"}, "outputs": {"out": "video"}},
-    "folder-bundle": {"inputs": {"path": "text", "kind": "text", "recursive": "boolean", "fps": "number", "modulo": "number", "start": "number", "end": "number", "format": "text"}, "outputs": {"out": "any"}},
-    "create-bundle": {"inputs": {"items": "any"}, "outputs": {"out": "any"}},
-    "sample-bundle": {"inputs": {"bundle": "any"}, "outputs": {"out": "any", "count": "number"}},
-    "loop-decompose": {"inputs": {"bundle": "any"}, "outputs": {"item": "any", "index": "number", "count": "number"}},
-    "loop-output": {"inputs": {"item": "any"}, "outputs": {"out": "any"}},
-    "run-trigger": {"inputs": {}, "outputs": {"run": "run"}},
-    "preview": {"inputs": {"in": "any"}, "outputs": {"out": "any"}},
-    "canvas": {"inputs": {"images": "image", "positions": "vector", "size": "vector"}, "outputs": {"out": "image"}},
-    "coordinate": {"inputs": {"width": "number", "height": "number", "dpi": "number", "space": "text"}, "outputs": {"uv": "vector-map"}},
-    "mapping": {"inputs": {"uv": "vector-map", "location_x": "number", "location_y": "number", "rotation": "number", "scale_x": "number", "scale_y": "number", "pivot_x": "number", "pivot_y": "number"}, "outputs": {"out": "vector-map"}},
-    "vector-op": {"inputs": {"a": "any", "b": "any", "op": "text"}, "outputs": {"out": "any"}},
-    "mix": {"inputs": {"factor": "any", "a": "any", "b": "any", "mode": "text", "clamp": "boolean"}, "outputs": {"out": "any"}},
-    "uv-render": {"inputs": {"pixel": "image", "uv": "vector-map", "interp": "text", "extension": "text"}, "outputs": {"out": "image"}},
-}
+NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = node_defs_socket_map()
 
-NODE_SOCKETS.update(node_defs_socket_map())
-
-NODE_SOCKET_ALIASES: Dict[Tuple[str, str], Dict[str, str]] = {
-    ("cmd-image", "inputs"): {"run": "trigger", "prompt": "subject", "text": "subject", "description": "subject", "references": "input", "reference": "input"},
-    ("cmd-video", "inputs"): {"run": "trigger", "prompt": "subject", "text": "subject", "description": "subject", "image": "start_frame", "startframe": "start_frame", "start": "start_frame", "references": "input", "reference": "input"},
-    ("cmd-edit", "inputs"): {"run": "trigger", "prompt": "subject", "text": "subject", "description": "subject", "instructions": "subject", "images": "input", "references": "input"},
-    ("cmd-merge", "inputs"): {"run": "trigger", "prompt": "subject", "text": "subject", "description": "subject", "images": "input", "references": "input"},
-    ("cmd-extend", "inputs"): {"run": "trigger", "prompt": "subject", "text": "subject", "description": "subject", "clip": "source", "video": "source"},
-    ("preview", "inputs"): {"input": "in", "image": "in", "video": "in", "text": "in", "value": "in", "preview": "in"},
-    ("canvas", "inputs"): {"input": "images", "image": "images", "images": "images", "position": "positions", "pos": "positions", "size": "size"},
-    ("crop-media", "inputs"): {"input": "in", "media": "in", "image": "in", "video": "in", "pos": "position"},
-    ("resize-media", "inputs"): {"input": "in", "media": "in", "image": "in", "video": "in", "integration": "mode"},
-    ("uv-render", "inputs"): {"image": "pixel", "texture": "pixel", "map": "uv"},
-    ("text-input", "outputs"): {"value": "out", "text": "out", "string": "out", "output": "out"},
-    ("number-input", "outputs"): {"value": "out", "number": "out", "output": "out"},
-    ("boolean-input", "outputs"): {"value": "out", "boolean": "out", "output": "out"},
-    ("create-bundle", "inputs"): {"item": "items", "input": "items"},
-    ("folder-bundle", "inputs"): {"folder": "path", "file": "path", "clip": "path", "video": "path", "framespersec": "fps", "framerate": "fps", "every": "modulo", "everynth": "modulo", "framemodulo": "modulo"},
-    ("run-trigger", "outputs"): {"out": "run", "output": "run", "trigger": "run"},
-}
+NODE_SOCKET_ALIASES: Dict[Tuple[str, str], Dict[str, str]] = node_defs_alias_map()
 
 
 GLOBAL_SINGLE_OUTPUT_ALIASES = {"out", "output", "result", "value", "image", "video", "text", "string", "bundle", "file", "path", "vector", "uv"}

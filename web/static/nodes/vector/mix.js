@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["mix"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["mix"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const mode = String(props.mode || "mix");
   const clamp = props.clamp !== false;
   const factorRaw = inputs.factor !== undefined && inputs.factor !== "" && inputs.factor !== null
@@ -42,4 +42,21 @@
   if (result.path) outputs.out = result.path;
   else if (result.color) outputs.out = helpers._rgbaToHex(result.color);
   else outputs.out = "";
+  },
+
+  migrate(node) {
+    if (!node || node.type !== "mix") return node;
+    node.props ||= {};
+    if (node.props.a == null && node.props.color_a != null) node.props.a = node.props.color_a;
+    if (node.props.b == null && node.props.color_b != null) node.props.b = node.props.color_b;
+    delete node.props.color_a;
+    delete node.props.color_b;
+    return node;
+  },
+
+  migrateEdge(edge) {
+    if (edge.toSocket === "color_a") edge.toSocket = "a";
+    if (edge.toSocket === "color_b") edge.toSocket = "b";
+    return edge;
+  },
 };

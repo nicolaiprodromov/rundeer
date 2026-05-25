@@ -25,5 +25,6 @@ compress-image:
       label: "Max Dimension (px, 0=keep)"
       kind: number
       default: 0
+  traits: [heavy]
   src: web/static/nodes/operations/compress-image.js
   api: /api/compress

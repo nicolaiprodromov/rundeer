@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["crop-media"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["crop-media"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const sizeWired = inputs.size;
   const positionWired = inputs.position;
   const sizeBad = helpers._vectorSocketUnparseableSource(sizeWired);
@@ -32,4 +32,4 @@
     return;
   }
   outputs.out = await cropOne(v);
-};
+} };

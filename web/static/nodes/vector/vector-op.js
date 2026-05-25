@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["vector-op"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["vector-op"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const op = String(props.op || "add");
   const payload = {
     op,
@@ -13,4 +13,4 @@
   if (result.error) throw new Error(`vector: ${result.error}`);
   outputs.out = (result.value != null) ? result.value : result.path;
   node._uvImage = result.image || result.preview || "";
-};
+} };

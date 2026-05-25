@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["time"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["time"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const now = new Date();
   const fmt = String(props.format || "iso");
   switch (fmt) {
@@ -17,4 +17,4 @@
     default:
       outputs.out = now.toISOString();
   }
-};
+} };

@@ -36,5 +36,6 @@ mix:
       label: Clamp Factor
       kind: checkbox
       default: true
+  traits: [liveUpdate]
   src: web/static/nodes/vector/mix.js
   api: /api/uv/mix

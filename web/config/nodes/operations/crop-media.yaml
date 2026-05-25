@@ -25,5 +25,12 @@ crop-media:
       placeholder: "x,y from bottom-left"
       socketType: vector
       passthroughWired: true
+  aliases:
+    inputs:
+      input: in
+      image: in
+    outputs:
+      output: out
+      result: out
   src: web/static/nodes/operations/crop-media.js
   api: /api/media/crop

@@ -16,4 +16,5 @@ loop-output:
       kind: text
       default: "loop1"
       placeholder: "matches Decompose"
+  traits: [heavy, producesBundle]
   src: web/static/nodes/loop/loop-output.js

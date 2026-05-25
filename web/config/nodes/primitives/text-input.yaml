@@ -22,4 +22,11 @@ text-input:
       kind: textarea
       default: ""
       placeholder: "sun = rgb(255, 210, 80)\nshadow = 120, 170, 255"
+
+      
+  aliases:
+    outputs:
+      text: out
+      value: out
+      string: out
   src: web/static/nodes/primitives/text-input.js

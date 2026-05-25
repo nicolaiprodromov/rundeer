@@ -28,5 +28,6 @@ coordinate:
       kind: select
       options: [uv, screen]
       default: uv
+  traits: [preview, terminal]
   src: web/static/nodes/coordinates/coordinate.js
   api: /api/uv/coordinate

@@ -181,6 +181,12 @@ def _parse_one(yaml_path: Path, data: Dict[str, Any]) -> List[Dict[str, Any]]:
             node_def["allInline"] = body["allInline"]
         if "resizable" in body:
             node_def["resizable"] = body["resizable"]
+        if "traits" in body and isinstance(body["traits"], list):
+            node_def["traits"] = body["traits"]
+        if "pairWith" in body:
+            node_def["pairWith"] = str(body["pairWith"])
+        if "aliases" in body and isinstance(body["aliases"], dict):
+            node_def["aliases"] = body["aliases"]
 
         results.append(node_def)
     return results
@@ -211,6 +217,20 @@ def get_node_defs(config_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     if _CACHED_DEFS is None:
         _CACHED_DEFS = load_node_defs(config_dir)
     return _CACHED_DEFS
+
+
+def node_defs_alias_map() -> Dict[tuple, Dict[str, str]]:
+    result: Dict[tuple, Dict[str, str]] = {}
+    for d in get_node_defs():
+        aliases = d.get("aliases")
+        if not isinstance(aliases, dict):
+            continue
+        ntype = d["type"]
+        for direction in ("inputs", "outputs"):
+            mapping = aliases.get(direction)
+            if isinstance(mapping, dict):
+                result[(ntype, direction)] = {str(k): str(v) for k, v in mapping.items()}
+    return result
 
 
 def node_defs_socket_map() -> Dict[str, Dict[str, Dict[str, str]]]:

@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["prompt"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["prompt"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const imageInputs = Array.isArray(inputs.input)
     ? inputs.input.filter((v) => v).map((v) => String(v))
     : (inputs.input ? [String(inputs.input)] : []);
@@ -42,4 +42,4 @@
   if (result.error) throw new Error(`prompt: ${result.error}`);
   outputs.out = result.filtered_prompt || inputs.prompt || "";
   helpers.appendRunLog(`  ↳ "${(outputs.out || "").slice(0, 80).replace(/\n/g, " ")}${outputs.out.length > 80 ? "…" : ""}"\n`);
-};
+} };

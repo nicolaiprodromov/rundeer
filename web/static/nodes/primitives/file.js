@@ -1,6 +1,6 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["file"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["file"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   outputs.out = String(props.path ?? "");
-};
-window.RundeerNodeResolvers["image-input"] = window.RundeerNodeResolvers["file"];
-window.RundeerNodeResolvers["video-input"] = window.RundeerNodeResolvers["file"];
-window.RundeerNodeResolvers["filepath-input"] = window.RundeerNodeResolvers["file"];
+} };
+window.RundeerNodes["image-input"] = window.RundeerNodes["file"];
+window.RundeerNodes["video-input"] = window.RundeerNodes["file"];
+window.RundeerNodes["filepath-input"] = window.RundeerNodes["file"];

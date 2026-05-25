@@ -71,5 +71,6 @@ prompt-filter:
       kind: text
       default: ""
       placeholder: "comma-separated (non-reasoning only)"
+  traits: [heavy]
   src: web/static/nodes/prompt/prompt-filter.js
   api: /api/filter-prompt

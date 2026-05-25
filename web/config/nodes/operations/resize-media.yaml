@@ -24,5 +24,12 @@ resize-media:
       options: [none, fill, stretch, contain]
       default: contain
       socketType: text
+  aliases:
+    inputs:
+      input: in
+      image: in
+    outputs:
+      output: out
+      result: out
   src: web/static/nodes/operations/resize-media.js
   api: /api/media/resize

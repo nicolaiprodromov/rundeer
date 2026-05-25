@@ -51,5 +51,10 @@ folder-bundle:
       kind: select
       options: [png, jpg, webp]
       default: png
+  traits: [producesBundle]
+  aliases:
+    outputs:
+      bundle: out
+      output: out
   src: web/static/nodes/bundle/folder-bundle.js
   api: /api/folder-list

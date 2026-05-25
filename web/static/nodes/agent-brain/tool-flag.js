@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["tool-flag"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["tool-flag"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   outputs.out = {
     tool_name: String(props.tool_name || ""),
     enabled: props.enabled !== false,
@@ -6,4 +6,4 @@
     category: String(props.category || ""),
     destructive: props.destructive ?? "",
   };
-};
+} };

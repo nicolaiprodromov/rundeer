@@ -22,4 +22,5 @@ loop-decompose:
       kind: text
       default: "loop1"
       placeholder: "unique loop name"
+  pairWith: loop-output
   src: web/static/nodes/loop/loop-decompose.js

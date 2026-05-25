@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["text-op"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["text-op"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const a = String(inputs.a ?? "");
   const b = String(inputs.b ?? "");
   const op = props.op || "to_string";
@@ -22,4 +22,4 @@
     case "length":   outputs.out = a.length; break;
     default:         outputs.out = a;
   }
-};
+} };

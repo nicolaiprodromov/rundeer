@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["random"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["random"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : props[key];
   const modeRaw = String(pick("mode") || "integer").trim().toLowerCase();
   const mode = ({ int: "integer", integer: "integer", float: "float", number: "float", str: "string", string: "string", text: "string" })[modeRaw] || "integer";
@@ -37,4 +37,4 @@
   const lo = Math.ceil(min);
   const hi = Math.floor(max);
   outputs.out = hi < lo ? lo : lo + Math.floor(Math.random() * (hi - lo + 1));
-};
+} };

@@ -11,6 +11,7 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
 import uuid
 import urllib.request
 import webbrowser
@@ -27,9 +28,16 @@ from rundeer.core.config import brain_dir, normalize_config, normalize_rate_limi
 from rundeer.web.animator import log_line, run_console
 from web.node_defs import get_node_defs
 
+from web.backends._helpers import IMAGE_EXTS, is_sensitive_file, relpath, safe_project_path
+from web.backends.operations.blur import blur_image
+from web.backends.operations.compress import compress_dispatch, compress_image
+from web.backends.operations.crop_media import crop_media_node
+from web.backends.operations.resize_media import resize_media_node
+from web.backends.output.canvas import canvas_media_node
+from web.backends.prompt.filter_prompt import filter_prompt
+
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".webm"}
 TEXT_EXTS = {".md", ".txt", ".json", ".py", ".csv", ".log"}
 ARTIFACT_EXTS = IMAGE_EXTS | VIDEO_EXTS | {".json", ".csv"}
@@ -249,6 +257,7 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         except FileNotFoundError as exc:
             self._send_error(HTTPStatus.NOT_FOUND, str(exc))
         except Exception as exc:
+            traceback.print_exc()
             self._send_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
     def do_POST(self) -> None:
@@ -314,6 +323,7 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         except FileNotFoundError as exc:
             self._send_error(HTTPStatus.NOT_FOUND, str(exc))
         except Exception as exc:
+            traceback.print_exc()
             self._send_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
     def _read_json(self) -> Dict[str, Any]:
@@ -323,13 +333,16 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         return json.loads(self.rfile.read(min(size, 20_000_000)).decode("utf-8"))
 
     def _send_json(self, data: Dict[str, Any], status: int = 200) -> None:
-        raw = json.dumps(data, indent=2, default=str).encode("utf-8")
+        raw = json.dumps(data, separators=(",", ":"), default=str).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
-        self.wfile.write(raw)
+        try:
+            self.wfile.write(raw)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
 
     def _send_error(self, status: HTTPStatus, message: str) -> None:
         self._send_json({"error": message}, int(status))
@@ -353,7 +366,10 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "public, max-age=3600" if cache else "no-store")
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
 
 
 def safe_static_path(rel: str) -> Path:
@@ -362,27 +378,6 @@ def safe_static_path(rel: str) -> Path:
     if path != static_root and static_root not in path.parents:
         raise PermissionError("static path escapes web root")
     return path
-
-
-def safe_project_path(root: Path, rel: str) -> Path:
-    raw = unquote(rel or "")
-    candidate = Path(raw).expanduser()
-    if not candidate.is_absolute():
-        candidate = root / raw
-    path = candidate.resolve()
-    resolved_root = root.resolve()
-    if path != resolved_root and resolved_root not in path.parents:
-        raise PermissionError("path escapes rundeer project")
-    if is_sensitive_file(path, resolved_root):
-        raise PermissionError("file is not available through the web console")
-    return path
-
-
-def relpath(root: Path, path: Path) -> str:
-    try:
-        return path.resolve().relative_to(root.resolve()).as_posix()
-    except ValueError:
-        return str(path)
 
 
 def graphs_dir(root: Path) -> Path:
@@ -418,20 +413,25 @@ def _write_json_file(path: Path, data: Dict[str, Any]) -> None:
     tmp.replace(path)
 
 
+_web_state_lock = threading.Lock()
+
+
 def load_web_state(root: Path) -> Dict[str, Any]:
-    path = web_state_path(root)
-    if not path.is_file():
-        return {"state": {}}
-    state = _read_json_file(path)
-    return {"state": state}
+    with _web_state_lock:
+        path = web_state_path(root)
+        if not path.is_file():
+            return {"state": {}}
+        state = _read_json_file(path)
+        return {"state": state}
 
 
 def save_web_state(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    state = payload.get("state", payload)
-    if not isinstance(state, dict):
-        raise ValueError("missing or invalid web state")
-    _write_json_file(web_state_path(root), state)
-    return {"state": state}
+    with _web_state_lock:
+        state = payload.get("state", payload)
+        if not isinstance(state, dict):
+            raise ValueError("missing or invalid web state")
+        _write_json_file(web_state_path(root), state)
+        return {"state": state}
 
 
 def _slugify_graph_name(name: str) -> str:
@@ -834,500 +834,6 @@ def chat_completions_url(base_url: str) -> str:
     return urlunparse(parsed._replace(path=final_path, params="", query="", fragment=""))
 
 
-def _coerce_filter_image_values(value: Any) -> List[str]:
-    if value is None:
-        return []
-    if isinstance(value, list):
-        values = value
-    elif isinstance(value, str):
-        values = value.split(",") if "," in value else [value]
-    else:
-        values = [value]
-    return [str(item).strip() for item in values if str(item or "").strip()]
-
-
-def filter_prompt_image_urls(root: Path, value: Any) -> List[str]:
-    values = _coerce_filter_image_values(value)
-    if not values:
-        return []
-    from rundeer.core.media import encode_image
-
-    image_urls: List[str] = []
-    cache_dir = rpaths.cache_dir(root, "filter-prompt")
-    for raw in values:
-        image_ref = raw
-        if image_ref.startswith(("http://", "https://", "data:image/")):
-            image_urls.append(image_ref)
-            continue
-        if image_ref.startswith("/api/file"):
-            image_ref = (parse_qs(urlparse(image_ref).query).get("path") or [""])[0]
-        path = safe_project_path(root, image_ref)
-        if not path.is_file():
-            raise FileNotFoundError(image_ref)
-        if path.suffix.lower() not in IMAGE_EXTS:
-            raise ValueError(f"unsupported image input: {image_ref}")
-        image_urls.append(encode_image(path, pad=False, quality=85, cache_dir=cache_dir))
-    return image_urls
-
-
-def filter_prompt_messages(prompt_text: str, instructions: str, image_urls: List[str]) -> List[Dict[str, Any]]:
-    user_content: Any = prompt_text
-    if image_urls:
-        user_content = [{"type": "text", "text": prompt_text or "Use the attached images as visual context."}]
-        user_content.extend({"type": "image_url", "image_url": {"url": url}} for url in image_urls)
-    return [
-        {"role": "system", "content": instructions},
-        {"role": "user", "content": user_content},
-    ]
-
-
-def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-
-
-
-
-
-    from rundeer.core.config import load_project_env
-
-    load_project_env(str(root))
-
-    prompt_text = str(payload.get("prompt") or "")
-    instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
-    model_override = str(payload.get("model") or "").strip()
-    model_name = model_override or (os.environ.get("RUNDEER_LLM_MODEL") or os.environ.get("MODEL_NAME") or "").strip()
-
-    if not model_name:
-        return {"error": "RUNDEER_LLM_MODEL not set (provide via .env or model prop)", "filtered_prompt": prompt_text}
-
-    from rundeer.core.models import resolve_llm_api_key
-    api_key = resolve_llm_api_key(model_name)
-
-    try:
-        image_urls = filter_prompt_image_urls(root, payload.get("images") or payload.get("image_urls") or payload.get("input"))
-    except Exception as exc:
-        return {"error": f"image input: {exc}", "filtered_prompt": prompt_text}
-
-    def _opt_num(key: str) -> Any:
-        v = payload.get(key)
-        if v is None or v == "":
-            return None
-        try:
-            n = float(v)
-        except (TypeError, ValueError):
-            return None
-        return n
-
-    def _opt_int(key: str) -> Any:
-        v = _opt_num(key)
-        return None if v is None else int(v)
-
-    import litellm
-    call_kwargs: Dict[str, Any] = {
-        "model": model_name,
-        "messages": filter_prompt_messages(prompt_text, instructions, image_urls),
-    }
-    if api_key:
-        call_kwargs["api_key"] = api_key
-
-    reasoning_effort = str(payload.get("reasoning_effort") or "").strip().lower()
-    is_reasoning = reasoning_effort in {"none", "low", "medium", "high", "xhigh"}
-    if is_reasoning:
-        call_kwargs["reasoning_effort"] = reasoning_effort
-
-    temperature = _opt_num("temperature")
-    if temperature is not None:
-        call_kwargs["temperature"] = temperature
-    top_p = _opt_num("top_p")
-    if top_p is not None:
-        call_kwargs["top_p"] = top_p
-    max_tokens = _opt_int("max_tokens")
-    if max_tokens is not None and max_tokens > 0:
-        call_kwargs["max_tokens"] = max_tokens
-    else:
-        call_kwargs["max_tokens"] = 1024
-    seed = _opt_int("seed")
-    if seed is not None:
-        call_kwargs["seed"] = seed
-
-    if not is_reasoning:
-        fp = _opt_num("frequency_penalty")
-        if fp is not None:
-            call_kwargs["frequency_penalty"] = fp
-        pp = _opt_num("presence_penalty")
-        if pp is not None:
-            call_kwargs["presence_penalty"] = pp
-        stop_raw = payload.get("stop")
-        if isinstance(stop_raw, str) and stop_raw.strip():
-            stop_list = [s.strip() for s in stop_raw.split(",") if s.strip()]
-            if stop_list:
-                call_kwargs["stop"] = stop_list if len(stop_list) > 1 else stop_list[0]
-        elif isinstance(stop_raw, list):
-            stop_list = [str(s).strip() for s in stop_raw if str(s).strip()]
-            if stop_list:
-                call_kwargs["stop"] = stop_list
-
-    try:
-        response = litellm.completion(**call_kwargs)
-        filtered = response.choices[0].message.content
-        return {"filtered_prompt": filtered}
-    except Exception as exc:
-        return {"error": str(exc), "filtered_prompt": prompt_text}
-
-
-def compress_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-
-
-
-
-
-    from PIL import Image
-
-    rel = str(payload.get("path") or "").strip()
-    if not rel:
-        raise ValueError("path is required")
-    quality = int(payload.get("quality") or 75)
-    quality = max(1, min(100, quality))
-    max_dim = payload.get("max_dimension")
-    max_dim = int(max_dim) if max_dim else 0
-
-    src = safe_project_path(root, rel)
-    if not src.is_file():
-        raise FileNotFoundError(rel)
-
-    cache_dir = rpaths.cache_dir(root, "compressed")
-    cache_dir.mkdir(parents=True, exist_ok=True)
-
-    suffix = ".jpg" if quality < 95 else src.suffix.lower()
-    if suffix not in (".jpg", ".jpeg", ".png", ".webp"):
-        suffix = ".jpg"
-    dest_name = f"{src.stem}_q{quality}{('_' + str(max_dim)) if max_dim else ''}{suffix}"
-    dest = cache_dir / dest_name
-
-    original_bytes = src.stat().st_size
-
-    with Image.open(src) as im:
-        im.load()
-        if max_dim and (im.width > max_dim or im.height > max_dim):
-            im.thumbnail((max_dim, max_dim), Image.LANCZOS)
-        save_kwargs: Dict[str, Any] = {}
-        if suffix in (".jpg", ".jpeg"):
-            if im.mode in ("RGBA", "LA", "P"):
-                im = im.convert("RGB")
-            save_kwargs = {"quality": quality, "optimize": True, "progressive": True}
-            fmt = "JPEG"
-        elif suffix == ".webp":
-            save_kwargs = {"quality": quality, "method": 6}
-            fmt = "WEBP"
-        else:
-            save_kwargs = {"optimize": True}
-            fmt = "PNG"
-        im.save(dest, format=fmt, **save_kwargs)
-
-    return {
-        "path": relpath(root, dest),
-        "bytes": dest.stat().st_size,
-        "originalBytes": original_bytes,
-    }
-
-
-IMAGE_COMPRESS_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".tif"}
-VIDEO_COMPRESS_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
-
-
-def blur_image(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-
-
-
-
-
-
-    from PIL import Image, ImageFilter
-
-    rel = str(payload.get("path") or "").strip()
-    if not rel:
-        raise ValueError("path is required")
-    try:
-        radius = float(payload.get("radius") if payload.get("radius") is not None else 4)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"radius must be a number: {exc}") from exc
-    if radius < 0:
-        radius = 0.0
-
-    radius = min(radius, 500.0)
-
-    src = safe_project_path(root, rel)
-    if not src.is_file():
-        raise FileNotFoundError(rel)
-
-    ext = src.suffix.lower()
-    if ext not in IMAGE_COMPRESS_EXTS:
-        raise ValueError(f"unsupported image extension: {ext or '(none)'}")
-
-    cache_dir = rpaths.cache_dir(root, "blurred")
-    cache_dir.mkdir(parents=True, exist_ok=True)
-
-
-
-    r_tag = f"{radius:.2f}".rstrip("0").rstrip(".") or "0"
-    r_tag = r_tag.replace(".", "p")
-
-
-
-    out_ext = ext if ext in (".png", ".jpg", ".jpeg", ".webp") else ".png"
-    dest = cache_dir / f"{src.stem}_blur{r_tag}{out_ext}"
-
-    with Image.open(src) as im:
-        im.load()
-
-
-        if im.mode in ("P", "LA"):
-            im = im.convert("RGBA")
-        blurred = im.filter(ImageFilter.GaussianBlur(radius=radius))
-        save_kwargs: Dict[str, Any] = {}
-        if out_ext in (".jpg", ".jpeg"):
-            if blurred.mode in ("RGBA", "LA"):
-                blurred = blurred.convert("RGB")
-            save_kwargs = {"quality": 95, "optimize": True, "progressive": True}
-            fmt = "JPEG"
-        elif out_ext == ".webp":
-            save_kwargs = {"quality": 95, "method": 6}
-            fmt = "WEBP"
-        else:
-            save_kwargs = {"optimize": True}
-            fmt = "PNG"
-        blurred.save(dest, format=fmt, **save_kwargs)
-
-    return {
-        "path": relpath(root, dest),
-        "bytes": dest.stat().st_size,
-        "radius": radius,
-    }
-
-
-def _coerce_vector2(value: Any, default: Tuple[float, float]) -> Tuple[int, int]:
-    if value is None or value == "":
-        return int(round(default[0])), int(round(default[1]))
-    if isinstance(value, dict):
-        if "x" in value or "y" in value:
-            return _coerce_vector2([value.get("x", default[0]), value.get("y", default[1])], default)
-        if "color" in value:
-            return _coerce_vector2(value.get("color"), default)
-        if "value" in value:
-            return _coerce_vector2(value.get("value"), default)
-    if isinstance(value, (int, float)):
-        n = float(value)
-        return int(round(n)), int(round(n))
-    if isinstance(value, (list, tuple)):
-        nums: List[float] = []
-        for item in value:
-            try:
-                nums.append(float(item))
-            except (TypeError, ValueError):
-                continue
-        if len(nums) >= 2:
-            return int(round(nums[0])), int(round(nums[1]))
-        if len(nums) == 1:
-            return int(round(nums[0])), int(round(nums[0]))
-        return int(round(default[0])), int(round(default[1]))
-    text = str(value).strip().strip("[]()")
-    text = text.replace("×", "x").replace("X", "x").replace("x", ",")
-    parts = [part for part in re.split(r"[\s,]+", text) if part]
-    return _coerce_vector2(parts, default)
-
-
-def _coerce_vector2_list(value: Any, count: int) -> List[Tuple[int, int]]:
-    if value is None or value == "":
-        return [(0, 0) for _ in range(count)]
-    if isinstance(value, list):
-        if not value:
-            return [(0, 0) for _ in range(count)]
-        if all(not isinstance(item, (list, tuple, dict)) for item in value):
-            return [_coerce_vector2(value, (0, 0))]
-        return [_coerce_vector2(item, (0, 0)) for item in value]
-    return [_coerce_vector2(value, (0, 0))]
-
-
-def _payload_paths(value: Any) -> List[str]:
-    if value is None or value == "":
-        return []
-    if isinstance(value, list):
-        return [str(item).strip() for item in value if str(item).strip()]
-    return [str(value).strip()]
-
-
-def _media_result(root: Path, path: Path, *, width: Optional[int] = None, height: Optional[int] = None) -> Dict[str, Any]:
-    out: Dict[str, Any] = {"path": relpath(root, path), "bytes": path.stat().st_size}
-    if width is not None:
-        out["width"] = int(width)
-    if height is not None:
-        out["height"] = int(height)
-    if path.suffix.lower() in IMAGE_COMPRESS_EXTS:
-        try:
-            from PIL import Image
-            with Image.open(path) as im:
-                out["width"], out["height"] = im.size
-        except Exception:
-            pass
-    return out
-
-
-def crop_media_node(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    rel = str(payload.get("path") or payload.get("input") or "").strip()
-    if not rel:
-        raise ValueError("path is required")
-    size = _coerce_vector2(payload.get("size"), (512, 512))
-    position = _coerce_vector2(payload.get("position"), (0, 0))
-    src = safe_project_path(root, rel)
-    if not src.is_file():
-        raise FileNotFoundError(rel)
-    from rundeer.core.media import crop_media
-    dest = crop_media(root, src, (max(1, size[0]), max(1, size[1])), position)
-    return _media_result(root, dest, width=max(1, size[0]), height=max(1, size[1]))
-
-
-def resize_media_node(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    rel = str(payload.get("path") or payload.get("input") or "").strip()
-    if not rel:
-        raise ValueError("path is required")
-    size = _coerce_vector2(payload.get("size"), (512, 512))
-    mode = str(payload.get("mode") or "contain").strip().lower()
-    src = safe_project_path(root, rel)
-    if not src.is_file():
-        raise FileNotFoundError(rel)
-    from rundeer.core.media import resize_media
-    dest = resize_media(root, src, (max(1, size[0]), max(1, size[1])), mode=mode)
-    return _media_result(root, dest, width=max(1, size[0]), height=max(1, size[1]))
-
-
-def canvas_media_node(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    rels = _payload_paths(payload.get("images") or payload.get("paths") or payload.get("input"))
-    if not rels:
-        raise ValueError("images is required")
-    size = _coerce_vector2(payload.get("size"), (1024, 1024))
-    positions = _coerce_vector2_list(payload.get("positions"), len(rels))
-    while len(positions) < len(rels):
-        positions.append((0, 0))
-    paths = []
-    for rel in rels:
-        path = safe_project_path(root, rel)
-        if not path.is_file():
-            raise FileNotFoundError(rel)
-        paths.append(path)
-    from rundeer.core.media import canvas_images
-    dest = canvas_images(root, paths, positions, (max(1, size[0]), max(1, size[1])))
-    return _media_result(root, dest, width=max(1, size[0]), height=max(1, size[1]))
-
-
-def compress_dispatch(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-
-
-
-
-    kind = str(payload.get("kind") or "auto").strip().lower()
-    if kind == "bundle":
-        return _compress_bundle(root, payload)
-    rel = str(payload.get("path") or "").strip()
-    if not rel:
-        raise ValueError("path is required")
-    ext = Path(rel).suffix.lower()
-    if kind == "auto":
-        if ext in IMAGE_COMPRESS_EXTS:
-            return compress_image(root, payload)
-        if ext in VIDEO_COMPRESS_EXTS:
-            return _compress_video(root, payload)
-
-        return compress_image(root, payload)
-    if kind == "image":
-        return compress_image(root, payload)
-    if kind == "video":
-        return _compress_video(root, payload)
-    raise ValueError(f"unknown compress kind: {kind}")
-
-
-def _compress_video(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    if shutil.which("ffmpeg") is None:
-        return {"error": "ffmpeg not found on PATH; install ffmpeg to compress videos"}
-    rel = str(payload.get("path") or "").strip()
-    src = safe_project_path(root, rel)
-    if not src.is_file():
-        raise FileNotFoundError(rel)
-    quality = int(payload.get("quality") or 75)
-    quality = max(1, min(100, quality))
-
-    crf = int(round(51 - (quality / 100.0) * 33))
-    max_dim = int(payload.get("max_dimension") or 0)
-
-    cache_dir = rpaths.cache_dir(root, "compressed")
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    dest_name = f"{src.stem}_q{quality}{('_' + str(max_dim)) if max_dim else ''}.mp4"
-    dest = cache_dir / dest_name
-
-    original_bytes = src.stat().st_size
-    cmd = [
-        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-        "-i", str(src),
-        "-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-b:a", "96k",
-        "-movflags", "+faststart",
-    ]
-    if max_dim:
-
-        cmd[-1:-1] = ["-vf", f"scale='if(gt(iw,ih),min({max_dim},iw),-2)':'if(gt(iw,ih),-2,min({max_dim},ih))'"]
-    cmd.append(str(dest))
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    except FileNotFoundError as exc:
-        return {"error": f"ffmpeg invocation failed: {exc}"}
-    if proc.returncode != 0:
-        return {"error": f"ffmpeg failed: {(proc.stderr or '').strip()[:400]}"}
-    return {
-        "path": relpath(root, dest),
-        "bytes": dest.stat().st_size,
-        "originalBytes": original_bytes,
-    }
-
-
-def _compress_bundle(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    import zipfile
-    paths = payload.get("paths") or []
-    if not isinstance(paths, list) or not paths:
-        raise ValueError("paths is required (non-empty list)")
-    out_dir_rel = str(payload.get("output_dir") or ".rundeer/data/cache/compressed").strip()
-    out_dir = safe_project_path(root, out_dir_rel) if out_dir_rel else rpaths.cache_dir(root, "compressed")
-    out_dir.mkdir(parents=True, exist_ok=True)
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    name = str(payload.get("name") or f"bundle_{stamp}.zip").strip()
-    if not name.lower().endswith(".zip"):
-        name += ".zip"
-    dest = out_dir / name
-    total_in = 0
-    seen: set[str] = set()
-    with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
-        for rel in paths:
-            rel_s = str(rel or "").strip()
-            if not rel_s:
-                continue
-            src = safe_project_path(root, rel_s)
-            if not src.is_file():
-                continue
-            arc_base = Path(rel_s).name
-            arc = arc_base
-            i = 1
-            while arc in seen:
-                arc = f"{Path(arc_base).stem}_{i}{Path(arc_base).suffix}"
-                i += 1
-            seen.add(arc)
-            total_in += src.stat().st_size
-            zf.write(src, arcname=arc)
-    return {
-        "path": relpath(root, dest),
-        "bytes": dest.stat().st_size,
-        "originalBytes": total_in,
-        "items": len(seen),
-    }
-
-
 def env_summary(root: Path) -> Dict[str, bool]:
     keys = ["GROK_IMAGINE_API_KEY", "WXWAI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "RUNDEER_LLM_MODEL"]
     return {key: bool(os.environ.get(key) or env_file_has_key(root, key)) for key in keys}
@@ -1404,7 +910,6 @@ def list_presets(root: Path) -> List[Dict[str, Any]]:
 
 def list_artifacts(root: Path, extra_dirs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     roots = [rpaths.default_output_dir(root), rpaths.benchmark_dir(root, "position", "outputs"), root / "docs"]
-
 
 
     for rel in (extra_dirs or []):
@@ -1557,7 +1062,6 @@ def extract_frames(
         return {"paths": [], "error": "ffmpeg not found on PATH; install ffmpeg to extract frames"}
 
 
-
     try:
         stat = video.stat()
     except OSError as exc:
@@ -1588,7 +1092,6 @@ def extract_frames(
             pass
 
     pattern = out_dir / f"frame_%06d.{fmt}"
-
 
 
     start_idx = max(1, start) if start > 0 else 1
@@ -1636,9 +1139,6 @@ def extract_frames(
 def ensure_thumbnail(root: Path, rel: str, size: int) -> Path:
 
 
-
-
-
     if not rel:
         raise FileNotFoundError("no path")
     src = safe_project_path(root, rel)
@@ -1655,11 +1155,9 @@ def ensure_thumbnail(root: Path, rel: str, size: int) -> Path:
         return dest
 
 
-
     with _THUMB_SEM:
         if dest.exists() and dest.stat().st_size > 0:
             return dest
-
 
 
         lock = _thumb_lock_for(key)
@@ -1758,15 +1256,6 @@ def skip_file(path: Path, root: Path) -> bool:
     return path.name.startswith(".") and (not rel_parts or rel_parts[0] not in ALLOWED_DOTFILE_ROOTS)
 
 
-def is_sensitive_file(path: Path, root: Path) -> bool:
-    try:
-        path.resolve().relative_to(root.resolve())
-    except ValueError:
-        return False
-    name = path.name.lower()
-    return name == ".env" or name.startswith(".env.")
-
-
 def file_payload(root: Path, path: Path, *, reference_id: Optional[int] = None) -> Dict[str, Any]:
     stat = path.stat()
     suffix = path.suffix.lower()
@@ -1787,9 +1276,6 @@ def file_payload(root: Path, path: Path, *, reference_id: Optional[int] = None) 
 
 
 def build_file_tree(root: Path, rel: str = "") -> Dict[str, Any]:
-
-
-
 
 
     root = root.resolve()
@@ -1882,9 +1368,6 @@ def list_style_references(root: Path, style: str) -> List[Dict[str, Any]]:
 
 
 def collect_mentions(root: Path, query: str) -> List[Dict[str, Any]]:
-
-
-
 
 
     q = (query or "").strip().lower().lstrip("@")
@@ -2288,10 +1771,6 @@ _BOOTSTRAP = (
 def rundeer_invoker() -> List[str]:
 
 
-
-
-
-
     return [sys.executable, "-c", _BOOTSTRAP]
 
 
@@ -2339,9 +1818,6 @@ def build_cli_command(root: Path, payload: Dict[str, Any], run_id: str, *, dry_r
 
 
 def _section(payload: Dict[str, Any], key: str) -> Dict[str, Any]:
-
-
-
 
 
     value = payload.get(key)
@@ -2485,10 +1961,6 @@ def build_run_config(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 def _coerce_bool(*candidates: Any, default: bool) -> bool:
 
 
-
-
-
-
     for value in candidates:
         if value is None:
             continue
@@ -2502,7 +1974,6 @@ def _coerce_bool(*candidates: Any, default: bool) -> bool:
                 return False
             return True
     return default
-
 
 
 def clean_str(value: Any) -> str:

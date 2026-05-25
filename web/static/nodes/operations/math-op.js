@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["math-op"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["math-op"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const a = Number(inputs.a ?? 0);
   const b = Number(inputs.b ?? 0);
   const op = props.op || "add";
@@ -14,4 +14,4 @@
     case "max":      r = Math.max(a, b); break;
   }
   outputs.out = r;
-};
+} };

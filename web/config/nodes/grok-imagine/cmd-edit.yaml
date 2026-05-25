@@ -127,4 +127,14 @@ cmd-edit:
       label: Min Region
       kind: number
       default: 64
+
+  traits: [command, heavy]
+  aliases:
+    inputs:
+      run: trigger
+      prompt: subject
+      reference: input
+    outputs:
+      result: out
+      
   src: web/static/nodes/grok-imagine/cmd-edit.js

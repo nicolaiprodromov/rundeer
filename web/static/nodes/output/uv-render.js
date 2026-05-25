@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["uv-render"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["uv-render"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const pixel = inputs.pixel;
   const uv = inputs.uv;
   if (!pixel) throw new Error("render: pixel input required");
@@ -16,4 +16,4 @@
   }, helpers.opts);
   if (result.error) throw new Error(`render: ${result.error}`);
   outputs.out = result.path;
-};
+} };

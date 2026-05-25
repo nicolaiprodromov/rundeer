@@ -14,4 +14,14 @@ preview:
       label: Out
       type: any
   props: []
+  traits: [preview]
+  aliases:
+    inputs:
+      input: in
+      image: in
+      video: in
+      text: in
+    outputs:
+      output: out
+      result: out
   src: web/static/nodes/output/preview.js

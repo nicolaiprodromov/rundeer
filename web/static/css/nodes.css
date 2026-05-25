@@ -810,8 +810,8 @@ body.is-resizing .ne-node-resize {
   color: var(--quiet);
 }
 
-.ne-node[data-node-type="text-input"].is-resized .ne-node-panel.is-settings,
-.ne-node[data-node-type="text-input"].is-resized .ne-node-panel.is-settings .ne-node-panel-body,
+.ne-node[data-node-type="text-input"].is-resized .ne-node-panel.is-settings:not(.is-collapsed),
+.ne-node[data-node-type="text-input"].is-resized .ne-node-panel.is-settings:not(.is-collapsed) .ne-node-panel-body,
 .ne-node[data-node-type="text-input"].is-resized .ne-inline-prop-row.has-md-editor {
   display: flex;
   flex: 1 1 auto;

@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["folder-bundle"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["folder-bundle"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const folderPath = String(props.path || "").trim();
   if (!folderPath) { outputs.out = []; return; }
   const kind = String(props.kind || "all");
@@ -22,4 +22,4 @@
   const tag = result.source === "frames" ? `frames${result.cached ? ", cached" : ""}` : "files";
   helpers.appendRunLog(`  ↳ → ${paths.length} ${tag}\n`);
   outputs.out = paths;
-};
+} };

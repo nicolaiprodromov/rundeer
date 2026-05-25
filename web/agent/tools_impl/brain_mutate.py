@@ -19,7 +19,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..brain_graph import build_default_graph, load_brain_graph
+from ..brain_graph import BUNDLE_PASSTHROUGH_TYPES, TEXT_SOURCE_TYPES, build_default_graph, load_brain_graph
 
 
 def _load(root: Path, agent_id: str = "default") -> Dict[str, Any]:
@@ -70,7 +70,7 @@ def _brain_section_targets(graph: Dict[str, Any]) -> Dict[str, Any]:
             break
     if target_id:
         target_node = (graph.get("nodes") or {}).get(target_id)
-        if target_node and target_node.get("type") == "create-bundle":
+        if target_node and target_node.get("type") in BUNDLE_PASSTHROUGH_TYPES:
             return {"brain": brain, "target": target_node, "socket": "items"}
     return {"brain": brain, "target": brain, "socket": target_socket}
 
@@ -86,7 +86,7 @@ def read_brain_graph(*, root: Path, agent_id: str = "default") -> Dict[str, Any]
     for nid, n in nodes.items():
         t = n.get("type")
         props = n.get("props") or {}
-        if t == "text-input":
+        if t in TEXT_SOURCE_TYPES:
             sections.append({"id": nid, "preview": (str(props.get("value") or ""))[:120]})
         elif t == "tool-flag":
             tools.append({
@@ -111,7 +111,7 @@ def read_brain_graph(*, root: Path, agent_id: str = "default") -> Dict[str, Any]
 def set_system_prompt_section(*, root: Path, section_id: str, body: str, agent_id: str = "default") -> Dict[str, Any]:
     g = _load(root, agent_id=agent_id)
     node = (g.get("nodes") or {}).get(section_id)
-    if not node or node.get("type") != "text-input":
+    if not node or node.get("type") not in TEXT_SOURCE_TYPES:
         return {"error": f"no text-input section node with id '{section_id}'"}
     props = dict(node.get("props") or {})
     props["value"] = str(body or "")
@@ -132,7 +132,7 @@ def add_system_prompt_section(*, root: Path, body: str, agent_id: str = "default
     new_id = _next_id(g, "section")
     y = 0
     for n in (g.get("nodes") or {}).values():
-        if n.get("type") == "text-input":
+        if n.get("type") in TEXT_SOURCE_TYPES:
             y = max(y, int(n.get("y") or 0) + 220)
     node = {
         "id": new_id,
@@ -157,7 +157,7 @@ def add_system_prompt_section(*, root: Path, body: str, agent_id: str = "default
 def remove_system_prompt_section(*, root: Path, section_id: str, agent_id: str = "default") -> Dict[str, Any]:
     g = _load(root, agent_id=agent_id)
     node = (g.get("nodes") or {}).get(section_id)
-    if not node or node.get("type") != "text-input":
+    if not node or node.get("type") not in TEXT_SOURCE_TYPES:
         return {"error": f"no text-input section node with id '{section_id}'"}
     return _ok(
         [{"op": "remove_node", "id": section_id}],

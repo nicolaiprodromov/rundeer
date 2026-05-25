@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from rundeer.core.paths import agent_dir
+from web.node_defs import get_node_defs
 
 from .profiles import DEFAULT_AGENT_ID, normalize_agent_id
 
@@ -18,33 +19,11 @@ BRAIN_GRAPH_FILENAME = "brain.graph.json"
 RUNTIME_FILENAME = "runtime.json"
 AUDIT_LOG_FILENAME = "brain.log"
 
-
-
-
-
-BRAIN_NODE_TYPES = {
-    "agent",
-    "brain",
-    "tool-flag",
-    "toolbox",
-    "time",
-    "context",
-}
-
+_defs = get_node_defs()
+BRAIN_NODE_TYPES = {d["type"] for d in _defs if d.get("category") == "Agent Brain"}
 DYNAMIC_SOURCE_TYPES = {"time", "context"}
-
-
-
 TEXT_SOURCE_TYPES = {"text-input"}
 BUNDLE_PASSTHROUGH_TYPES = {"create-bundle", "folder-bundle", "sample-bundle"}
-LEGACY_BRAIN_NODE_TYPES = {
-    "agent-settings",
-    "system-prompt-root",
-    "system-prompt-section",
-    "active-brain",
-    "brain-source",
-    "brain-md-section",
-}
 
 
 @dataclass
@@ -630,8 +609,6 @@ def load_brain_graph(root: Path, agent_id: Optional[str] = None) -> Optional[Dic
 def _requires_reseed(graph: Dict[str, Any]) -> bool:
     nodes = graph.get("nodes") or {}
     types = {str(n.get("type") or "") for n in nodes.values() if isinstance(n, dict)}
-    if types & LEGACY_BRAIN_NODE_TYPES:
-        return True
     return not {"agent", "brain"}.issubset(types)
 
 

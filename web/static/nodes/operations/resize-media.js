@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["resize-media"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["resize-media"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const sizeWired = inputs.size;
   const modeWired = inputs.mode;
   const sizeBad = helpers._vectorSocketUnparseableSource(sizeWired);
@@ -30,4 +30,4 @@
     return;
   }
   outputs.out = await resizeOne(v);
-};
+} };

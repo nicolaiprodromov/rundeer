@@ -13,4 +13,11 @@ create-bundle:
       label: Bundle
       type: any
   props: []
+  traits: [producesBundle]
+  aliases:
+    inputs:
+      input: items
+    outputs:
+      bundle: out
+      output: out
   src: web/static/nodes/bundle/create-bundle.js

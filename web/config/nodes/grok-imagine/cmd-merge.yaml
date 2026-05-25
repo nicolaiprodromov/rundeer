@@ -71,4 +71,13 @@ cmd-merge:
       label: JPEG Quality
       kind: number
       default: 85
+  traits: [command, heavy]
+  aliases:
+    inputs:
+      run: trigger
+      prompt: subject
+      reference: input
+    outputs:
+      image: out
+      result: out
   src: web/static/nodes/grok-imagine/cmd-merge.js

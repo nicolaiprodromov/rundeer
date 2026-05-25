@@ -12,4 +12,8 @@ boolean-input:
       label: Value
       kind: checkbox
       default: false
+  aliases:
+    outputs:
+      bool: out
+      value: out
   src: web/static/nodes/primitives/boolean-input.js

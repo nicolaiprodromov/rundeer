@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["canvas"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["canvas"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const images = helpers._mediaPathList(inputs.images);
   if (images.length === 0) { outputs.out = ""; return; }
   const rawPositions = Array.isArray(inputs.positions) ? inputs.positions : (inputs.positions ? [inputs.positions] : []);
@@ -22,4 +22,4 @@
   }, helpers.opts);
   if (result.error) throw new Error(`canvas: ${result.error}`);
   outputs.out = result.path;
-};
+} };

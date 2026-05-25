@@ -1,2 +1,2 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["agent"] = async function (node, inputs, outputs, props, helpers) {
-};
+(window.RundeerNodes = window.RundeerNodes || {})["agent"] = { resolve: async function (node, inputs, outputs, props, helpers) {
+} };

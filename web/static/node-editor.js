@@ -82,9 +82,8 @@ function compressInHasTextUpstream(nodeId) {
 
 
 function isInputSocketVisible(node, def, sock) {
-  if (node?.type === "compress-image" && sock.id === "instructions") {
-    return compressInHasTextUpstream(node.id);
-  }
+  const reg = (window.RundeerNodes || {})[node?.type];
+  if (reg?.isInputVisible) return reg.isInputVisible(node, sock, _nodeUICtx());
   return true;
 }
 
@@ -137,9 +136,7 @@ function outputProducesBundle(nodeId, sockId, seen = new Set()) {
     const incoming = activeIncomingEdges(nodeId, "in")[0];
     return incoming ? outputProducesBundle(incoming.fromNode, incoming.fromSocket, seen) : false;
   }
-  if (n.type === "loop-output") return true;
-  if (n.type === "folder-bundle") return true;
-  if (n.type === "create-bundle") return true;
+  if (BUNDLE_TYPES.has(n.type)) return true;
   if (n.type === "sample-bundle") {
     
     if (sockId !== "out") return false;
@@ -232,13 +229,15 @@ function _coerceMixInput(v, { isFactor } = {}) {
     }
   }
   if (Array.isArray(v)) {
-    const arr = v.map(Number);
+    const arr = v.map((x) => Number(x) || 0);
     return { payload: { color: arr }, isPath: false, color: arr };
   }
   if (typeof v === "number") {
     return { payload: { scalar: v }, isPath: false, scalar: v };
   }
-  
+  if (v && typeof v === "object" && v.path) {
+    return { payload: { path: v.path }, isPath: true };
+  }
   if (isFactor) return { payload: { scalar: 0.5 }, isPath: false, scalar: 0.5 };
   return { payload: { color: [0, 0, 0, 1] }, isPath: false, color: [0, 0, 0, 1] };
 }
@@ -404,186 +403,16 @@ let NODE_BY_TYPE = Object.fromEntries(
   NODE_CATALOG.flatMap((cat) => cat.nodes.map((n) => [n.type, { ...n, category: cat.category }]))
 );
 
-let _toolboxToolsCache = null;
 
-async function ensureToolboxCache() {
-  if (_toolboxToolsCache) return _toolboxToolsCache;
-  try {
-    const data = await fetchJSON("/api/tools");
-    _toolboxToolsCache = data;
-    return data;
-  } catch (_) {
-    return null;
-  }
-}
 
-function buildToolboxBody(nodeId, node) {
-  const wrap = document.createElement("div");
-  wrap.className = "ne-toolbox-body";
-
-  const data = _toolboxToolsCache;
-  if (!data || !data.categories) {
-    const msg = document.createElement("div");
-    msg.className = "ne-toolbox-loading";
-    msg.textContent = "Loading tools\u2026";
-    wrap.appendChild(msg);
-    ensureToolboxCache().then(() => {
-      const el = document.querySelector(`[data-node-id="${nodeId}"]`);
-      if (el) { el.dataset.signature = "stale"; renderNodes(); }
-    });
-    return wrap;
-  }
-
-  const disabledStr = String(node.props.disabled_tools || "");
-  const disabledSet = new Set(
-    disabledStr.split(",").map((s) => s.trim()).filter(Boolean)
-  );
-  const allToolNames = data.tools.map((t) => t.name);
-  const totalCount = allToolNames.length;
-  const enabledCount = totalCount - [...disabledSet].filter((n) => allToolNames.includes(n)).length;
-
-  function updateDisabledProp(newSet) {
-    const val = [...newSet].filter((n) => allToolNames.includes(n)).join(",");
-    node.props.disabled_tools = val;
-    scheduleAutosave();
-    schedulePreviewRefresh();
-  }
-
-  function refreshConnections() {
-    requestAnimationFrame(renderConnections);
-  }
-
-  wrap.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
-  wrap.addEventListener("mousedown", (e) => e.stopPropagation());
-
-  const master = document.createElement("div");
-  master.className = "ne-toolbox-master";
-  const masterCb = document.createElement("input");
-  masterCb.type = "checkbox";
-  masterCb.checked = enabledCount === totalCount;
-  masterCb.indeterminate = enabledCount > 0 && enabledCount < totalCount;
-  const masterLabel = document.createElement("span");
-  masterLabel.className = "ne-toolbox-master-label";
-  masterLabel.textContent = `All (${enabledCount}/${totalCount})`;
-  master.append(masterCb, masterLabel);
-
-  masterCb.addEventListener("mousedown", (e) => e.stopPropagation());
-  masterCb.addEventListener("change", (e) => {
-    e.stopPropagation();
-    masterCb.indeterminate = false;
-    if (masterCb.checked) disabledSet.clear();
-    else allToolNames.forEach((n) => disabledSet.add(n));
-    updateDisabledProp(disabledSet);
-    const el = document.querySelector(`[data-node-id="${nodeId}"]`);
-    if (el) { el.dataset.signature = "stale"; renderNodes(); }
-  });
-
-  wrap.appendChild(master);
-
-  const catList = document.createElement("div");
-  catList.className = "ne-toolbox-cats";
-
-  for (let catIdx = 0; catIdx < data.categories.length; catIdx++) {
-    const cat = data.categories[catIdx];
-    const catTools = cat.tools || [];
-    const catTotal = catTools.length;
-    const catEnabled = catTools.filter((n) => !disabledSet.has(n)).length;
-    const startOpen = catIdx < 2;
-
-    const panel = document.createElement("div");
-    const catCls = ["ne-toolbox-cat"];
-    if (catEnabled < catTotal) catCls.push("has-disabled");
-    if (catEnabled === 0) catCls.push("all-disabled");
-    if (startOpen) catCls.push("is-open");
-    panel.className = catCls.join(" ");
-
-    const head = document.createElement("button");
-    head.type = "button";
-    head.className = "ne-toolbox-cat-head";
-    const caret = document.createElement("span");
-    caret.className = "ne-toolbox-caret";
-    caret.textContent = "\u25b6";
-    const catCb = document.createElement("input");
-    catCb.type = "checkbox";
-    catCb.checked = catEnabled === catTotal;
-    catCb.indeterminate = catEnabled > 0 && catEnabled < catTotal;
-    const catLabel = document.createElement("span");
-    catLabel.className = "ne-toolbox-cat-label";
-    catLabel.textContent = cat.label;
-    const catCount = document.createElement("span");
-    catCount.className = "ne-toolbox-cat-count";
-    catCount.textContent = `${catEnabled}/${catTotal}`;
-    head.append(caret, catCb, catLabel, catCount);
-
-    const body = document.createElement("div");
-    body.className = "ne-toolbox-cat-body";
-    body.hidden = !startOpen;
-
-    head.addEventListener("mousedown", (e) => e.stopPropagation());
-    head.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (e.target === catCb || e.target.closest("input")) return;
-      const wasOpen = panel.classList.contains("is-open");
-      panel.classList.toggle("is-open");
-      body.hidden = wasOpen;
-      refreshConnections();
-    });
-
-    catCb.addEventListener("mousedown", (e) => e.stopPropagation());
-    catCb.addEventListener("click", (e) => e.stopPropagation());
-    catCb.addEventListener("change", (e) => {
-      e.stopPropagation();
-      const checked = catCb.checked;
-      catCb.indeterminate = false;
-      for (const toolName of catTools) {
-        if (checked) disabledSet.delete(toolName);
-        else disabledSet.add(toolName);
-      }
-      updateDisabledProp(disabledSet);
-      const el = document.querySelector(`[data-node-id="${nodeId}"]`);
-      if (el) { el.dataset.signature = "stale"; renderNodes(); }
-    });
-
-    for (const toolName of catTools) {
-      const isDisabled = disabledSet.has(toolName);
-      const row = document.createElement("label");
-      row.className = "ne-toolbox-tool" + (isDisabled ? " is-disabled" : "");
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = !isDisabled;
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "ne-toolbox-tool-name";
-      nameSpan.textContent = toolName;
-      row.append(cb, nameSpan);
-
-      cb.addEventListener("mousedown", (e) => e.stopPropagation());
-      cb.addEventListener("change", (e) => {
-        e.stopPropagation();
-        if (cb.checked) disabledSet.delete(toolName);
-        else disabledSet.add(toolName);
-        updateDisabledProp(disabledSet);
-        const el = document.querySelector(`[data-node-id="${nodeId}"]`);
-        if (el) { el.dataset.signature = "stale"; renderNodes(); }
-      });
-
-      body.appendChild(row);
-    }
-
-    panel.append(head, body);
-    catList.appendChild(panel);
-  }
-
-  wrap.appendChild(catList);
-  return wrap;
-}
-
-const PREVIEW_TYPES = new Set(["preview", "file", "uv-render", "coordinate", "canvas"]);
-const LIVE_UPDATE_TYPES = new Set(["mix"]);
+const PREVIEW_TYPES = new Set();
+const LIVE_UPDATE_TYPES = new Set();
+const COMMAND_TYPES = new Set();
+const HEAVY_TYPES = new Set();
+const BUNDLE_TYPES = new Set();
+const TERMINAL_TYPES = new Set();
 const LEGACY_PREVIEW_TYPES = new Set(["preview-image", "preview-video", "preview-text"]);
-
-
 const LEGACY_FILE_TYPES = new Set(["image-input", "video-input", "filepath-input"]);
-const COMMAND_TYPES = new Set(["cmd-image", "cmd-video", "cmd-edit", "cmd-merge", "cmd-extend"]);
 const PREVIEW_ZOOM_MIN = 1;
 const PREVIEW_ZOOM_MAX = 4;
 const PREVIEW_ZOOM_WHEEL_SENSITIVITY = 0.0015;
@@ -793,7 +622,8 @@ function addNode(type, canvasX, canvasY, opts = {}) {
     lastRunStatus: null,
     lastRunCount: 0,
   };
-  migrateMixNode(graph.nodes[id]);
+  const _addReg = (window.RundeerNodes || {})[type];
+  if (_addReg?.migrate) _addReg.migrate(graph.nodes[id]);
   if (isStandaloneDecompose) {
     const outDef = NODE_BY_TYPE["loop-output"];
     const outProps = {};
@@ -1032,7 +862,11 @@ function pruneInvalidEdges() {
 function removeEdge(edgeId) {
   const removed = graph.edges.find((e) => e.id === edgeId);
   graph.edges = graph.edges.filter((e) => e.id !== edgeId);
-  if (removed) maintainCompressInstructions(removed.toNode, removed.toSocket);
+  if (removed) {
+    const _rNode = graph.nodes[removed.toNode];
+    const _rReg = _rNode ? (window.RundeerNodes || {})[_rNode.type] : null;
+    if (_rReg?.onEdgeChange) _rReg.onEdgeChange(removed.toNode, removed.toSocket, _nodeUICtx());
+  }
   renderGraph();
   scheduleAutosave();
   schedulePreviewRefresh();
@@ -1078,7 +912,9 @@ function addEdge(fromNode, fromSocket, toNode, toSocket) {
     )) return;
   }
   graph.edges.push({ id: genEdgeId(), fromNode, fromSocket, toNode, toSocket });
-  maintainCompressInstructions(toNode, toSocket);
+  const _eNode = graph.nodes[toNode];
+  const _eReg = _eNode ? (window.RundeerNodes || {})[_eNode.type] : null;
+  if (_eReg?.onEdgeChange) _eReg.onEdgeChange(toNode, toSocket, _nodeUICtx());
   renderGraph();
   scheduleAutosave();
   schedulePreviewRefresh();
@@ -1089,75 +925,7 @@ function addEdge(fromNode, fromSocket, toNode, toSocket) {
 
 
 
-const COMPRESS_HELPER_PROMPT =
-  "Summarize and compress the input text. Keep all the same meaning, intent, " +
-  "facts, and tone — strip filler, redundancy, and rephrase verbose passages " +
-  "into tighter prose. Do not invent or omit information. Return only the " +
-  "compressed text, no preamble.";
 
-function maintainCompressInstructions(nodeId, changedSocket) {
-  const node = graph.nodes[nodeId];
-  if (!node || node.type !== "compress-image") return;
-  if (changedSocket !== "in" && changedSocket !== "instructions") return;
-  const hasText = compressInHasTextUpstream(nodeId);
-  if (!hasText) {
-    
-    graph.edges = graph.edges.filter(
-      (e) => !(e.toNode === nodeId && e.toSocket === "instructions")
-    );
-    return;
-  }
-  
-  const existing = graph.edges.find(
-    (e) => e.toNode === nodeId && e.toSocket === "instructions"
-  );
-  if (existing) return;
-  node.props ||= {};
-  let helperId = node.props._instructionsHelperId;
-  if (!helperId || !graph.nodes[helperId]) {
-    helperId = createCompressInstructionsHelper(node);
-    node.props._instructionsHelperId = helperId;
-  }
-  graph.edges.push({
-    id: genEdgeId(),
-    fromNode: helperId,
-    fromSocket: "out",
-    toNode: nodeId,
-    toSocket: "instructions",
-  });
-}
-
-function createCompressInstructionsHelper(compressNode) {
-  const def = NODE_BY_TYPE["text-input"];
-  const id = genNodeId();
-  const props = {};
-  for (const p of def.props || []) props[p.id] = p.default ?? "";
-  props.value = COMPRESS_HELPER_PROMPT;
-  const width = def.defaultWidth || 280;
-  graph.nodes[id] = {
-    id, type: "text-input",
-    x: (compressNode.x || 0) - width - 40,
-    y: (compressNode.y || 0) + 30,
-    props,
-    title: "Compress · Instructions",
-    width,
-    height: def.defaultHeight || null,
-    collapsed: false,
-    foldLocked: false,
-    previewMode: null,
-    previewIndex: 0,
-    previewZoom: 1,
-    previewPanX: 0,
-    previewPanY: 0,
-    textZoom: 1,
-    minimized: false,
-    collapsedPanels: {},
-    lastRunMs: null,
-    lastRunStatus: null,
-    lastRunCount: 0,
-  };
-  return id;
-}
 
 function selectOnly(id) {
   ix.selection.clear();
@@ -1572,24 +1340,6 @@ function sanitizeCommandProps(node) {
   return node;
 }
 
-function migrateMixNode(node) {
-  if (!node || node.type !== "mix") return node;
-  node.props ||= {};
-  if (node.props.a == null && node.props.color_a != null) node.props.a = node.props.color_a;
-  if (node.props.b == null && node.props.color_b != null) node.props.b = node.props.color_b;
-  delete node.props.color_a;
-  delete node.props.color_b;
-  return node;
-}
-
-function migrateMixEdge(edge) {
-  const target = graph.nodes[edge?.toNode];
-  if (!target || target.type !== "mix") return edge;
-  if (edge.toSocket === "color_a") edge.toSocket = "a";
-  if (edge.toSocket === "color_b") edge.toSocket = "b";
-  return edge;
-}
-
 function nodeDefaultLabel(node) {
   const def = NODE_BY_TYPE[node?.type];
   return def?.label || node?.type || "Node";
@@ -1692,6 +1442,19 @@ function bindNodeMuteButton(root, nodeId) {
   });
 }
 
+function _nodeUICtx() {
+  return {
+    graph, SOCKET_TYPES, NODE_BY_TYPE, COMMAND_TYPES,
+    nodeSignature, nodeMuteButtonMarkup, bindNodeMuteButton,
+    startNodeDrag, selectOnly, startWire, renderGraph, renderNodes,
+    renderConnections, scheduleAutosave, schedulePreviewRefresh,
+    activeIncomingEdges, outputProducesBundle, outputSocketDef, baseType,
+    isNodeMuted, _graphRunState: () => _graphRunState,
+    runFromTrigger, resumeGraphRun, isPauseNodeResumeReady,
+    fetchJSON, genNodeId, genEdgeId, compressInHasTextUpstream,
+  };
+}
+
 function estimatedNodeHeight(node) {
   const def = NODE_BY_TYPE[node.type];
   if (!def) return 80;
@@ -1700,66 +1463,11 @@ function estimatedNodeHeight(node) {
   return Math.max(def.defaultHeight || 0, nodeResizeMin(node).h);
 }
 
-function buildRerouteNodeElement(id, node, def) {
-  const el = document.createElement("div");
-  el.className = "ne-node ne-reroute-node";
-  el.dataset.nodeId = id;
-  el.dataset.nodeType = node.type;
-  el.dataset.category = def.category;
-  el.dataset.signature = nodeSignature(node);
-  el.classList.toggle("is-muted", Boolean(node.muted));
-  el.style.width = `${node.width || def.defaultWidth || 88}px`;
-  el.style.height = `${node.height || def.defaultHeight || 30}px`;
-
-  const body = document.createElement("div");
-  body.className = "ne-reroute-body";
-  body.title = "Reroute";
-  body.appendChild(buildRerouteSocket(id, false));
-  body.appendChild(buildRerouteSocket(id, true));
-  body.insertAdjacentHTML("beforeend", nodeMuteButtonMarkup(id, node, "ne-reroute-mute"));
-  bindNodeMuteButton(body, id);
-  body.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
-    if (e.target.classList.contains("ne-socket")) return;
-    e.stopPropagation();
-    startNodeDrag(e, id);
-  });
-  el.appendChild(body);
-
-  el.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
-    if (e.target.classList.contains("ne-socket")) return;
-    if (!ix.selection.has(id)) selectOnly(id);
-  });
-  return el;
-}
-
-function buildRerouteSocket(nodeId, isOutput) {
-  const dot = document.createElement("div");
-  dot.className = `ne-socket ne-reroute-socket ${isOutput ? "is-output" : "is-input"}`;
-  dot.dataset.nodeId = nodeId;
-  dot.dataset.socketId = isOutput ? "out" : "in";
-  dot.dataset.socketType = "any";
-  dot.dataset.isOutput = isOutput ? "1" : "0";
-  dot.style.background = SOCKET_TYPES.any.color;
-  dot.style.color = SOCKET_TYPES.any.color;
-  dot.title = isOutput ? "Reroute output" : "Reroute input";
-  const isConnected = isOutput
-    ? graph.edges.some((edge) => edge.fromNode === nodeId && edge.fromSocket === "out")
-    : graph.edges.some((edge) => edge.toNode === nodeId && edge.toSocket === "in");
-  if (isConnected) dot.classList.add("is-connected");
-  dot.addEventListener("mousedown", (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    startWire(e, nodeId, isOutput ? "out" : "in", "any", isOutput);
-  });
-  return dot;
-}
-
 function buildNodeElement(id, node) {
   const def = NODE_BY_TYPE[node.type];
   if (!def) return document.createElement("div");
-  if (node.type === "reroute") return buildRerouteNodeElement(id, node, def);
+  const _reg = (window.RundeerNodes || {})[node.type];
+  if (_reg?.buildNode) return _reg.buildNode(id, node, def, _nodeUICtx());
 
   const el = document.createElement("div");
   el.className = "ne-node";
@@ -1770,7 +1478,7 @@ function buildNodeElement(id, node) {
   el.classList.toggle("is-minimized", Boolean(node.minimized));
   el.classList.toggle("is-muted", Boolean(node.muted));
   el.style.width = `${node.width || def.defaultWidth || 220}px`;
-  const fixedHeight = !node.minimized ? (node.height || (node.type === "text-input" ? def.defaultHeight : null)) : null;
+  const fixedHeight = !node.minimized ? (node.height || (_reg?.usesDefaultHeight ? def.defaultHeight : null)) : null;
   if (fixedHeight) {
     el.style.height = `${fixedHeight}px`;
     el.classList.add("is-resized");
@@ -1866,8 +1574,8 @@ function buildNodeElement(id, node) {
       }
     }
 
-    if (node.type === "toolbox") {
-      body.appendChild(buildToolboxBody(id, node));
+    if (_reg?.buildBody) {
+      body.appendChild(_reg.buildBody(id, node, _nodeUICtx()));
     } else if ((def.props || []).length > 0) {
       body.appendChild(buildNodeFields(id, node, def));
     }
@@ -1910,12 +1618,8 @@ function buildNodeElement(id, node) {
     }
 
     
-    if (node.type === "run-trigger") {
-      body.appendChild(buildRunTriggerButton(id));
-    }
-
-    if (node.type === "pause") {
-      body.appendChild(buildPauseNodeButton(id));
+    if (_reg?.buildFooter) {
+      body.appendChild(_reg.buildFooter(id, node, _nodeUICtx()));
     }
 
     el.appendChild(body);
@@ -2417,12 +2121,17 @@ function isNodePanelCollapsed(node, panelKey, defaultCollapsed = false) {
 function toggleNodePanel(nodeId, panelKey, defaultCollapsed = false) {
   const node = graph.nodes[nodeId];
   if (!node) return;
+  const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+  const prevHeight = el ? el.offsetHeight : null;
+  const oldMin = nodeResizeMin(node);
   node.collapsedPanels ||= {};
   node.collapsedPanels[panelKey] = !isNodePanelCollapsed(node, panelKey, Boolean(defaultCollapsed));
-  
-  
-  
-  node.height = null;
+  const newMin = nodeResizeMin(node);
+  if (prevHeight != null) {
+    node.height = Math.max(prevHeight + (newMin.h - oldMin.h), newMin.h);
+  } else {
+    node.height = null;
+  }
   renderGraph();
   scheduleAutosave();
 }
@@ -4188,6 +3897,8 @@ function stringEditorMinRowHeight() {
 function nodeResizeMin(node) {
   if (!node) return { w: 160, h: 120 };
   const def = NODE_BY_TYPE[node.type];
+  const reg = (window.RundeerNodes || {})[node.type];
+  if (reg?.resizeMin) return reg.resizeMin(node, def);
   if (node.type === "reroute") {
     return { w: def?.defaultWidth || 88, h: def?.defaultHeight || 30 };
   }
@@ -6448,50 +6159,8 @@ function enableMentions(control, nodeId) {
 
 
 
-function buildRunTriggerButton(nodeId) {
-  const wrap = document.createElement("div");
-  wrap.className = "ne-run-trigger-wrap";
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "ne-run-play";
-  const graphBusy = Boolean(_graphRunState);
-  btn.title = graphBusy ? "A graph is already running" : (isNodeMuted(nodeId) ? "Unmute this node before running" : "Run connected command(s)");
-  btn.disabled = graphBusy || isNodeMuted(nodeId);
-  btn.setAttribute("aria-label", "Run connected command nodes");
-  btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5.14v13.72c0 .79.87 1.27 1.54.84l10.74-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg><span>Run</span>`;
-  btn.addEventListener("mousedown", (e) => e.stopPropagation());
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    runFromTrigger(nodeId);
-  });
-  wrap.appendChild(btn);
-  return wrap;
-}
-
 function isPauseNodeResumeReady(nodeId) {
   return Boolean(_graphRunState && _graphRunState.paused && _graphRunState.pausedNodeId === nodeId && !_graphRunState.cancelled);
-}
-
-function buildPauseNodeButton(nodeId) {
-  const wrap = document.createElement("div");
-  wrap.className = "ne-pause-node-wrap";
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "ne-pause-resume";
-  btn.dataset.pauseResumeNode = nodeId;
-  const active = isPauseNodeResumeReady(nodeId);
-  btn.classList.toggle("is-active", active);
-  btn.disabled = !active;
-  btn.title = active ? "Resume graph flow" : "Available when graph execution is paused here";
-  btn.setAttribute("aria-label", active ? "Resume graph flow" : "Resume graph flow when paused here");
-  btn.innerHTML = `<span aria-hidden="true">▶</span><span>Resume</span>`;
-  btn.addEventListener("mousedown", (e) => e.stopPropagation());
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (isPauseNodeResumeReady(nodeId)) resumeGraphRun("node");
-  });
-  wrap.appendChild(btn);
-  return wrap;
 }
 
 async function pauseGraphAtNode(nodeId, outputs, opts = {}) {
@@ -6623,9 +6292,7 @@ async function runGraph(opts = {}) {
     if (isNodeMuted(n)) return false;
     if (COMMAND_TYPES.has(n.type)) return true;
     if (PREVIEW_TYPES.has(n.type)) {
-      
-      
-      if (n.type === "coordinate") return true;
+      if (TERMINAL_TYPES.has(n.type)) return true;
       return activeIncomingEdges(id).length > 0;
     }
     return false;
@@ -6760,11 +6427,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     
     
     
-    const heavy = COMMAND_TYPES.has(node.type)
-      || node.type === "compress-image"
-      || node.type === "prompt"
-      || node.type === "prompt-filter"
-      || node.type === "loop-output";
+    const heavy = HEAVY_TYPES.has(node.type);
     if (heavy) {
       const out = (def.outputs || [])[0];
       if (!node.lastResult) throw new Error("no cached result");
@@ -6849,12 +6512,13 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   const work = traceNode ? beginNodeWork(nodeId) : null;
 
   try {
-  const _extResolver = (window.RundeerNodeResolvers || {})[node.type];
-  if (_extResolver) {
-    await _extResolver(node, inputs, outputs, props, {
+  const _reg = (window.RundeerNodes || {})[node.type];
+  const _resolver = typeof _reg === "function" ? _reg : _reg?.resolve;
+  if (_resolver) {
+    await _resolver(node, inputs, outputs, props, {
       appendRunLog, graphFetchJSON, opts, formatBytes, nodeId,
       activeIncomingEdges, baseType, outputSocketDef,
-      COMPRESS_HELPER_PROMPT, _vectorSocketUnparseableSource, _coerceVector2Value,
+      _vectorSocketUnparseableSource, _coerceVector2Value,
       graph, cache, loopCtx, work,
       resolveNode, resolveNodeWithPausedWork,
       waitForGraphRunReady, pauseGraphAtNode,
@@ -8775,10 +8439,16 @@ function loadGraphData(data) {
       foldIndex: null,
       foldCount: null,
     };
-    migrateMixNode(graph.nodes[id]);
+    const _ldReg = (window.RundeerNodes || {})[graph.nodes[id]?.type];
+    if (_ldReg?.migrate) _ldReg.migrate(graph.nodes[id]);
     sanitizeCommandProps(graph.nodes[id]);
   }
-  graph.edges = (data.edges || []).map((e) => migrateMixEdge({ ...e, id: e.id || genEdgeId() }));
+  graph.edges = (data.edges || []).map((e) => {
+    const edge = { ...e, id: e.id || genEdgeId() };
+    const _edReg = (window.RundeerNodes || {})[graph.nodes[edge?.toNode]?.type];
+    if (_edReg?.migrateEdge) return _edReg.migrateEdge(edge);
+    return edge;
+  });
   graph._nextId = data._nextId || (Math.max(0, ...Object.keys(graph.nodes).map((k) => Number(k.slice(1)) || 0)) + 1);
   const removedEdges = pruneInvalidEdges();
   ix.selection.clear();
@@ -9596,6 +9266,16 @@ async function loadYamlNodeDefs() {
       }
     }
     await Promise.all(scriptPromises);
+    for (const [type, def] of Object.entries(NODE_BY_TYPE)) {
+      for (const t of def.traits || []) {
+        if (t === "preview") PREVIEW_TYPES.add(type);
+        if (t === "command") COMMAND_TYPES.add(type);
+        if (t === "heavy") HEAVY_TYPES.add(type);
+        if (t === "liveUpdate") LIVE_UPDATE_TYPES.add(type);
+        if (t === "producesBundle") BUNDLE_TYPES.add(type);
+        if (t === "terminal") TERMINAL_TYPES.add(type);
+      }
+    }
   } catch (err) {
     console.error("[yaml-nodes] Failed to load YAML node definitions:", err);
   }
@@ -9604,7 +9284,7 @@ async function loadYamlNodeDefs() {
 document.addEventListener("DOMContentLoaded", async () => {
   await loadWebStore();
   await loadYamlNodeDefs();
-  ensureToolboxCache();
+  _ensureToolboxCache({ fetchJSON });
   loadState();
   renderPalette();
   applyViewport();

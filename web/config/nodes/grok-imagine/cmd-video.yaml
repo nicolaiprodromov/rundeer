@@ -88,4 +88,14 @@ cmd-video:
       label: JPEG Quality
       kind: number
       default: 85
+  traits: [command, heavy]
+  aliases:
+    inputs:
+      run: trigger
+      prompt: subject
+      reference: input
+      image: start_frame
+    outputs:
+      video: out
+      result: out
   src: web/static/nodes/grok-imagine/cmd-video.js

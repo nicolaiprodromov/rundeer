@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from web.node_defs import get_node_defs
 
-COMMAND_TYPES = {"cmd-image", "cmd-video", "cmd-edit", "cmd-merge", "cmd-extend"}
+COMMAND_TYPES = {d["type"] for d in get_node_defs() if "command" in (d.get("traits") or [])}
+TRIGGER_TYPES = {d["type"] for d in get_node_defs() if any(s.get("type") == "run" for s in d.get("outputs", []))}
 
 
 def _patch(op: str, **fields: Any) -> Dict[str, Any]:
@@ -37,7 +39,7 @@ def _connected_trigger_ids(graph: Dict[str, Any]) -> List[str]:
     edges = graph.get("edges") if isinstance(graph.get("edges"), list) else []
     trigger_ids: List[str] = []
     for node_id, node in nodes.items():
-        if not isinstance(node, dict) or node.get("type") != "run-trigger":
+        if not isinstance(node, dict) or node.get("type") not in TRIGGER_TYPES:
             continue
         if any(
             edge.get("fromNode") == node_id
@@ -60,14 +62,14 @@ def _execution_patch(*, graph: Dict[str, Any], subset: Any = None, dry_run: bool
     subset_ids = _id_list(subset)
     trigger_id = str(trigger_node or "").strip()
     if trigger_id:
-        if _node_type(graph, trigger_id) != "run-trigger":
+        if _node_type(graph, trigger_id) not in TRIGGER_TYPES:
             return {"error": f"trigger_node is not a run-trigger: {trigger_id}"}
         return {
             "patch": [_patch("run_trigger", id=trigger_id, dryRun=bool(dry_run))],
             "summary": f"{'dry-run' if dry_run else 'run'} trigger {trigger_id} in browser",
         }
 
-    subset_triggers = [node_id for node_id in subset_ids if _node_type(graph, node_id) == "run-trigger"]
+    subset_triggers = [node_id for node_id in subset_ids if _node_type(graph, node_id) in TRIGGER_TYPES]
     if len(subset_triggers) == 1:
         trigger_id = subset_triggers[0]
         return {

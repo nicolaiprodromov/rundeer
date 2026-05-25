@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["loop-output"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["loop-output"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const loopId = String(node.props.loop_id || "loop1");
   const decomposeNodeId = Object.keys(helpers.graph.nodes).find((id) => {
     const n = helpers.graph.nodes[id];
@@ -46,4 +46,4 @@
     }
   }
   outputs.out = collected;
-};
+} };

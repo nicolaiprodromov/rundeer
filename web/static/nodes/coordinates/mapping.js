@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["mapping"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["mapping"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const uv = inputs.uv;
   if (!uv) throw new Error("mapping: UV input required");
   const payload = {
@@ -19,4 +19,4 @@
   if (result.error) throw new Error(`mapping: ${result.error}`);
   outputs.out = result.path;
   node._uvImage = result.image || result.preview || "";
-};
+} };

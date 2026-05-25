@@ -1,4 +1,4 @@
-(window.RundeerNodeResolvers = window.RundeerNodeResolvers || {})["sample-bundle"] = async function (node, inputs, outputs, props, helpers) {
+(window.RundeerNodes = window.RundeerNodes || {})["sample-bundle"] = { resolve: async function (node, inputs, outputs, props, helpers) {
   const v = inputs.bundle;
   const items = Array.isArray(v) ? v : (v !== undefined && v !== null && v !== "" ? [v] : []);
   const expr = String(props.expression ?? "").trim();
@@ -16,4 +16,4 @@
     outputs.out = chosen;
   }
   outputs.count = chosen.length;
-};
+} };

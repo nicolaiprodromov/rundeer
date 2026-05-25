@@ -3,6 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from web.node_defs import get_node_defs
+
+TRIGGER_TYPES = {d["type"] for d in get_node_defs() if any(s.get("type") == "run" for s in d.get("outputs", []))}
+
 
 def _ensure_graph(graph: Any) -> Dict[str, Any]:
     if not isinstance(graph, dict):
@@ -84,7 +88,7 @@ def validate_graph_tool(graph: Any) -> Dict[str, Any]:
         if edge.get("fromNode") not in node_ids or edge.get("toNode") not in node_ids:
             issues.append({"severity": "error", "kind": "orphan-edge", "edge": edge.get("id")})
 
-    has_trigger = any(n.get("type") == "run-trigger" for n in g["nodes"].values())
+    has_trigger = any(n.get("type") in TRIGGER_TYPES for n in g["nodes"].values())
     if g["nodes"] and not has_trigger:
         issues.append({"severity": "warning", "kind": "no-trigger", "message": "graph has nodes but no run-trigger"})
     return {"issue_count": len(issues), "issues": issues, "node_count": len(g["nodes"]), "edge_count": len(g["edges"])}

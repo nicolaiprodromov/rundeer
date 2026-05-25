@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from web.node_defs import get_node_defs
+
 from .tools_impl import (
     artifacts as ti_artifacts,
     code_reads as ti_reads,
@@ -15,6 +17,8 @@ from .tools_impl import (
     web_search as ti_web,
     brain_mutate as ti_brain,
 )
+
+_VALID_NODE_TYPES = ", ".join(d["type"] for d in get_node_defs())
 
 
 @dataclass
@@ -258,12 +262,7 @@ ADD_NODE = ToolSpec(
     name="add_node",
     description=(
         "Create a node in the user's graph. Returns a graph patch the client "
-        "applies live. Valid types include: text-input, number-input, file, "
-        "definition, prompt, prompt-filter, cmd-image, cmd-video, cmd-edit, cmd-merge, "
-        "cmd-extend, run-trigger, preview, reroute, folder-bundle, create-bundle, "
-        "sample-bundle, loop-decompose, loop-output, text-join, compress-image, "
-        "blur-image, crop-media, resize-media, canvas, coordinate, mapping, vector-op, "
-        "mix, uv-render, math-op, text-op, random."
+        f"applies live. Valid types include: {_VALID_NODE_TYPES}."
     ),
     parameters=_obj({
         "type": {"type": "string"},

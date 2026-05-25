@@ -27,5 +27,13 @@ uv-render:
       kind: select
       options: [clamp, repeat, mirror]
       default: clamp
+  traits: [preview, terminal]
+  aliases:
+    inputs:
+      image: pixel
+      map: uv
+    outputs:
+      image: out
+      result: out
   src: web/static/nodes/output/uv-render.js
   api: /api/uv/render
