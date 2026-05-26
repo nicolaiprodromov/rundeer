@@ -1,0 +1,50 @@
+mapping:
+  label: Mapping
+  category: Coordinates
+  desc: "Transform a UV map: scale, rotate (deg), then translate, around a configurable pivot."
+  in:
+    - id: uv
+      label: UV
+      type: vector-map
+  out:
+    - id: out
+      label: UV
+      type: vector-map
+  props:
+    - id: location_x
+      category: Location
+      label: X
+      kind: number
+      default: 0.0
+    - id: location_y
+      category: Location
+      label: Y
+      kind: number
+      default: 0.0
+    - id: rotation
+      category: Rotation
+      label: "Rotation (deg)"
+      kind: number
+      default: 0.0
+    - id: scale_x
+      category: Scale
+      label: X
+      kind: number
+      default: 1.0
+    - id: scale_y
+      category: Scale
+      label: Y
+      kind: number
+      default: 1.0
+    - id: pivot_x
+      category: Pivot
+      label: X
+      kind: number
+      default: 0.5
+    - id: pivot_y
+      category: Pivot
+      label: Y
+      kind: number
+      default: 0.5
+  src: web/nodes/coordinates/mapping.js
+  api: /api/uv/mapping

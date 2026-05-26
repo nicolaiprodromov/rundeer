@@ -1,0 +1,26 @@
+loop-decompose:
+  label: "Loop · Decompose"
+  category: Loop
+  desc: "Iterate over each item of a bundle"
+  in:
+    - id: bundle
+      label: Bundle
+      type: any
+  out:
+    - id: item
+      label: Item
+      type: any
+    - id: index
+      label: Index
+      type: number
+    - id: count
+      label: Count
+      type: number
+  props:
+    - id: loop_id
+      label: Loop ID
+      kind: text
+      default: "loop1"
+      placeholder: "unique loop name"
+  pairWith: loop-output
+  src: web/nodes/loop/loop-decompose.js

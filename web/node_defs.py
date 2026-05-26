@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-_CONFIG_DIR = Path(__file__).resolve().parent / "config" / "nodes"
+_CONFIG_DIR = Path(__file__).resolve().parent / "nodes"
 
 KNOWN_SOCKET_TYPES = {
     "text", "image", "video", "number", "boolean", "definition",

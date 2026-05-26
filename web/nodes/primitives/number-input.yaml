@@ -1,0 +1,19 @@
+number-input:
+  label: Number
+  category: Primitives
+  desc: "Numeric value"
+  in: []
+  out:
+    - id: out
+      label: Number
+      type: number
+  props:
+    - id: value
+      label: Value
+      kind: number
+      default: 1
+  aliases:
+    outputs:
+      number: out
+      value: out
+  src: web/nodes/primitives/number-input.js

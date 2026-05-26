@@ -21,10 +21,6 @@ class SandboxError(PermissionError):
 
 def resolve_within(root: Path, rel: str) -> Path:
 
-
-
-
-
     if rel is None or str(rel).strip() == "":
         raise SandboxError("empty path")
     root_resolved = root.resolve()

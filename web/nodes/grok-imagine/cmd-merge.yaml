@@ -1,0 +1,83 @@
+cmd-merge:
+  label: Merge
+  category: Grok Imagine
+  desc: "Composite multiple images"
+  in:
+    - id: trigger
+      label: Run
+      type: run
+    - id: input
+      label: Input Images
+      type: image
+      multi: true
+    - id: subject
+      label: Subject
+      type: text
+  out:
+    - id: out
+      label: "Run →"
+      type: image
+  props:
+    - id: style
+      category: Run
+      label: Style
+      kind: text
+      default: "Moebius"
+      placeholder: "Moebius"
+    - id: iterations
+      category: Run
+      label: Iterations
+      kind: number
+      default: 1
+    - id: concurrency
+      category: Run
+      label: Concurrency
+      kind: number
+      default: null
+      placeholder: "auto"
+    - id: output_dir
+      category: Run
+      label: Output Dir
+      kind: text
+      default: ".rundeer/data/outputs"
+    - id: output_name
+      category: Run
+      label: Output Name
+      kind: text
+      default: "output"
+    - id: model
+      category: Run
+      label: Image Model
+      kind: text
+      default: "grok-imagine-image"
+    - id: aspect_ratio
+      category: Media
+      label: Aspect Ratio
+      kind: text
+      default: "1:1"
+    - id: resolution
+      category: Media
+      label: Resolution
+      kind: text
+      default: ""
+      placeholder: "1k or 2k"
+    - id: pad_reference
+      category: References
+      label: Pad Inputs
+      kind: checkbox
+      default: true
+    - id: ref_quality
+      category: References
+      label: JPEG Quality
+      kind: number
+      default: 85
+  traits: [command, heavy]
+  aliases:
+    inputs:
+      run: trigger
+      prompt: subject
+      reference: input
+    outputs:
+      image: out
+      result: out
+  src: web/nodes/grok-imagine/cmd-merge.js

@@ -1,10 +1,5 @@
 
-
-
-
 "use strict";
-
-
 
 const SOCKET_TYPES = {
   text:         { color: "oklch(74% 0.180 235)", label: "String" },
@@ -70,14 +65,6 @@ const PROP_GROUPS = {
 };
 
 
-
-
-function compressInHasTextUpstream(nodeId) {
-  const edge = activeIncomingEdges(nodeId, "in")[0];
-  if (!edge) return false;
-  const sock = outputSocketDef(edge.fromNode, edge.fromSocket);
-  return baseType(sock?.type || "any") === "text";
-}
 
 
 
@@ -587,8 +574,10 @@ const ix = {
 function addNode(type, canvasX, canvasY, opts = {}) {
   
   
-  if (type === "loop") {
-    return addLoopPair(canvasX, canvasY, opts);
+  const _pairType = type === "loop" ? "loop-decompose" : type;
+  const _pairReg = (window.RundeerNodes || {})[_pairType];
+  if ((type === "loop" || (NODE_BY_TYPE[type]?.pairWith && !opts.skipPair)) && _pairReg?.createPair) {
+    return _pairReg.createPair(canvasX, canvasY, opts, _nodeUICtx());
   }
   const def = NODE_BY_TYPE[type];
   if (!def) return null;
@@ -596,12 +585,6 @@ function addNode(type, canvasX, canvasY, opts = {}) {
   const props = {};
   for (const p of def.props || []) props[p.id] = p.default ?? "";
   Object.assign(props, opts.props || {});
-  
-  
-  const isStandaloneDecompose = (type === "loop-decompose" && !opts.skipPair);
-  if (isStandaloneDecompose) {
-    props.loop_id = nextLoopId();
-  }
   graph.nodes[id] = {
     id, type, x: canvasX, y: canvasY, props,
     title: "",
@@ -624,34 +607,6 @@ function addNode(type, canvasX, canvasY, opts = {}) {
   };
   const _addReg = (window.RundeerNodes || {})[type];
   if (_addReg?.migrate) _addReg.migrate(graph.nodes[id]);
-  if (isStandaloneDecompose) {
-    const outDef = NODE_BY_TYPE["loop-output"];
-    const outProps = {};
-    for (const p of outDef.props || []) outProps[p.id] = p.default ?? "";
-    outProps.loop_id = props.loop_id;
-    const outId = genNodeId();
-    graph.nodes[outId] = {
-      id: outId, type: "loop-output",
-      x: canvasX + 360, y: canvasY, props: outProps,
-      title: "",
-      width: outDef.defaultWidth || 220,
-      height: outDef.defaultHeight || null,
-      collapsed: false,
-      foldLocked: false,
-      previewMode: null,
-      previewIndex: 0,
-      previewZoom: 1,
-      previewPanX: 0,
-      previewPanY: 0,
-      textZoom: 1,
-      minimized: false,
-      muted: Boolean(opts.muted),
-      collapsedPanels: {},
-      lastRunMs: null,
-      lastRunStatus: null,
-      lastRunCount: 0,
-    };
-  }
   renderGraph();
   if (!opts.skipSelect) selectOnly(id);
   if (!opts.skipAutosave) scheduleAutosave();
@@ -660,75 +615,6 @@ function addNode(type, canvasX, canvasY, opts = {}) {
 
 
 
-
-function addLoopPair(canvasX, canvasY, opts = {}) {
-  const loopId = nextLoopId();
-  const decDef = NODE_BY_TYPE["loop-decompose"];
-  const decProps = {};
-  for (const p of decDef.props || []) decProps[p.id] = p.default ?? "";
-  Object.assign(decProps, opts.props || {});
-  decProps.loop_id = loopId;
-  const decId = genNodeId(opts.id);
-  graph.nodes[decId] = {
-    id: decId, type: "loop-decompose",
-    x: canvasX, y: canvasY, props: decProps,
-    title: "",
-    width: decDef.defaultWidth || 220, collapsed: false,
-    foldLocked: false,
-    previewMode: null,
-    previewIndex: 0,
-    previewZoom: 1,
-    previewPanX: 0,
-    previewPanY: 0,
-    textZoom: 1,
-    minimized: false,
-    muted: Boolean(opts.muted),
-    collapsedPanels: {},
-    lastRunMs: null,
-    lastRunStatus: null,
-    lastRunCount: 0,
-  };
-  const outDef = NODE_BY_TYPE["loop-output"];
-  const outProps = {};
-  for (const p of outDef.props || []) outProps[p.id] = p.default ?? "";
-  outProps.loop_id = loopId;
-  const outId = genNodeId();
-  graph.nodes[outId] = {
-    id: outId, type: "loop-output",
-    x: canvasX + 360, y: canvasY, props: outProps,
-    title: "",
-    width: outDef.defaultWidth || 220, collapsed: false,
-    foldLocked: false,
-    previewMode: null,
-    previewIndex: 0,
-    previewZoom: 1,
-    previewPanX: 0,
-    previewPanY: 0,
-    textZoom: 1,
-    minimized: false,
-    muted: Boolean(opts.muted),
-    collapsedPanels: {},
-    lastRunMs: null,
-    lastRunStatus: null,
-    lastRunCount: 0,
-  };
-  renderGraph();
-  if (!opts.skipSelect) selectOnly(decId);
-  scheduleAutosave();
-  return decId;
-}
-
-
-function nextLoopId() {
-  const used = new Set(
-    Object.values(graph.nodes)
-      .filter((n) => n.type === "loop-decompose" || n.type === "loop-output")
-      .map((n) => String(n.props.loop_id || ""))
-  );
-  let i = 1;
-  while (used.has(`loop${i}`)) i++;
-  return `loop${i}`;
-}
 
 function removeNode(id) {
   
@@ -782,10 +668,8 @@ function inputSocketDefsForDef(def) {
 
 function canonicalInputSocketId(nodeId, socketId) {
   const node = graph.nodes[nodeId];
-  if (node?.type === "mix") {
-    if (socketId === "color_a") return "a";
-    if (socketId === "color_b") return "b";
-  }
+  const reg = (window.RundeerNodes || {})[node?.type];
+  if (reg?.canonicalInputSocketId) return reg.canonicalInputSocketId(node, socketId);
   return socketId;
 }
 
@@ -1451,7 +1335,7 @@ function _nodeUICtx() {
     activeIncomingEdges, outputProducesBundle, outputSocketDef, baseType,
     isNodeMuted, _graphRunState: () => _graphRunState,
     runFromTrigger, resumeGraphRun, isPauseNodeResumeReady,
-    fetchJSON, genNodeId, genEdgeId, compressInHasTextUpstream,
+    fetchJSON, genNodeId, genEdgeId,
   };
 }
 
@@ -3899,10 +3783,7 @@ function nodeResizeMin(node) {
   const def = NODE_BY_TYPE[node.type];
   const reg = (window.RundeerNodes || {})[node.type];
   if (reg?.resizeMin) return reg.resizeMin(node, def);
-  if (node.type === "reroute") {
-    return { w: def?.defaultWidth || 88, h: def?.defaultHeight || 30 };
-  }
-  const minW = node.type === "text-input" ? 220 : (def?.defaultWidth ? Math.min(def.defaultWidth, 220) : 160);
+  const minW = def?.defaultWidth ? Math.min(def.defaultWidth, 220) : 160;
 
   const HEADER = 34;
   const PANEL_HEAD = 32;
@@ -3912,12 +3793,7 @@ function nodeResizeMin(node) {
   const PREVIEW_BODY = 120;
   const FOOTER = 26;
   const MINIMIZED_BODY = 18;
-  
-  
-  
-  
-  
-  const BOTTOM_BUFFER = node.type === "text-input" ? 6 : 50;
+  const BOTTOM_BUFFER = 50;
 
   if (node.minimized) {
     return {
@@ -6160,7 +6036,8 @@ function enableMentions(control, nodeId) {
 
 
 function isPauseNodeResumeReady(nodeId) {
-  return Boolean(_graphRunState && _graphRunState.paused && _graphRunState.pausedNodeId === nodeId && !_graphRunState.cancelled);
+  const reg = (window.RundeerNodes || {})["pause"];
+  return reg?.isPauseResumeReady ? reg.isPauseResumeReady(nodeId, { _graphRunState: () => _graphRunState }) : false;
 }
 
 async function pauseGraphAtNode(nodeId, outputs, opts = {}) {
@@ -6541,155 +6418,18 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
 }
 
 function collectDefinitionMapForCommand(nodeId) {
-  const definitions = {};
-  const stack = [nodeId];
-  const visited = new Set();
-  while (stack.length) {
-    const current = stack.pop();
-    if (!current || visited.has(current)) continue;
-    visited.add(current);
-    for (const edge of activeIncomingEdges(current)) {
-      const source = graph.nodes[edge.fromNode];
-      if (!source || isNodeMuted(source)) continue;
-      if (source.type === "definition") {
-        const name = String(source.props?.name || "").trim().replace(/^@+/, "");
-        const file = String(source.props?.file || "").trim();
-        if (name && file) definitions[name] = file;
-      }
-      if (!visited.has(edge.fromNode)) stack.push(edge.fromNode);
-    }
-  }
-  return definitions;
+  return window.RundeerNodeHelpers.collectDefinitionMapForCommand(nodeId, {
+    activeIncomingEdges, graph, isNodeMuted,
+  });
 }
 
 async function executeCommandNode(node, inputs, opts = {}) {
-  const cmdMap = {
-    "cmd-image": "image", "cmd-video": "video", "cmd-edit": "edit",
-    "cmd-merge": "merge", "cmd-extend": "extend",
-  };
-  const command = cmdMap[node.type];
-  const p = node.props;
-  
-  
-  const pick = (key) => (inputs[key] !== undefined && inputs[key] !== "" && inputs[key] !== null) ? inputs[key] : p[key];
-  const num = (key, fallback) => {
-    const v = pick(key);
-    if (v === "" || v == null) return fallback;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
-  };
-  const optionalNum = (key) => {
-    const v = pick(key);
-    if (v === "" || v == null) return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  };
-  const str = (key, fallback) => {
-    const v = pick(key);
-    return (v === "" || v == null) ? (fallback ?? "") : String(v);
-  };
-  const bool = (key, fallback = false) => {
-    const v = pick(key);
-    if (v === "" || v == null) return fallback;
-    if (typeof v === "string") return !["false", "0", "no", "off"].includes(v.trim().toLowerCase());
-    return Boolean(v);
-  };
-  
-  
-  const inputList = Array.isArray(inputs.input)
-    ? inputs.input.filter((v) => v).map((v) => String(v)).join(",")
-    : (inputs.input || "");
-  const outputDir = str("output_dir", ".rundeer/data/outputs");
-  const outputName = str("output_name", "output");
-  const model = str("model", "");
-  const aspectRatio = str("aspect_ratio", "");
-  const resolution = str("resolution", "");
-  const usesImageModel = command === "image" || command === "merge" || command === "edit";
-  const usesVideoModel = command === "video" || command === "extend" || command === "edit";
-  const payload = {
-    command,
-    dryRun: Boolean(opts.dryRun),
-    subject: inputs.subject || "",
-    motion: inputs.motion || "",
-    style: str("style", ""),
-    batch: {
-      iterations: num("iterations", 1),
-      concurrency: optionalNum("concurrency"),
-      grid: false,
-      grid_only: false,
-      grid_options: {
-        rows: "auto",
-        columns: "auto",
-        padding: 0,
-        bg_color: "#000000",
-      },
-      chain: bool("chain", false),
-      chain_compose: bool("chain_compose", false),
-      chain_threshold: num("chain_threshold", 12),
-      chain_override: num("chain_override", 50),
-      chain_dilate: num("chain_dilate", 6),
-      chain_feather: num("chain_feather", 8),
-      chain_min_region: num("chain_min_region", 64),
-    },
-    image: {
-      model: usesImageModel ? model : "",
-      aspect_ratio: command === "image" || command === "merge" || (command === "edit" && str("edit_type", "image") === "image") ? aspectRatio : "",
-      resolution: command === "image" || command === "merge" || (command === "edit" && str("edit_type", "image") === "image") ? resolution : "",
-    },
-    video: {
-      model: usesVideoModel ? model : "",
-      aspect_ratio: command === "video" || (command === "edit" && str("edit_type", "image") === "video") ? aspectRatio : "",
-      duration: num("duration", 6),
-      resolution: command === "video" || (command === "edit" && str("edit_type", "image") === "video") ? (resolution || "720p") : "",
-    },
-    inputs: {
-      input: inputList,
-      startFrame: inputs.start_frame || "",
-      source: inputs.source || "",
-      editType: str("edit_type", "image"),
-    },
-    output: { dir: outputDir, name: outputName },
-    references: {
-      ids: str("reference_ids", ""),
-      pad: bool("pad_reference", true),
-      quality: num("ref_quality", 85),
-    },
-    definitions: collectDefinitionMapForCommand(node.id),
-    extra: {},
-  };
-
-  appendRunLog(`  ↳ ${command} · "${(payload.subject || "").slice(0, 50)}"\n`);
-
-  const endpoint = payload.dryRun ? "/api/plan" : "/api/run";
-  const result = await graphFetchJSON(endpoint, { method: "POST", body: JSON.stringify(payload) }, opts);
-
-  if (payload.dryRun) {
-    appendRunLog(result.output || "(no output)\n");
-    bindRunLogToRun(result.id);
-    await persistRunLogNow(result.id);
-    return { id: result.id };
-  }
-
-  appendRunLog(`  ↳ run ${result.id}\n`);
-  const runState = graphRunFromOpts(opts);
-  if (runState && result.id) runState.activeRunIds.add(result.id);
-  bindRunLogToRun(result.id);
-  await persistRunLogNow(result.id);
-  let final;
-  try {
-    final = await pollUntilDone(result.id, opts);
-  } finally {
-    if (runState && result.id) runState.activeRunIds.delete(result.id);
-    await persistRunLogNow(result.id).catch(() => {});
-  }
-  
-  
-  const artifacts = await findArtifactsForRun(final, { output_dir: outputDir, output_name: outputName }, opts);
-  return {
-    id: result.id,
-    firstArtifact: artifacts[0] || "",
-    artifacts,
-  };
+  return window.RundeerNodeHelpers.executeCommandNode(node, inputs, opts, {
+    appendRunLog, graphFetchJSON, graphRunFromOpts,
+    pollUntilDone, findArtifactsForRun,
+    bindRunLogToRun, persistRunLogNow,
+    activeIncomingEdges, graph, isNodeMuted,
+  });
 }
 
 async function findArtifactsForRun(runRecord, props, opts = {}) {
@@ -8723,8 +8463,7 @@ function applyAgentPatchOp(op) {
         const node = graph.nodes[id];
         const def = (window.NODE_REGISTRY || {})[node.type];
         for (const [rawKey, v] of Object.entries(op.props || {})) {
-          const k = node.type === "mix" && rawKey === "color_a" ? "a"
-            : (node.type === "mix" && rawKey === "color_b" ? "b" : rawKey);
+          const k = canonicalInputSocketId(id, rawKey);
           if (k === "muted") {
             node.muted = Boolean(v);
             continue;
@@ -9244,6 +8983,16 @@ async function loadYamlNodeDefs() {
     const data = await fetchJSON("/api/node-defs");
     const nodes = data && Array.isArray(data.nodes) ? data.nodes : [];
     const scriptPromises = [];
+    const helperSources = ["/nodes/grok-imagine/_command-helpers.js"];
+    for (const src of helperSources) {
+      scriptPromises.push(new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error(`Failed to load node helper: ${src}`));
+        document.head.appendChild(s);
+      }));
+    }
     for (const nodeDef of nodes) {
       let cat = NODE_CATALOG.find((c) => c.category === nodeDef.category);
       if (!cat) {
@@ -9253,8 +9002,8 @@ async function loadYamlNodeDefs() {
       cat.nodes.push(nodeDef);
       NODE_BY_TYPE[nodeDef.type] = { ...nodeDef, category: nodeDef.category };
       if (nodeDef.src) {
-        const srcPath = nodeDef.src.startsWith("web/static/")
-          ? "/" + nodeDef.src.replace("web/static/", "static/")
+        const srcPath = nodeDef.src.startsWith("web/")
+          ? "/" + nodeDef.src.replace("web/", "")
           : "/" + nodeDef.src;
         scriptPromises.push(new Promise((resolve, reject) => {
           const s = document.createElement("script");

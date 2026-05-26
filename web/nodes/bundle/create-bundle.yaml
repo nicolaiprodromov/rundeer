@@ -1,0 +1,23 @@
+create-bundle:
+  label: Create Bundle
+  category: Bundle
+  desc: "Combine multiple inputs of the same type into a bundle. Plug into the dotted socket — a new slot appears automatically."
+  defaultWidth: 240
+  in:
+    - id: items
+      label: Item
+      type: any
+      multi: true
+  out:
+    - id: out
+      label: Bundle
+      type: any
+  props: []
+  traits: [producesBundle]
+  aliases:
+    inputs:
+      input: items
+    outputs:
+      bundle: out
+      output: out
+  src: web/nodes/bundle/create-bundle.js

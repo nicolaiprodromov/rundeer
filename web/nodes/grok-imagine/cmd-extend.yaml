@@ -1,0 +1,68 @@
+cmd-extend:
+  label: Extend
+  category: Grok Imagine
+  desc: "Extend an existing video clip"
+  in:
+    - id: trigger
+      label: Run
+      type: run
+    - id: source
+      label: Source Clip
+      type: video
+    - id: subject
+      label: Subject
+      type: text
+    - id: motion
+      label: Motion
+      type: text
+  out:
+    - id: out
+      label: "Run →"
+      type: video
+  props:
+    - id: style
+      category: Run
+      label: Style
+      kind: text
+      default: "Moebius"
+      placeholder: "Moebius"
+    - id: iterations
+      category: Run
+      label: Iterations
+      kind: number
+      default: 1
+    - id: concurrency
+      category: Run
+      label: Concurrency
+      kind: number
+      default: null
+      placeholder: "auto"
+    - id: output_dir
+      category: Run
+      label: Output Dir
+      kind: text
+      default: ".rundeer/data/outputs"
+    - id: output_name
+      category: Run
+      label: Output Name
+      kind: text
+      default: "output"
+    - id: model
+      category: Run
+      label: Video Model
+      kind: text
+      default: "grok-imagine-video"
+    - id: duration
+      category: Media
+      label: "Duration (s)"
+      kind: number
+      default: 6
+  traits: [command, heavy]
+  aliases:
+    inputs:
+      run: trigger
+      video: source
+    outputs:
+      video: out
+      result: out
+  src: web/nodes/grok-imagine/cmd-extend.js

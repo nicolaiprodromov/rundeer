@@ -1,0 +1,60 @@
+folder-bundle:
+  label: Bundle
+  category: Bundle
+  desc: "Emit a bundle from a folder, or extract frames from a video / animated image"
+  defaultWidth: 280
+  in: []
+  out:
+    - id: out
+      label: Bundle
+      type: any
+  props:
+    - id: path
+      label: Path
+      kind: text
+      default: ""
+      placeholder: "folder/ or clip.mp4 / .mov / .webm / .gif / .webp"
+    - id: kind
+      category: Settings
+      label: Folder Filter
+      kind: select
+      options: [all, image, video, media]
+      default: all
+    - id: recursive
+      category: Settings
+      label: "Recursive (folder)"
+      kind: checkbox
+      default: false
+    - id: fps
+      category: Media
+      label: "Frames / sec (0 = native)"
+      kind: number
+      default: 0
+    - id: modulo
+      category: Media
+      label: "Modulo (every Nth, 1 = all)"
+      kind: number
+      default: 1
+    - id: start
+      category: Media
+      label: "Start (item/frame #, 0 = first)"
+      kind: number
+      default: 0
+    - id: end
+      category: Media
+      label: "End (item/frame #, 0 = all)"
+      kind: number
+      default: 0
+    - id: format
+      category: Media
+      label: Frame Format
+      kind: select
+      options: [png, jpg, webp]
+      default: png
+  traits: [producesBundle]
+  aliases:
+    outputs:
+      bundle: out
+      output: out
+  src: web/nodes/bundle/folder-bundle.js
+  api: /api/folder-list

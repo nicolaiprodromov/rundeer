@@ -1,0 +1,16 @@
+time:
+  label: Time
+  category: Agent Brain
+  desc: "Injects the current timestamp when the agent runs. Connect into Brain sections (directly or via a Bundle)."
+  in: []
+  out:
+    - id: out
+      label: Time
+      type: text
+  props:
+    - id: format
+      label: Format
+      kind: select
+      options: [iso, unix, human, date, time]
+      default: iso
+  src: web/nodes/agent-brain/time.js

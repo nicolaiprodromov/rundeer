@@ -28,16 +28,18 @@ from rundeer.core.config import brain_dir, normalize_config, normalize_rate_limi
 from rundeer.web.animator import log_line, run_console
 from web.node_defs import get_node_defs
 
-from web.backends._helpers import IMAGE_EXTS, is_sensitive_file, relpath, safe_project_path
-from web.backends.operations.blur import blur_image
-from web.backends.operations.compress import compress_dispatch, compress_image
-from web.backends.operations.crop_media import crop_media_node
-from web.backends.operations.resize_media import resize_media_node
-from web.backends.output.canvas import canvas_media_node
-from web.backends.prompt.filter_prompt import filter_prompt
+from web.nodes._shared.helpers import IMAGE_EXTS, is_sensitive_file, relpath, safe_project_path
+from web.nodes.operations.blur import blur_image
+from web.nodes.operations.compress import compress_dispatch, compress_image
+from web.nodes.operations.crop_media import crop_media_node
+from web.nodes.operations.resize_media import resize_media_node
+from web.nodes.output.canvas import canvas_media_node
+from web.nodes.prompt.filter_prompt import filter_prompt
+from web.nodes.bundle.folder_bundle import list_folder
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+NODES_DIR = Path(__file__).resolve().parent / "nodes"
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".webm"}
 TEXT_EXTS = {".md", ".txt", ".json", ".py", ".csv", ".log"}
 ARTIFACT_EXTS = IMAGE_EXTS | VIDEO_EXTS | {".json", ".csv"}
@@ -186,6 +188,15 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_static(STATIC_DIR / "node-editor.html")
             elif path.startswith("/static/"):
                 self._send_static(safe_static_path(path.removeprefix("/static/")))
+            elif path.startswith("/nodes/"):
+                rel = unquote(path.removeprefix("/nodes/")).lstrip("/")
+                fpath = (NODES_DIR / rel).resolve()
+                nodes_root = NODES_DIR.resolve()
+                if fpath != nodes_root and nodes_root not in fpath.parents:
+                    raise PermissionError("nodes path escapes directory")
+                if fpath.suffix != ".js":
+                    raise PermissionError("only .js files served from /nodes/")
+                self._send_file(fpath, cache=False)
             elif path == "/api/state":
                 light = (query.get("light") or ["0"])[0] in {"1", "true", "yes"}
                 state = build_state(self.server.project_root, light=light)
@@ -298,19 +309,19 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/compress":
                 self._send_json(compress_dispatch(self.server.project_root, payload))
             elif parsed.path == "/api/uv/coordinate":
-                from .uv_api import coordinate as _uv_coord
+                from web.nodes.coordinates.coordinate import coordinate as _uv_coord
                 self._send_json(_uv_coord(self.server.project_root, payload))
             elif parsed.path == "/api/uv/vector":
-                from .uv_api import vector as _uv_vec
+                from web.nodes.vector.vector_op import vector as _uv_vec
                 self._send_json(_uv_vec(self.server.project_root, payload))
             elif parsed.path == "/api/uv/mapping":
-                from .uv_api import mapping as _uv_map
+                from web.nodes.coordinates.mapping import mapping as _uv_map
                 self._send_json(_uv_map(self.server.project_root, payload))
             elif parsed.path == "/api/uv/mix":
-                from .uv_api import mix as _uv_mix
+                from web.nodes.vector.mix import mix as _uv_mix
                 self._send_json(_uv_mix(self.server.project_root, payload))
             elif parsed.path == "/api/uv/render":
-                from .uv_api import render as _uv_render
+                from web.nodes.output.uv_render import render as _uv_render
                 self._send_json(_uv_render(self.server.project_root, payload))
             elif parsed.path == "/api/agent/brain-graph":
                 self._send_json(_save_brain_graph_payload(self.server.project_root, payload))
@@ -965,175 +976,6 @@ def list_files(root: Path, query: Dict[str, List[str]]) -> List[Dict[str, Any]]:
 
 
 ANIMATED_EXTS = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".avi", ".gif", ".webp", ".apng"}
-
-
-def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
-    rel = (query.get("path") or [""])[0]
-    kind = (query.get("kind") or ["all"])[0]
-    recursive = (query.get("recursive") or ["0"])[0] in {"1", "true", "yes"}
-    if not rel:
-        return {"paths": [], "error": "no path"}
-    try:
-        target = safe_project_path(root, rel)
-    except PermissionError as exc:
-        return {"paths": [], "error": str(exc)}
-    if not target.exists():
-        return {"paths": [], "error": f"path not found: {rel}"}
-
-
-    if target.is_file() and target.suffix.lower() in ANIMATED_EXTS:
-        try:
-            fps = float((query.get("fps") or [""])[0] or 0) or None
-        except ValueError:
-            fps = None
-        try:
-            modulo = int((query.get("modulo") or [""])[0] or 1)
-        except ValueError:
-            modulo = 1
-        modulo = max(1, modulo)
-
-        try:
-            start = int((query.get("start") or [""])[0] or 0) or 0
-        except ValueError:
-            start = 0
-        try:
-            end = int((query.get("end") or [""])[0] or 0) or 0
-        except ValueError:
-            end = 0
-        fmt = ((query.get("format") or ["png"])[0] or "png").lower()
-        if fmt not in {"png", "jpg", "jpeg", "webp"}:
-            fmt = "png"
-        return extract_frames(
-            root, target, fps=fps, start=start, end=end, fmt=fmt, modulo=modulo,
-        )
-
-    if not target.is_dir():
-        return {"paths": [], "error": f"not a folder or supported animated file: {rel}"}
-    folder = target
-    out: List[str] = []
-    if recursive:
-        candidates = iter_files(folder, root)
-    else:
-        candidates = (p for p in sorted(folder.iterdir()) if p.is_file() and not skip_file(p, root))
-    for path in candidates:
-        suffix = path.suffix.lower()
-        if kind == "image" and suffix not in IMAGE_EXTS:
-            continue
-        if kind == "video" and suffix not in VIDEO_EXTS:
-            continue
-        if kind == "media" and suffix not in IMAGE_EXTS | VIDEO_EXTS:
-            continue
-        out.append(relpath(root, path))
-    out.sort(key=str.lower)
-
-    try:
-        start_i = int((query.get("start") or [""])[0] or 0) or 0
-    except ValueError:
-        start_i = 0
-    try:
-        end_i = int((query.get("end") or [""])[0] or 0) or 0
-    except ValueError:
-        end_i = 0
-    lo = max(0, start_i - 1) if start_i > 0 else 0
-    hi = end_i if end_i > 0 else len(out)
-    if lo or hi != len(out):
-        out = out[lo:hi]
-    try:
-        modulo_i = int((query.get("modulo") or [""])[0] or 1)
-    except ValueError:
-        modulo_i = 1
-    modulo_i = max(1, modulo_i)
-    if modulo_i > 1:
-        out = [path for idx, path in enumerate(out) if idx % modulo_i == 0]
-    return {"paths": out, "count": len(out), "source": "folder"}
-
-
-def extract_frames(
-    root: Path,
-    video: Path,
-    *,
-    fps: Optional[float],
-    start: int,
-    end: int,
-    fmt: str,
-    modulo: int = 1,
-) -> Dict[str, Any]:
-    if shutil.which("ffmpeg") is None:
-        return {"paths": [], "error": "ffmpeg not found on PATH; install ffmpeg to extract frames"}
-
-
-    try:
-        stat = video.stat()
-    except OSError as exc:
-        return {"paths": [], "error": f"stat failed: {exc}"}
-    import hashlib
-    modulo = max(1, int(modulo or 1))
-    key_src = f"{video.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{fps}|{start}|{end}|{fmt}|{modulo}"
-    key = hashlib.sha1(key_src.encode("utf-8")).hexdigest()[:16]
-    cache_root = rpaths.cache_dir(root, "frames")
-    out_dir = cache_root / f"{video.stem}-{key}"
-    manifest = out_dir / "frames.json"
-
-    if manifest.exists():
-        try:
-            data = json.loads(manifest.read_text())
-            paths = data.get("paths") or []
-            if paths and all((root / p).exists() for p in paths):
-                return {"paths": paths, "count": len(paths), "source": "frames", "cached": True}
-        except Exception:
-            pass
-
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    for child in out_dir.iterdir():
-        try:
-            child.unlink()
-        except OSError:
-            pass
-
-    pattern = out_dir / f"frame_%06d.{fmt}"
-
-
-    start_idx = max(1, start) if start > 0 else 1
-    end_idx = end if (end and end >= start_idx) else 0
-    count = ((end_idx - start_idx) // modulo + 1) if end_idx > 0 else 0
-
-    cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(video)]
-    vf: List[str] = []
-    if fps and fps > 0:
-        vf.append(f"fps={fps}")
-    select_terms: List[str] = []
-    start_zero = start_idx - 1
-    if start_idx > 1:
-        select_terms.append(f"gte(n\\,{start_zero})")
-    if end_idx > 0:
-        select_terms.append(f"lte(n\\,{end_idx - 1})")
-    if modulo > 1:
-        select_terms.append(f"eq(mod(n-{start_zero}\\,{modulo})\\,0)")
-    if select_terms:
-        select_expr = "*".join(select_terms)
-        vf.append(f"select='{select_expr}'")
-        vf.append("setpts=N/FRAME_RATE/TB")
-    if vf:
-        cmd += ["-vf", ",".join(vf), "-vsync", "vfr"]
-    if count > 0:
-        cmd += ["-frames:v", str(count)]
-    if fmt in {"jpg", "jpeg"}:
-        cmd += ["-q:v", "2"]
-    cmd += [str(pattern)]
-    try:
-        subprocess.run(cmd, check=True, capture_output=True)
-    except subprocess.CalledProcessError as exc:
-        stderr = exc.stderr.decode("utf-8", "replace") if exc.stderr else ""
-        return {"paths": [], "error": f"ffmpeg failed: {stderr.strip() or exc}"}
-
-    frames = sorted(p for p in out_dir.iterdir() if p.is_file() and p.suffix.lower().lstrip(".") in {"png", "jpg", "jpeg", "webp"})
-    paths = [relpath(root, p) for p in frames]
-    try:
-        manifest.write_text(json.dumps({"paths": paths, "source": str(video)}, indent=2))
-    except OSError:
-        pass
-    return {"paths": paths, "count": len(paths), "source": "frames", "cached": False}
 
 
 def ensure_thumbnail(root: Path, rel: str, size: int) -> Path:

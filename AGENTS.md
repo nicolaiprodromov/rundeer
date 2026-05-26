@@ -1,11 +1,14 @@
-# Rundeer Project Rules
+# RUNDEER PROJECT RULES
 
-You are working on the Rundeer project repository.
+You are a coding agent working on the Rundeer project.
 
-## What Rundeer Is
-Rundeer is a CLI-backed visual workbench for batch-first AI image and video generation. It turns creative directions into repeatable runs, keeps style brains and references organized, supports dry-runs before spending API credits, and exposes the same command engine through CLI commands and a browser node workbench.
+## What Rundeer is
 
-Primary user workflows are image generation, video generation, image/video edit, merge, extend, batch execution.
+Rundeer is in `alpha pre-launch phase`. *Only you and the user have access to this codebase at the moment.*
+
+Rundeer is a CLI-backed, node-based, visual programming workbench for *AI-enhanced image and video generation/creation/editing*. The main goal of rundeer is to support professional artists in the development of high quality audio-visual content with granular control & high throughput 
+
+Rundeer allows for complex & emergent procedural workflows by giving the user the ability to generate/manipulate/mix/edit images and videos, create highly customized agents, and combine everything in node graphs that
 
 ## Current Structure
 - Root entrypoints: `rundeer.py`, `__init__.py`, `__main__.py`.
@@ -36,6 +39,7 @@ Primary user workflows are image generation, video generation, image/video edit,
 - Do not write runtime data directly under `.rundeer/`; use `.rundeer/data/` through `src/rundeer/core/paths.py`.
 - Do not restore deleted tests or unrelated user changes unless explicitly asked.
 - DO NOT SAY YOU FINISHED WITHOUT TRIPLE CHECKING THAT YOU HAVE ACCOMPLISHED EVERY REQUIREMENT OF THE TASK.
+- DO NOT CODE FALLBACKS OR PRESERVE ANY OLD FUNCTIONALITY. When the user requests features, because we are in a pre-release phase, there is no need to preserve old functionality, legacy code or to create fallbacks and live migrations. Old graphs in `.rundeer/data/graphs/` and other data, logs, configs or whatever that might break after code changes must be adapted or the user must be warned directly about this. REPEAT: DO NOT CODE FALLBACKS OR LIVE MIGRATIONS, DO NOT PRESERVE ANY OLD FUNCTIONALITY AND NO LEGACY CODE PRESERVATION.
 
 ## Workflow
 
@@ -50,11 +54,13 @@ Primary user workflows are image generation, video generation, image/video edit,
 9. Throughout the task you should update the user on your reasoning and understanding of the task and what you are currently doing.
 
 ## Working Style
-1. Read the current files before editing, especially if the worktree is dirty.
-2. Use existing helpers and good modular coding conventions.
-3. Use `src/rundeer/core/paths.py` for `.rundeer` paths.
-5. DO NOT CODE FALLBACKS AND HALF-BAKED PATCHES. The user is an experienced coder and only needs the implementation to be done, if any fallbacks or safety for production ready code is needed to keep the app alive you will be told before, there is no need to code extra fallbacks to "not break the app", focus on building good, not on maintaining old conventions and structures.
-6. For UI work, use `impeccable.md` as the onboarding map and consult `.grok/skills/impeccable/SKILL.md` when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality. Respect `PRODUCT.md` and `DESIGN.md` for product register, audience, visual tokens, typography, colors, and interaction principles.
+1. ALWAYS read the current codebase repomix context first when thinking, then ALWAYS read the actual files before editing.
+2. Use `src/rundeer/core/paths.py` for `.rundeer` paths.
+3. DO NOT CODE FALLBACKS AND HALF-BAKED PATCHES. The user is an experienced coder and only needs the implementation to be done, if any fallbacks or safety for production ready code is needed to keep the app alive you will be told before, there is no need to code extra fallbacks to "not break the app", focus on building good, not on maintaining old conventions and structures.
+4. For UI work, use `impeccable.md` as the onboarding map and consult `.grok/skills/impeccable/SKILL.md` when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality. Respect `PRODUCT.md` and `DESIGN.md` for product register, audience, visual tokens, typography, colors, and interaction principles.
+5. DO NOT CODE FALLBACKS OR PRESERVE ANY OLD FUNCTIONALITY. When the user requests features, because we are in a pre-release phase, there is no need to preserve old functionality, legacy code or to create fallbacks and live migrations. Old graphs in `.rundeer/data/graphs/` and other data, logs, configs or whatever that might break after code changes must be adapted or the user must be warned directly about this. REPEAT: DO NOT CODE FALLBACKS OR LIVE MIGRATIONS, DO NOT PRESERVE ANY OLD FUNCTIONALITY AND NO LEGACY CODE PRESERVATION.
+6. VERY IMPORTANT: When a new feature or functionality is requested by the user, you must isolate this code and make it modular enough to be easily integrated in different parts of the code in the future.
+7. If the f
 
 ## Useful Validation
 - Python syntax: `python3 -m compileall -q src web rundeer.py __init__.py`.
@@ -62,3 +68,9 @@ Primary user workflows are image generation, video generation, image/video edit,
 - Dry-run generation smoke test: `python3 rundeer.py image --dry-run --no-tui --iterations=1`.
 - Web command smoke test: `python3 rundeer.py web --help`.
 - JavaScript syntax when web static code changes: `rg --files -g '*.js' -g '*.mjs' | xargs -r -n 1 node --check`.
+
+
+### Most Important Reminders:
+1. CODE IN AN ISOLATED AND MODULAR MANNER - most functionality might be reused or bootstrapped via config files, separation of concerns is a must!
+2. DO NOT CODE FALLBACKS OR PRESERVE ANY OLD FUNCTIONALITY - we are in alpha, pre-release phase and we do not wish to preserve any legacy functionality that will inflate the codebase needlesly, if a breaking change is required go all in, the user will usually request atomic tasks that present small chance of breaking the app fully.
+3. 

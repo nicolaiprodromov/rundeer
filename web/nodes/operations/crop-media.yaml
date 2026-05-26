@@ -1,0 +1,36 @@
+crop-media:
+  label: Crop
+  category: Operations
+  desc: "Crop an image or video. Size and position use pixel vectors; position starts at the source bottom-left."
+  in:
+    - id: in
+      label: Media
+      type: any
+  out:
+    - id: out
+      label: Cropped
+      type: any
+  props:
+    - id: size
+      label: Size
+      kind: text
+      default: "512,512"
+      placeholder: "width,height"
+      socketType: vector
+      passthroughWired: true
+    - id: position
+      label: Position
+      kind: text
+      default: "0,0"
+      placeholder: "x,y from bottom-left"
+      socketType: vector
+      passthroughWired: true
+  aliases:
+    inputs:
+      input: in
+      image: in
+    outputs:
+      output: out
+      result: out
+  src: web/nodes/operations/crop-media.js
+  api: /api/media/crop

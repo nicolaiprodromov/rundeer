@@ -148,7 +148,7 @@ to:
 
 With the hook system in place, move each piece of hardcoded UI out of `node-editor.js` and into the node's own JS file.
 
-#### Reroute — `web/static/nodes/layout/reroute.js`
+#### Reroute — `web/nodes/layout/reroute.js`
 
 Move `buildRerouteNodeElement` (lines 1703–1735) + `buildRerouteSocket` (lines 1737–1756) into `reroute.js` as a `buildNode` hook. The `node-editor.js` check at line 1762 becomes:
 
@@ -161,7 +161,7 @@ Remove `buildRerouteNodeElement` and `buildRerouteSocket` from `node-editor.js`.
 
 **~55 lines moved out.**
 
-#### Toolbox — `web/static/nodes/agent-brain/toolbox.js`
+#### Toolbox — `web/nodes/agent-brain/toolbox.js`
 
 Move `buildToolboxBody` (lines 420–577) + `ensureToolboxCache` (lines 409–418) into `toolbox.js` as a `buildBody` hook. The check at line 1869 becomes:
 
@@ -177,7 +177,7 @@ Remove `buildToolboxBody` and `ensureToolboxCache` from `node-editor.js`.
 
 **~170 lines moved out.**
 
-#### Run Trigger — `web/static/nodes/triggers/run-trigger.js`
+#### Run Trigger — `web/nodes/triggers/run-trigger.js`
 
 Move `buildRunTriggerButton` (lines 6451–6469) into `run-trigger.js` as a `buildFooter` hook. The check at line 1913 becomes:
 
@@ -189,7 +189,7 @@ Remove `buildRunTriggerButton` from `node-editor.js`.
 
 **~20 lines moved out.**
 
-#### Pause — `web/static/nodes/triggers/pause.js`
+#### Pause — `web/nodes/triggers/pause.js`
 
 Move `buildPauseNodeButton` (lines 6475–6495) + `isPauseNodeResumeReady` (lines 6471–6473) into `pause.js` as a `buildFooter` hook.
 
@@ -197,7 +197,7 @@ Remove from `node-editor.js`.
 
 **~25 lines moved out.**
 
-#### Compress-image — `web/static/nodes/operations/compress-image.js`
+#### Compress-image — `web/nodes/operations/compress-image.js`
 
 Move `isInputSocketVisible` compress-specific logic (lines 84–88), `compressInHasTextUpstream` (lines 75–80), `maintainCompressInstructions` (lines 1098–1128), `createCompressInstructionsHelper` (lines 1130–1160), and `COMPRESS_HELPER_PROMPT` (lines 1092–1096) into `compress-image.js`.
 
@@ -225,7 +225,7 @@ Remove all 5 compress-specific functions from `node-editor.js`.
 
 **~70 lines moved out.**
 
-#### Text-input — `web/static/nodes/primitives/text-input.js`
+#### Text-input — `web/nodes/primitives/text-input.js`
 
 Add a `resizeMin` hook:
 
@@ -246,7 +246,7 @@ if (reg?.resizeMin) return reg.resizeMin(node, def);
 
 **~6 lines replaced.**
 
-#### Mix migration — `web/static/nodes/vector/mix.js`
+#### Mix migration — `web/nodes/vector/mix.js`
 
 Move `migrateMixNode` (lines 1575–1583) and `migrateMixEdge` (lines 1585–1591) into `mix.js`. Register as a `migrate` hook:
 
@@ -262,7 +262,7 @@ Move `migrateMixNode` (lines 1575–1583) and `migrateMixEdge` (lines 1585–159
 
 **~17 lines moved out.**
 
-#### Loop pair creation — `web/static/nodes/loop/loop-decompose.js`
+#### Loop pair creation — `web/nodes/loop/loop-decompose.js`
 
 Move the `addLoopPair` (lines 834–889) and `nextLoopId` (lines 892–906) logic into `loop-decompose.js`. Add a YAML field `pairWith: loop-output` to `loop-decompose.yaml`. The generic `addNode` reads this and calls:
 
@@ -279,7 +279,7 @@ if (def.pairWith) {
 
 `executeCommandNode` (lines 6901–7029, ~130 lines) builds the API payload for all 5 command nodes. It's already called by every `cmd-*.js` resolver via `helpers.executeCommandNode`. It stays accessible through the helpers bag — but physically move the function body into a shared module:
 
-Create `web/static/nodes/grok-imagine/_command-helpers.js` loaded before the cmd-* resolvers (declared as a dependency or loaded first by convention). This file defines `executeCommandNode` and `collectDefinitionMapForCommand` on `window.RundeerNodeHelpers` (or similar).
+Create `web/nodes/grok-imagine/_command-helpers.js` loaded before the cmd-* resolvers (declared as a dependency or loaded first by convention). This file defines `executeCommandNode` and `collectDefinitionMapForCommand` on `window.RundeerNodeHelpers` (or similar).
 
 Update the 5 cmd-* JS files to call `window.RundeerNodeHelpers.executeCommandNode(...)` directly instead of going through the helpers bag.
 
@@ -308,10 +308,10 @@ Remaining type-aware code in `node-editor.js` after this: ~260 lines of generic 
 
 Node-specific Python compute functions are embedded in `web/server.py`. Extract them into per-node Python files mirroring the existing structure.
 
-### 2A. Create `web/backends/` directory
+### 2A. Create `web/nodes/` directory
 
 ```
-web/backends/
+web/nodes/
 ├── __init__.py
 ├── _helpers.py
 ├── operations/
@@ -330,7 +330,7 @@ web/backends/
 
 UV backends already live in `web/uv_api.py` — leave them there (they're already separated).
 
-### 2B. Extract shared helpers into `web/backends/_helpers.py`
+### 2B. Extract shared helpers into `web/nodes/_helpers.py`
 
 Move from `server.py`:
 
@@ -345,7 +345,7 @@ Move from `server.py`:
 
 ### 2C. Extract each backend function
 
-#### `web/backends/prompt/filter_prompt.py`
+#### `web/nodes/prompt/filter_prompt.py`
 
 Move from `server.py`:
 - `_coerce_filter_image_values(value)` — lines 837–846
@@ -355,7 +355,7 @@ Move from `server.py`:
 
 Dependencies: `litellm`, `rundeer.core.config.load_project_env`, `rundeer.core.models.resolve_llm_api_key`, `rundeer.core.media.encode_image`, `os`, `re`
 
-#### `web/backends/operations/compress.py`
+#### `web/nodes/operations/compress.py`
 
 Move from `server.py`:
 - `compress_image(root, payload)` — lines 977–1030
@@ -365,28 +365,28 @@ Move from `server.py`:
 
 Dependencies: `PIL.Image`, `subprocess`, `shutil.which`, `zipfile`, `time`, `_helpers` (for `IMAGE_COMPRESS_EXTS`, `VIDEO_COMPRESS_EXTS`)
 
-#### `web/backends/operations/blur.py`
+#### `web/nodes/operations/blur.py`
 
 Move from `server.py`:
 - `blur_image(root, payload)` — lines 1037–1104
 
 Dependencies: `PIL.Image`, `PIL.ImageFilter`, `_helpers.IMAGE_COMPRESS_EXTS`
 
-#### `web/backends/operations/crop_media.py`
+#### `web/nodes/operations/crop_media.py`
 
 Move from `server.py`:
 - `crop_media_node(root, payload)` — lines 1174–1185
 
 Dependencies: `rundeer.core.media.crop_media`, `_helpers`
 
-#### `web/backends/operations/resize_media.py`
+#### `web/nodes/operations/resize_media.py`
 
 Move from `server.py`:
 - `resize_media_node(root, payload)` — lines 1188–1199
 
 Dependencies: `rundeer.core.media.resize_media`, `_helpers`
 
-#### `web/backends/output/canvas.py`
+#### `web/nodes/output/canvas.py`
 
 Move from `server.py`:
 - `canvas_media_node(root, payload)` — lines 1202–1218
@@ -398,12 +398,12 @@ Dependencies: `rundeer.core.media.canvas_images`, `_helpers`
 Replace the inline function calls with imports:
 
 ```python
-from web.backends.prompt.filter_prompt import filter_prompt
-from web.backends.operations.compress import compress_dispatch, compress_image
-from web.backends.operations.blur import blur_image
-from web.backends.operations.crop_media import crop_media_node
-from web.backends.operations.resize_media import resize_media_node
-from web.backends.output.canvas import canvas_media_node
+from web.nodes.prompt.filter_prompt import filter_prompt
+from web.nodes.operations.compress import compress_dispatch, compress_image
+from web.nodes.operations.blur import blur_image
+from web.nodes.operations.crop_media import crop_media_node
+from web.nodes.operations.resize_media import resize_media_node
+from web.nodes.output.canvas import canvas_media_node
 ```
 
 The route handlers in `do_POST` stay in `server.py` — they're just thin dispatchers now:
@@ -649,7 +649,7 @@ These three workstreams have dependencies:
 | **1** | 1A — Add `traits` to YAML configs + parse in `node_defs.py` | Nothing |
 | **2** | 3A–3D — Delete NODE_SOCKETS, auto-gen CORE_PROMPT, auto-gen ADD_NODE types, add aliases to YAML | Step 1 (for traits) |
 | **3** | 3E–3I — Derive COMMAND_TYPES, TRIGGER_TYPES, BRAIN_NODE_TYPES from YAML | Step 1 |
-| **4** | 2A–2E — Extract server backends into `web/backends/` | Nothing (parallel with 2–3) |
+| **4** | 2A–2E — Extract server backends into `web/nodes/` | Nothing (parallel with 2–3) |
 | **5** | 1B — Expand JS file pattern to support hooks | Step 1 |
 | **6** | 1C–1D — Move type-specific UI code into per-node JS files | Step 5 |
 
@@ -671,6 +671,6 @@ Steps 2, 3, and 4 can run in parallel. Step 6 is the biggest individual chunk of
 ## Final State After All Three Workstreams
 
 - `node-editor.js`: ~9,186 lines (down from 9,776) — no hardcoded type sets, no type-specific UI code, all behavioral branching reads from YAML traits and JS hooks
-- `server.py`: ~1,520 lines (down from ~2,000) — thin route dispatchers, all compute in `web/backends/`
+- `server.py`: ~1,520 lines (down from ~2,000) — thin route dispatchers, all compute in `web/nodes/`
 - Agent code: zero hardcoded node type lists, zero stale info — everything derived from YAML at import time
 - Adding a new node type: create one YAML + one JS file + optionally one Python backend file. The agent, editor, and server all discover it automatically

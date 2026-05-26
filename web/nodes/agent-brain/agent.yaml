@@ -1,0 +1,43 @@
+agent:
+  label: Agent
+  category: Agent Brain
+  desc: "The chat agent itself. Connect a Brain into its input. Props are runtime overrides (model, temperature, iteration & rate caps, vision)."
+  defaultWidth: 320
+  in:
+    - id: brain
+      label: Brain
+      type: text
+  out: []
+  props:
+    - id: model
+      label: Model
+      kind: text
+      default: ""
+      placeholder: "inherits global agent.model"
+    - id: temperature
+      label: Temperature
+      kind: number
+      default: null
+      placeholder: "leave blank for default"
+    - id: max_tool_iterations
+      label: Max Tool Iterations
+      kind: number
+      default: null
+      placeholder: "default 12"
+    - id: max_web_search_per_turn
+      label: Max Web Searches / Turn
+      kind: number
+      default: null
+    - id: max_file_bytes
+      label: Max File Bytes
+      kind: number
+      default: null
+    - id: max_list_entries
+      label: Max List Entries
+      kind: number
+      default: null
+    - id: vision_enabled
+      label: Vision Enabled
+      kind: checkbox
+      default: true
+  src: web/nodes/agent-brain/agent.js
