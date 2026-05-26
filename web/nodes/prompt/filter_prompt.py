@@ -64,7 +64,7 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     prompt_text = str(payload.get("prompt") or "")
     instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
     model_override = str(payload.get("model") or "").strip()
-    model_name = model_override or (os.environ.get("RUNDEER_LLM_MODEL") or os.environ.get("MODEL_NAME") or "").strip()
+    model_name = model_override or (os.environ.get("RUNDEER_LLM_MODEL") or "").strip()
 
     if not model_name:
         return {"error": "RUNDEER_LLM_MODEL not set (provide via .env or model prop)", "filtered_prompt": prompt_text}

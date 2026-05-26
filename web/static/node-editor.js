@@ -398,8 +398,7 @@ const COMMAND_TYPES = new Set();
 const HEAVY_TYPES = new Set();
 const BUNDLE_TYPES = new Set();
 const TERMINAL_TYPES = new Set();
-const LEGACY_PREVIEW_TYPES = new Set(["preview-image", "preview-video", "preview-text"]);
-const LEGACY_FILE_TYPES = new Set(["image-input", "video-input", "filepath-input"]);
+
 const PREVIEW_ZOOM_MIN = 1;
 const PREVIEW_ZOOM_MAX = 4;
 const PREVIEW_ZOOM_WHEEL_SENSITIVITY = 0.0015;
@@ -1208,21 +1207,7 @@ function nodeSignature(node) {
   ].join("|");
 }
 
-const REMOVED_COMMAND_PROP_IDS = new Set([
-  "dry_run",
-  "grid",
-  "grid_only",
-  "grid_rows",
-  "grid_columns",
-  "grid_padding",
-  "grid_bg_color",
-]);
 
-function sanitizeCommandProps(node) {
-  if (!node || !COMMAND_TYPES.has(node.type) || !node.props) return node;
-  for (const propId of REMOVED_COMMAND_PROP_IDS) delete node.props[propId];
-  return node;
-}
 
 function nodeDefaultLabel(node) {
   const def = NODE_BY_TYPE[node?.type];
@@ -2928,7 +2913,7 @@ function makeBundleMedia(value, kindHint) {
   const hint = String(kindHint || "");
   
   
-  const isVideo = hint === "video" || hint === "preview-video" || /\.(mp4|mov|webm|mkv)$/i.test(String(value));
+  const isVideo = hint === "video" || /\.(mp4|mov|webm|mkv)$/i.test(String(value));
   if (isVideo) {
     const url = artifactURL(String(value));
     const vid = document.createElement("video");
@@ -5872,12 +5857,7 @@ function gatherMentionOptions(forNodeId) {
     if (!id || depth > 8) return;
     const n = graph.nodes[id];
     if (!n) return;
-    if (n.type === "image-input" && n.props?.path) {
-      pushOpt(id, `Image · ${basenameOf(n.props.path)}`, n.props.path, "image");
-    }
-    if (n.type === "video-input" && n.props?.path) {
-      pushOpt(id, `Video · ${basenameOf(n.props.path)}`, n.props.path, "video");
-    }
+
     if (n.lastResult && n.lastResult.value && (n.lastResult.kind === "image" || n.lastResult.kind === "video")) {
       const def = NODE_BY_TYPE[n.type];
       pushOpt(id, `${def?.label || n.type} · ${basenameOf(n.lastResult.value)}`, n.lastResult.value, n.lastResult.kind);
@@ -6555,13 +6535,6 @@ function normalizeRunDockEdge(edge) {
 
 function defaultRunDockAlong(edge) {
   return edge === "bottom" ? 0.72 : 0.5;
-}
-
-function legacyRunDockState(value) {
-  const edge = normalizeRunDockEdge(value);
-  if (value === "top-left" || value === "bottom-left") return { edge, along: 0.2 };
-  if (value === "top-right" || value === "bottom-right") return { edge, along: 0.8 };
-  return { edge, along: defaultRunDockAlong(edge) };
 }
 
 function readRunDockState() {
@@ -8155,8 +8128,7 @@ function loadGraphData(data) {
     
     
     let migrated = n;
-    if (LEGACY_PREVIEW_TYPES.has(n.type)) migrated = { ...migrated, type: "preview" };
-    if (LEGACY_FILE_TYPES.has(migrated.type)) migrated = { ...migrated, type: "file" };
+
     graph.nodes[id] = {
       ...migrated,
       title: typeof migrated.title === "string" ? migrated.title : "",
@@ -8181,7 +8153,7 @@ function loadGraphData(data) {
     };
     const _ldReg = (window.RundeerNodes || {})[graph.nodes[id]?.type];
     if (_ldReg?.migrate) _ldReg.migrate(graph.nodes[id]);
-    sanitizeCommandProps(graph.nodes[id]);
+
   }
   graph.edges = (data.edges || []).map((e) => {
     const edge = { ...e, id: e.id || genEdgeId() };
@@ -8296,13 +8268,7 @@ function paletteCategoriesForDisplay() {
         ],
       };
     }
-    if (cat.category === "Agent Brain") {
-      return {
-        ...cat,
-        nodes: cat.nodes.filter((n) => n.type !== "tool-flag"),
-      };
-    }
-    return cat;
+    return { ...cat, nodes: cat.nodes.filter((n) => !(n.traits || []).includes("paletteHidden")) };
   });
 }
 
@@ -8461,7 +8427,7 @@ function applyAgentPatchOp(op) {
         const id = _resolveAgentId(op.id);
         if (!id || !graph.nodes[id]) break;
         const node = graph.nodes[id];
-        const def = (window.NODE_REGISTRY || {})[node.type];
+        const def = NODE_BY_TYPE[node.type];
         for (const [rawKey, v] of Object.entries(op.props || {})) {
           const k = canonicalInputSocketId(id, rawKey);
           if (k === "muted") {

@@ -13,7 +13,6 @@ import threading
 import time
 import traceback
 import uuid
-import urllib.request
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -28,7 +27,7 @@ from rundeer.core.config import brain_dir, normalize_config, normalize_rate_limi
 from rundeer.web.animator import log_line, run_console
 from web.node_defs import get_node_defs
 
-from web.nodes._shared.helpers import IMAGE_EXTS, is_sensitive_file, relpath, safe_project_path
+from web.nodes._shared.helpers import IMAGE_EXTS, VIDEO_EXTS, is_sensitive_file, relpath, safe_project_path
 from web.nodes.operations.blur import blur_image
 from web.nodes.operations.compress import compress_dispatch, compress_image
 from web.nodes.operations.crop_media import crop_media_node
@@ -40,11 +39,10 @@ from web.nodes.bundle.folder_bundle import list_folder
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 NODES_DIR = Path(__file__).resolve().parent / "nodes"
-VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".webm"}
 TEXT_EXTS = {".md", ".txt", ".json", ".py", ".csv", ".log"}
 ARTIFACT_EXTS = IMAGE_EXTS | VIDEO_EXTS | {".json", ".csv"}
 SKIP_DIRS = {
-    ".crush",
+    ".rundeer",
     ".git",
     ".mypy_cache",
     ".pytest_cache",
@@ -57,24 +55,6 @@ SKIP_DIRS = {
 }
 ALLOWED_DOTFILE_ROOTS = {".rundeer"}
 COMMANDS = {"image", "video", "edit", "extend", "merge", "batch", "benchmark"}
-
-LOGO_DIR = rpaths.package_root() / "cli" / "assets"
-LOGO_FILES = ("logo_frame1.txt", "logo.txt", "logo_frame2.txt")
-_logo_cache: Optional[List[str]] = None
-
-
-def load_logo_frames() -> List[str]:
-    global _logo_cache
-    if _logo_cache is not None:
-        return _logo_cache
-    frames: List[str] = []
-    for name in LOGO_FILES:
-        path = LOGO_DIR / name
-        if path.exists():
-            frames.append(path.read_text(encoding="utf-8"))
-    _logo_cache = frames or [" rundeer "]
-    return _logo_cache
-
 
 def serve(
     *,

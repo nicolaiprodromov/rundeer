@@ -1,30 +1,18 @@
 import os
 import sys
-import requests
 from pathlib import Path
 from typing import Union
 
 
 def load_prompt() -> str:
-
     path = Path(__file__).parent / "fractal_prompt.md"
     with open(path, encoding="utf-8") as f:
         return f.read().strip()
 
 
 def fractal(prompt: str, iterations: Union[int, str] = 1) -> str:
-
-
-
-
-
-
-
-
-
     if not prompt or not isinstance(prompt, str):
         return ""
-
 
     if isinstance(iterations, str):
         try:
@@ -33,17 +21,19 @@ def fractal(prompt: str, iterations: Union[int, str] = 1) -> str:
             iterations = 1
     iterations = max(1, int(iterations or 1))
 
-    api_key = os.environ.get("MODEL_API_KEY")
-    if not api_key:
-        print("[fractal] MODEL_API_KEY is not set", file=sys.stderr)
+    model_name = (os.environ.get("RUNDEER_LLM_MODEL") or "").strip()
+    if not model_name:
+        print("[fractal] RUNDEER_LLM_MODEL is not set", file=sys.stderr)
         return ""
-    model = os.environ.get("MODEL_NAME", "default")
-    base_url = os.environ.get("BASE_URL", "http://localhost:8000/v1").rstrip("/")
 
+    import litellm
+    from rundeer.core.models import resolve_llm_api_key
+
+    api_key = resolve_llm_api_key(model_name)
     system_prompt = load_prompt()
-
     base_prompt = prompt.rstrip(". ").rstrip(",")
     all_additions: list[str] = []
+
     for it in range(1, iterations + 1):
         try:
             already = ", ".join(all_additions) if all_additions else "(none)"
@@ -52,29 +42,20 @@ def fractal(prompt: str, iterations: Union[int, str] = 1) -> str:
                 f"Already-added details — do NOT repeat, extend, or elaborate on any of these; pick a completely DIFFERENT aspect of the base prompt: {already}\n"
                 f"Return your single new addition only (iteration {it}/{iterations})."
             )
-            resp = requests.post(
-                f"{base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_content},
-                    ],
-                    "temperature": 0.3,
-                    "max_tokens": 1500,
-                },
-                timeout=45,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            addition = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
+            call_kwargs = {
+                "model": model_name,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content},
+                ],
+                "temperature": 0.3,
+                "max_tokens": 1500,
+            }
+            if api_key:
+                call_kwargs["api_key"] = api_key
+            response = litellm.completion(**call_kwargs)
+            addition = response.choices[0].message.content.strip()
             if addition and len(addition) > 5:
-
                 addition = addition.lstrip(", ")
                 all_additions.append(addition)
             else:
@@ -87,7 +68,6 @@ def fractal(prompt: str, iterations: Union[int, str] = 1) -> str:
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-
         args = sys.argv[1:]
         if len(args) > 1 and args[-1].isdigit():
             iters = int(args[-1])
@@ -98,7 +78,6 @@ if __name__ == "__main__":
         additions = fractal(prompt_arg, iters)
         print(additions)
     else:
-
         demo = "a woman in red dress standing in forest at dusk"
         print("=== DEMO (additions only) ===")
         print("Base:", demo)

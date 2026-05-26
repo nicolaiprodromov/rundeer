@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from rundeer.core.paths import agent_dir as project_agent_dir
-
+from web.agent._io import atomic_write
+from web.agent.profiles import DEFAULT_AGENT_ID
 
 SCHEMA_VERSION = 1
-DEFAULT_AGENT_ID = "default"
 
 
 def agent_dir(root: Path) -> Path:
@@ -34,21 +32,6 @@ def _safe_id() -> str:
 def _agent_id(value: Any) -> str:
     raw = str(value or DEFAULT_AGENT_ID).strip() or DEFAULT_AGENT_ID
     return raw if raw else DEFAULT_AGENT_ID
-
-
-def _atomic_write(path: Path, data: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(prefix=".conv-", suffix=".json", dir=str(path.parent))
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            fh.write(data)
-        os.replace(tmp, path)
-    except Exception:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
 
 
 def new_conversation(root: Path, *, model: str, title: str = "New conversation", agent_id: str = DEFAULT_AGENT_ID) -> Dict[str, Any]:
@@ -83,7 +66,7 @@ def save_conversation(root: Path, conv: Dict[str, Any]) -> None:
     conv["agent_id"] = _agent_id(conv.get("agent_id"))
     conv["updated_at"] = time.time()
     path = _conv_path(root, conv["id"])
-    _atomic_write(path, json.dumps(conv, ensure_ascii=False, indent=2, default=str))
+    atomic_write(path, json.dumps(conv, ensure_ascii=False, indent=2, default=str))
     _update_index(root, conv)
 
 
@@ -113,7 +96,7 @@ def _read_index(root: Path) -> List[Dict[str, Any]]:
 
 
 def _write_index(root: Path, index: List[Dict[str, Any]]) -> None:
-    _atomic_write(_index_path(root), json.dumps(index, ensure_ascii=False, indent=2, default=str))
+    atomic_write(_index_path(root), json.dumps(index, ensure_ascii=False, indent=2, default=str))
 
 
 def _update_index(root: Path, conv: Dict[str, Any]) -> None:

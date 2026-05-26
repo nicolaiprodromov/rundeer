@@ -7,6 +7,7 @@ from urllib.parse import unquote
 
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".webm"}
 IMAGE_COMPRESS_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".tif"}
 VIDEO_COMPRESS_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
 

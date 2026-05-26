@@ -281,12 +281,6 @@ def detect_shape(
     }
 
 
-def _serializable_detection(det: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    if det is None:
-        return None
-    return {k: v for k, v in det.items() if not k.startswith("_")}
-
-
 def score_position(
     expected_xy: Tuple[float, float],
     expected_size: Tuple[int, int],

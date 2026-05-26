@@ -32,4 +32,5 @@ tool-flag:
       kind: select
       options: ["", "true", "false"]
       default: ""
+  traits: [paletteHidden]
   src: web/nodes/agent-brain/tool-flag.js

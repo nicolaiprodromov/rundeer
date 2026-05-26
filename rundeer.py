@@ -12,9 +12,8 @@ _src_pkg = _here / "src" / "rundeer"
 __path__ = [str(_here)]
 if _src_pkg.is_dir():
     __path__.append(str(_src_pkg))
-__version__ = "0.2.0"
-_parent = _here.parent
-_parent_str = str(_parent)
+__version__ = "0.3.5"
+_parent_str = str(_here.parent)
 sys.path = [_parent_str] + [path for path in sys.path if path != _parent_str]
 
 from rundeer.cli.commands import main

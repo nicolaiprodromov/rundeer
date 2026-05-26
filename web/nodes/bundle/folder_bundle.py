@@ -8,13 +8,27 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from rundeer.core import paths as rpaths
-from web.nodes._shared.helpers import IMAGE_EXTS, is_sensitive_file, relpath, safe_project_path
+from web.nodes._shared.helpers import IMAGE_EXTS, VIDEO_EXTS, is_sensitive_file, relpath, safe_project_path
 
 
-VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".webm"}
+def _qint(query: Dict[str, List[str]], key: str, default: int = 0) -> int:
+    try:
+        return int((query.get(key) or [""])[0] or default) or default
+    except ValueError:
+        return default
+
+
+def _qfloat(query: Dict[str, List[str]], key: str) -> Optional[float]:
+    try:
+        v = float((query.get(key) or [""])[0] or 0)
+        return v or None
+    except ValueError:
+        return None
+
+
 ANIMATED_EXTS = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".avi", ".gif", ".webp", ".apng"}
 SKIP_DIRS = {
-    ".crush",
+    ".rundeer",
     ".git",
     ".mypy_cache",
     ".pytest_cache",
@@ -42,23 +56,10 @@ def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
         return {"paths": [], "error": f"path not found: {rel}"}
 
     if target.is_file() and target.suffix.lower() in ANIMATED_EXTS:
-        try:
-            fps = float((query.get("fps") or [""])[0] or 0) or None
-        except ValueError:
-            fps = None
-        try:
-            modulo = int((query.get("modulo") or [""])[0] or 1)
-        except ValueError:
-            modulo = 1
-        modulo = max(1, modulo)
-        try:
-            start = int((query.get("start") or [""])[0] or 0) or 0
-        except ValueError:
-            start = 0
-        try:
-            end = int((query.get("end") or [""])[0] or 0) or 0
-        except ValueError:
-            end = 0
+        fps = _qfloat(query, "fps")
+        modulo = max(1, _qint(query, "modulo", 1))
+        start = _qint(query, "start")
+        end = _qint(query, "end")
         fmt = ((query.get("format") or ["png"])[0] or "png").lower()
         if fmt not in {"png", "jpg", "jpeg", "webp"}:
             fmt = "png"
@@ -85,23 +86,13 @@ def list_folder(root: Path, query: Dict[str, List[str]]) -> Dict[str, Any]:
         out.append(relpath(root, path))
     out.sort(key=str.lower)
 
-    try:
-        start_i = int((query.get("start") or [""])[0] or 0) or 0
-    except ValueError:
-        start_i = 0
-    try:
-        end_i = int((query.get("end") or [""])[0] or 0) or 0
-    except ValueError:
-        end_i = 0
+    start_i = _qint(query, "start")
+    end_i = _qint(query, "end")
     lo = max(0, start_i - 1) if start_i > 0 else 0
     hi = end_i if end_i > 0 else len(out)
     if lo or hi != len(out):
         out = out[lo:hi]
-    try:
-        modulo_i = int((query.get("modulo") or [""])[0] or 1)
-    except ValueError:
-        modulo_i = 1
-    modulo_i = max(1, modulo_i)
+    modulo_i = max(1, _qint(query, "modulo", 1))
     if modulo_i > 1:
         out = [path for idx, path in enumerate(out) if idx % modulo_i == 0]
     return {"paths": out, "count": len(out), "source": "folder"}

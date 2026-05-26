@@ -5,4 +5,4 @@ _SRC_PKG_DIR = _PKG_DIR / "src" / "rundeer"
 if _SRC_PKG_DIR.is_dir():
 	__path__.append(str(_SRC_PKG_DIR))
 
-__version__ = "0.2.0"
+__version__ = "0.3.5"

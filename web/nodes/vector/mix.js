@@ -6,10 +6,10 @@
     : Number(props.factor ?? 0.5);
   const aRaw = inputs.a !== undefined && inputs.a !== "" && inputs.a !== null
     ? inputs.a
-    : (props.a ?? props.color_a ?? "#000000");
+    : (props.a ?? "#000000");
   const bRaw = inputs.b !== undefined && inputs.b !== "" && inputs.b !== null
     ? inputs.b
-    : (props.b ?? props.color_b ?? "#ffffff");
+    : (props.b ?? "#ffffff");
 
   const factor = helpers._coerceMixInput(factorRaw, { isFactor: true });
   const a = helpers._coerceMixInput(aRaw, {});
@@ -42,27 +42,5 @@
   if (result.path) outputs.out = result.path;
   else if (result.color) outputs.out = helpers._rgbaToHex(result.color);
   else outputs.out = "";
-  },
-
-  canonicalInputSocketId(node, socketId) {
-    if (socketId === "color_a") return "a";
-    if (socketId === "color_b") return "b";
-    return socketId;
-  },
-
-  migrate(node) {
-    if (!node || node.type !== "mix") return node;
-    node.props ||= {};
-    if (node.props.a == null && node.props.color_a != null) node.props.a = node.props.color_a;
-    if (node.props.b == null && node.props.color_b != null) node.props.b = node.props.color_b;
-    delete node.props.color_a;
-    delete node.props.color_b;
-    return node;
-  },
-
-  migrateEdge(edge) {
-    if (edge.toSocket === "color_a") edge.toSocket = "a";
-    if (edge.toSocket === "color_b") edge.toSocket = "b";
-    return edge;
   },
 };

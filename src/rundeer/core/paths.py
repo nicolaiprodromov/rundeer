@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable
+
 
 RUNDEER_DIRNAME = ".rundeer"
 DATA_DIRNAME = "data"
@@ -89,9 +89,4 @@ def agent_dir(root: Path | str) -> Path:
     return data_path(root, "agent")
 
 
-def legacy_data_path(root: Path | str, name: str) -> Path:
-    return rundeer_dir(root) / name
 
-
-def data_dirs() -> Iterable[str]:
-    return DATA_DIRS

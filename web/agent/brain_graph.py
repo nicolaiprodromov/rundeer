@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from rundeer.core.paths import agent_dir
+from web.agent._io import atomic_write
 from web.node_defs import get_node_defs
 
 from .profiles import DEFAULT_AGENT_ID, normalize_agent_id
@@ -20,7 +19,6 @@ RUNTIME_FILENAME = "runtime.json"
 AUDIT_LOG_FILENAME = "brain.log"
 
 _defs = get_node_defs()
-BRAIN_NODE_TYPES = {d["type"] for d in _defs if d.get("category") == "Agent Brain"}
 DYNAMIC_SOURCE_TYPES = {"time", "context"}
 TEXT_SOURCE_TYPES = {"text-input"}
 BUNDLE_PASSTHROUGH_TYPES = {"create-bundle", "folder-bundle", "sample-bundle"}
@@ -81,13 +79,6 @@ def _as_bool(value: Any, default: bool = False) -> bool:
     return default
 
 
-def _as_int(value: Any, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
 def _as_float(value: Any, default: Optional[float] = None) -> Optional[float]:
     try:
         if value is None or value == "":
@@ -95,14 +86,6 @@ def _as_float(value: Any, default: Optional[float] = None) -> Optional[float]:
         return float(value)
     except (TypeError, ValueError):
         return default
-
-
-def _csv_list(value: Any) -> List[str]:
-    if isinstance(value, list):
-        return [str(v).strip() for v in value if str(v).strip()]
-    if isinstance(value, str):
-        return [p.strip() for p in value.split(",") if p.strip()]
-    return []
 
 
 def _nodes_of(graph: Dict[str, Any], node_type: str) -> List[Dict[str, Any]]:
@@ -298,16 +281,6 @@ def seed_default_graph(
         "edges": edges,
         "_nextId": nid,
     }
-
-
-def _slug(text: str) -> str:
-    out = []
-    for ch in (text or "").lower():
-        if ch.isalnum():
-            out.append(ch)
-        elif out and out[-1] != "-":
-            out.append("-")
-    return "".join(out).strip("-") or "section"
 
 
 def _split_prompt_into_sections(prompt: str) -> List[Tuple[str, str]]:
@@ -574,21 +547,6 @@ def audit_log_path(root: Path, agent_id: Optional[str] = None) -> Path:
     return _agent_brain_dir(root, agent_id) / AUDIT_LOG_FILENAME
 
 
-def _atomic_write(path: Path, data: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(prefix=".brain-", suffix=".json", dir=str(path.parent))
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            fh.write(data)
-        os.replace(tmp, path)
-    except Exception:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
-
-
 def _read_json(path: Path) -> Optional[Any]:
     if not path.is_file():
         return None
@@ -606,12 +564,6 @@ def load_brain_graph(root: Path, agent_id: Optional[str] = None) -> Optional[Dic
     return None
 
 
-def _requires_reseed(graph: Dict[str, Any]) -> bool:
-    nodes = graph.get("nodes") or {}
-    types = {str(n.get("type") or "") for n in nodes.values() if isinstance(n, dict)}
-    return not {"agent", "brain"}.issubset(types)
-
-
 def save_brain_graph(root: Path, graph: Dict[str, Any], agent_id: Optional[str] = None) -> AgentRuntimeConfig:
 
 
@@ -626,9 +578,9 @@ def save_brain_graph(root: Path, graph: Dict[str, Any], agent_id: Optional[str] 
     graph["schema"] = SCHEMA_VERSION
     graph["agent_id"] = resolved_agent_id
 
-    _atomic_write(brain_graph_path(root, resolved_agent_id), json.dumps(graph, ensure_ascii=False, indent=2, default=str))
+    atomic_write(brain_graph_path(root, resolved_agent_id), json.dumps(graph, ensure_ascii=False, indent=2, default=str))
     compiled = compile_brain_graph(graph)
-    _atomic_write(runtime_path(root, resolved_agent_id), json.dumps(compiled.to_dict(), ensure_ascii=False, indent=2, default=str))
+    atomic_write(runtime_path(root, resolved_agent_id), json.dumps(compiled.to_dict(), ensure_ascii=False, indent=2, default=str))
 
     try:
         with audit_log_path(root, resolved_agent_id).open("a", encoding="utf-8") as fh:

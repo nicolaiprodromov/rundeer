@@ -9,7 +9,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse
+
 
 PROVIDER_KEY_MAP: Dict[str, str] = {
     "xai": "WXWAI_API_KEY",
@@ -76,14 +76,6 @@ def _get_provider_models(prefix: str) -> List[str]:
     return PROVIDER_MODELS.get(prefix, [])
 
 
-def refresh_models_cache() -> None:
-    for prefix in PROVIDER_KEY_MAP:
-        fetched = _fetch_models_for_provider(prefix)
-        if fetched is not None:
-            with _cache_lock:
-                _models_cache[prefix] = fetched
-
-
 PROXY_RESPONSES_URL = "https://cli-chat-proxy.grok.com/v1/responses"
 GROK_CLIENT_VERSION = "0.1.218"
 PROXY_MODELS = {
@@ -138,16 +130,9 @@ class VisionConfig:
 
 def load_vision_config() -> VisionConfig:
     provider = os.environ.get("RUNDEER_VISION_PROVIDER") or "grok_imagine"
-    api_key = os.environ.get("GROK_IMAGINE_API_KEY") or os.environ.get("VISION_API_KEY") or None
-    base_url = os.environ.get("GROK_IMAGINE_BASE_URL") or os.environ.get("BASE_URL") or None
+    api_key = os.environ.get("GROK_IMAGINE_API_KEY") or None
+    base_url = os.environ.get("GROK_IMAGINE_BASE_URL") or None
     return VisionConfig(provider=provider, api_key=api_key, base_url=base_url)
-
-
-def _api_host_from_base_url(base_url: Optional[str]) -> Optional[str]:
-    if not base_url:
-        return None
-    parsed = urlparse(base_url if "://" in base_url else f"https://{base_url}")
-    return parsed.netloc or parsed.path.split("/", 1)[0] or None
 
 
 def make_vision_client(
@@ -156,7 +141,7 @@ def make_vision_client(
     rate_limits: Optional[Dict[str, Any]] = None,
     rate_limit_state_path: Optional[Path | str] = None,
 ):
-    from .api import GrokClient
+    from .api import GrokClient, _api_host_from_base_url
     cfg = config or load_vision_config()
     from xai_sdk import Client
     kwargs: Dict[str, Any] = {}

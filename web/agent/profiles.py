@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import shutil
-import tempfile
 import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from rundeer.core.paths import agent_dir
+from web.agent._io import atomic_write
 
 
 SCHEMA_VERSION = 1
@@ -49,21 +48,6 @@ def _safe_new_id(name: str) -> str:
     return normalize_agent_id(f"{_slug(name)}-{uuid.uuid4().hex[:6]}")
 
 
-def _atomic_write(path: Path, data: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(prefix=".agents-", suffix=".json", dir=str(path.parent))
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            fh.write(data)
-        os.replace(tmp, path)
-    except Exception:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
-
-
 def _default_profile(*, model: str = "") -> Dict[str, Any]:
     now = time.time()
     return {
@@ -83,8 +67,6 @@ def _read_registry(root: Path, *, model: str = "") -> Dict[str, Any]:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             data = None
-    if isinstance(data, list):
-        data = {"schema": SCHEMA_VERSION, "active_id": DEFAULT_AGENT_ID, "agents": data}
     if not isinstance(data, dict):
         data = {"schema": SCHEMA_VERSION, "active_id": DEFAULT_AGENT_ID, "agents": []}
     agents = data.get("agents") if isinstance(data.get("agents"), list) else []
@@ -121,7 +103,7 @@ def _read_registry(root: Path, *, model: str = "") -> Dict[str, Any]:
 
 
 def _write_registry(root: Path, registry: Dict[str, Any]) -> None:
-    _atomic_write(_registry_path(root), json.dumps(registry, ensure_ascii=False, indent=2, default=str))
+    atomic_write(_registry_path(root), json.dumps(registry, ensure_ascii=False, indent=2, default=str))
 
 
 def ensure_agent_registry(root: Path, *, model: str = "") -> Dict[str, Any]:

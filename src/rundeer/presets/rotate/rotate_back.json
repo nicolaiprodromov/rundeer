@@ -3,7 +3,7 @@
   "subject": "Rotate the existing subject into a true back view from behind. Preserve the exact same identity, body shape, hairstyle, clothing, accessories, colors, materials, markings, lighting direction, scene context, camera distance, crop, and overall realism. Reconstruct the unseen back-side details consistently and conservatively so they logically match the visible front-side design. Do not add new elements or change the art style, outfit design, or background.",
   "motion": null,
 
-  "input": "reuben/beatrice/beatrice3.png",
+  "input": null,
 
   "output": {
     "dir": "reuben/beatrice/ref/",

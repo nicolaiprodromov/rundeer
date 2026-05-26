@@ -303,7 +303,7 @@ def normalize_config(raw: Dict[str, Any]) -> Dict[str, Any]:
     refs = _section("references") if isinstance(cfg.get("references"), dict) else {}
     image = _section("image")
     video_in = _section("video")
-    rate_limits = _section("rate_limits") or _section("rateLimiter")
+    rate_limits = _section("rate_limits")
     web = _section("web")
 
     def _set(flat_key: str, *candidates: Any) -> None:
@@ -438,7 +438,7 @@ def parse_references(ref_arg: Any, config: Dict[str, Any]) -> List[int]:
         else:
             ids = [int(ref_arg)]
         return ids[:5]
-    ref_config = config.get("references", config.get("reference"))
+    ref_config = config.get("references")
     if ref_config is None:
         return []
     if isinstance(ref_config, (list, tuple)):

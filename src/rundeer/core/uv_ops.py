@@ -41,13 +41,6 @@ def _hash_key(*parts: Any) -> str:
     return h.hexdigest()[:16]
 
 
-def _relpath(project_root: Path, path: Path) -> str:
-    try:
-        return path.resolve().relative_to(project_root.resolve()).as_posix()
-    except ValueError:
-        return str(path)
-
-
 
 
 def _map_to_preview_rgb(arr: np.ndarray) -> np.ndarray:

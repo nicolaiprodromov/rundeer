@@ -64,12 +64,9 @@ def _parse_hex_color(hex_str: str) -> list:
 
 
 def _shape_meta(arr: np.ndarray) -> Dict[str, int]:
-    if arr.ndim == 2:
-        return {"width": int(arr.shape[1]), "height": int(arr.shape[0])}
-    if arr.ndim >= 3:
+    if arr.ndim >= 2:
         return {"width": int(arr.shape[1]), "height": int(arr.shape[0])}
     return {"width": 1, "height": 1}
 
 
-def _value_is_map(v: Any) -> bool:
-    return isinstance(v, np.ndarray) and v.ndim >= 2 and (v.shape[0] > 1 or v.shape[1] > 1)
+
