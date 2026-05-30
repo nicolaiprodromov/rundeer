@@ -60,7 +60,6 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
                 "Loop": "oklch(50% 0.2 330)",
                 "Triggers": "oklch(55% 0.25 90)",
                 "Coordinates": "oklch(50% 0.2 210)",
-                "Vector": "oklch(55% 0.2 270)",
                 "Output": "oklch(55% 0.25 25)",
                 "Agent Brain": "oklch(50% 0.2 350)",
                 "Terminal": "oklch(45% 0.12 160)",

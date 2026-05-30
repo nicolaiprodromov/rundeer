@@ -1,6 +1,6 @@
 vector-op:
-  label: Vector
-  category: Vector
+  label: Vector Op
+  category: Operations
   desc: Per-pixel vector op between two fields (image, UV map, vector, or scalar). Mirrors Blender's Vector Math node.
   in:
   - id: a
@@ -18,5 +18,5 @@ vector-op:
   - id: out
     label: Out
     type: any
-  src: web/nodes/vector/vector-op.js
+  src: web/nodes/operations/vector-op.js
   api: /api/uv/vector

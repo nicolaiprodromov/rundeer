@@ -1,0 +1,22 @@
+switch:
+  label: Switch
+  category: Operations
+  desc: Route one of two same-type inputs to the output by a selector
+  in:
+  - id: sel
+    label: Select B
+    kind: checkbox
+    default: false
+    type: boolean
+    passthroughWired: true
+  - id: a
+    label: A
+    type: any
+  - id: b
+    label: B
+    type: any
+  out:
+  - id: out
+    label: Out
+    type: any
+  src: web/nodes/operations/switch.js

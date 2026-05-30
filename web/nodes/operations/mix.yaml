@@ -1,6 +1,6 @@
 mix:
   label: Mix
-  category: Vector
+  category: Operations
   desc: Blend two inputs by a factor. A/B default to color controls; factor can be a number or an image/map. Mirrors Blender's Mix node.
   in:
   - id: factor
@@ -36,5 +36,5 @@ mix:
     label: Out
     type: any
   traits: [liveUpdate]
-  src: web/nodes/vector/mix.js
+  src: web/nodes/operations/mix.js
   api: /api/uv/mix

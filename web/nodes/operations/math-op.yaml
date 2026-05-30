@@ -12,10 +12,16 @@ math-op:
   - id: op
     label: Operation
     kind: select
-    options: [add, subtract, multiply, divide, modulo, power, min, max]
+    options: [add, subtract, multiply, divide, modulo, power, min, max, abs, sqrt, equal, not-equal, greater, greater-equal, less, less-equal]
     default: add
+  - id: eps
+    label: Epsilon
+    kind: number
+    default: 0.0001
+    type: number
+    group: settings
   out:
   - id: out
     label: Result
-    type: number
+    type: any
   src: web/nodes/operations/math-op.js

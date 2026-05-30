@@ -328,13 +328,13 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 from web.nodes.coordinates.coordinate import coordinate as _uv_coord
                 self._send_json(_uv_coord(self.server.project_root, payload))
             elif parsed.path == "/api/uv/vector":
-                from web.nodes.vector.vector_op import vector as _uv_vec
+                from web.nodes.operations.vector_op import vector as _uv_vec
                 self._send_json(_uv_vec(self.server.project_root, payload))
             elif parsed.path == "/api/uv/mapping":
                 from web.nodes.coordinates.mapping import mapping as _uv_map
                 self._send_json(_uv_map(self.server.project_root, payload))
             elif parsed.path == "/api/uv/mix":
-                from web.nodes.vector.mix import mix as _uv_mix
+                from web.nodes.operations.mix import mix as _uv_mix
                 self._send_json(_uv_mix(self.server.project_root, payload))
             elif parsed.path == "/api/uv/render":
                 from web.nodes.output.uv_render import render as _uv_render
