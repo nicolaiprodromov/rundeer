@@ -32,6 +32,7 @@ from web.nodes._shared.helpers import IMAGE_EXTS, VIDEO_EXTS, is_sensitive_file,
 from web.nodes.operations.blur import blur_image
 from web.nodes.operations.compress import compress_dispatch, compress_image
 from web.nodes.operations.crop_media import crop_media_node
+from web.nodes.operations.export import export_node
 from web.nodes.operations.resize_media import resize_media_node
 from web.nodes.output.canvas import canvas_media_node
 from web.nodes.prompt.filter_prompt import filter_prompt
@@ -321,6 +322,8 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 self._send_json(canvas_media_node(self.server.project_root, payload))
             elif parsed.path == "/api/compress":
                 self._send_json(compress_dispatch(self.server.project_root, payload))
+            elif parsed.path == "/api/export":
+                self._send_json(export_node(self.server.project_root, payload))
             elif parsed.path == "/api/uv/coordinate":
                 from web.nodes.coordinates.coordinate import coordinate as _uv_coord
                 self._send_json(_uv_coord(self.server.project_root, payload))

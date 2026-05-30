@@ -1,0 +1,51 @@
+export:
+  label: Export
+  category: Operations
+  desc: Export any value to a file. Text/number → .txt/.md/.json; images → png/jpg/webp/gif; video → mp4. Bundles export separately; image bundles with fps>0 become mp4/gif.
+  defaultWidth: 280
+  in:
+  - id: trigger
+    label: Run
+    type: run
+  - id: in
+    label: Data
+    type: any
+  - id: name
+    label: Name (with extension)
+    kind: text
+    default: export.png
+    placeholder: name.ext (e.g. clip.mp4, notes.md)
+    passthroughWired: true
+    type: text
+  - id: fps
+    label: FPS (image bundle, 0 = separate files)
+    kind: number
+    default: 0
+    group: media
+  - id: fmt
+    label: Bundle Format
+    kind: select
+    options: [mp4, gif]
+    default: mp4
+    group: media
+    type: text
+  - id: crf
+    label: MP4 Quality (CRF, lower = better)
+    kind: range
+    min: 0
+    max: 51
+    step: 1
+    default: 18
+    group: media
+  - id: loop
+    label: GIF Loops (0 = infinite)
+    kind: number
+    default: 0
+    group: media
+  out:
+  - id: out
+    label: File
+    type: filepath
+  traits: [terminal, heavy]
+  src: web/nodes/operations/export.js
+  api: /api/export
