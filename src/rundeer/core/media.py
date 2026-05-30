@@ -5,6 +5,8 @@ import io
 import math
 import shutil
 import subprocess
+import sys
+import time
 import base64
 import hashlib
 from pathlib import Path
@@ -13,7 +15,7 @@ from typing import List, Optional, Tuple
 from PIL import Image, ImageOps
 
 from rundeer.core.config import parse_aspect_ratio
-from rundeer.core.paths import cache_dir
+from rundeer.core.paths import cache_dir, atomic_pil, atomic_wb
 
 
 def pad_to_aspect_ratio(image_path: Path, target_ratio: float) -> Tuple[bytes, str]:
@@ -129,7 +131,7 @@ def make_image_grid(
         grid.paste(img, (x, y))
 
     grid_path = output_dir / f"{output_name}_grid.png"
-    grid.save(grid_path, format="PNG", optimize=True)
+    atomic_pil(grid, grid_path, format="PNG", optimize=True)
     return grid_path
 
 
@@ -158,8 +160,7 @@ def _source_key(src: Path) -> str:
 
 
 def _save_rgba_png(image: Image.Image, dest: Path) -> Path:
-    image.save(dest, format="PNG", optimize=True)
-    return dest
+    return atomic_pil(image, dest, format="PNG", optimize=True)
 
 
 def crop_media(root: Path, src: Path, size: Tuple[int, int], position: Tuple[int, int]) -> Path:
@@ -358,17 +359,20 @@ def make_video_grid(
 
 def download_url(url: str, dest: Path, timeout: int = 60) -> Path:
     import requests
-    dest.parent.mkdir(parents=True, exist_ok=True)
+    t0 = time.monotonic()
     data = requests.get(url, timeout=timeout).content
-    dest.write_bytes(data)
-    return dest
+    dt = time.monotonic() - t0
+    sys.stderr.write(f"[api-timing] download {len(data)} bytes elapsed={dt:.2f}s\n")
+    sys.stderr.flush()
+    return atomic_wb(dest, data)
 
 
 def download_and_save_image(url: str, dest: Path, timeout: int = 60) -> Path:
-
     import requests
-    dest.parent.mkdir(parents=True, exist_ok=True)
+    t0 = time.monotonic()
     data = requests.get(url, timeout=timeout).content
+    dt = time.monotonic() - t0
+    sys.stderr.write(f"[api-timing] download_image {len(data)} bytes elapsed={dt:.2f}s\n")
+    sys.stderr.flush()
     img = Image.open(io.BytesIO(data))
-    img.save(dest, format="PNG", optimize=True)
-    return dest
+    return atomic_pil(img, dest, format="PNG", optimize=True)

@@ -1,0 +1,113 @@
+.ne-node[data-node-type="terminal"] .ne-node-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.ne-node[data-node-type="terminal"].is-resized .ne-node-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.ne-term-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ne-term-status {
+  flex: 0 0 auto;
+  padding: 3px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  border-bottom: 1px solid color-mix(in oklch, var(--line) 50%, transparent);
+  background: color-mix(in oklch, var(--bg-deep) 60%, transparent);
+}
+
+.ne-term-status[data-state="connected"] {
+  color: var(--green, #6a9955);
+}
+
+.ne-term-status[data-state="connecting"] {
+  color: var(--gold);
+}
+
+.ne-term-status[data-state="disconnected"] {
+  color: var(--quiet);
+}
+
+.ne-term-status[data-state="error"] {
+  color: oklch(72% 0.15 25);
+}
+
+.ne-term-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: #0d0d0d;
+  padding: 4px;
+}
+
+.ne-term-container .xterm {
+  height: 100%;
+}
+
+.ne-term-container .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+
+.ne-term-container .xterm-screen {
+  height: 100% !important;
+}
+
+.ne-term-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-top: 1px solid color-mix(in oklch, var(--line) 50%, transparent);
+  background: color-mix(in oklch, var(--bg-deep) 42%, transparent);
+}
+
+.ne-term-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in oklch, var(--line-strong) 60%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in oklch, var(--surface-3) 60%, var(--bg-deep));
+  color: var(--text-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.ne-term-btn:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--bg-deep);
+}
+
+.ne-term-btn:active {
+  transform: translateY(1px);
+}
+
+.ne-node[data-node-type="terminal"] {
+  --node-accent: oklch(45% 0.12 160);
+}

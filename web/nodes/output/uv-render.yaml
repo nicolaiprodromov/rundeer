@@ -1,39 +1,31 @@
 uv-render:
   label: Render
   category: Output
-  desc: "Sample a pixel image using a bottom-left UV coordinate map. Like Blender's Image Texture sampled by a custom UV."
+  desc: Sample a pixel image using a bottom-left UV coordinate map. Like Blender's Image Texture sampled by a custom UV.
   defaultWidth: 320
   defaultHeight: 260
   resizable: true
   in:
-    - id: pixel
-      label: Pixel
-      type: image
-    - id: uv
-      label: UV
-      type: vector-map
+  - id: pixel
+    label: Pixel
+    type: image
+  - id: uv
+    label: UV
+    type: vector-map
+  - id: interp
+    label: Interpolation
+    kind: select
+    options: [bilinear, nearest]
+    default: bilinear
+  - id: extension
+    label: Extension
+    kind: select
+    options: [clamp, repeat, mirror]
+    default: clamp
   out:
-    - id: out
-      label: Image
-      type: image
-  props:
-    - id: interp
-      label: Interpolation
-      kind: select
-      options: [bilinear, nearest]
-      default: bilinear
-    - id: extension
-      label: Extension
-      kind: select
-      options: [clamp, repeat, mirror]
-      default: clamp
+  - id: out
+    label: Image
+    type: image
   traits: [preview, terminal]
-  aliases:
-    inputs:
-      image: pixel
-      map: uv
-    outputs:
-      image: out
-      result: out
   src: web/nodes/output/uv-render.js
   api: /api/uv/render

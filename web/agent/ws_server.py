@@ -135,7 +135,7 @@ class AgentWSServer:
         current_agent_id = str(active_agent.get("id") or "default")
 
         def agent_model() -> str:
-            return str(active_agent.get("model") or self.settings.model)
+            return self.settings.model
 
         async def send(payload: Dict[str, Any]) -> None:
             try:
@@ -151,7 +151,7 @@ class AgentWSServer:
             agents=list_agent_profiles(root, model=self.settings.model),
             ws_port=self.ws_port,
             project=str(root),
-            available_models=available_llm_providers(),
+            available_models=available_llm_providers(configured_model=self.settings.model),
         ))
 
         async for raw in ws:
@@ -307,6 +307,8 @@ class AgentWSServer:
                         base_url=self.settings.base_url,
                         ws_host=self.settings.ws_host,
                         ws_port=self.settings.ws_port,
+                        max_turns=self.settings.max_turns,
+                        max_tokens=self.settings.max_tokens,
                         max_tool_iterations=self.settings.max_tool_iterations,
                         max_file_bytes=self.settings.max_file_bytes,
                         max_list_entries=self.settings.max_list_entries,

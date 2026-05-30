@@ -77,8 +77,8 @@
 
 .ne-box-select {
   position: absolute;
-  border: 1px solid var(--gold-soft);
-  background: color-mix(in oklch, var(--gold) 8%, transparent);
+  border: 1px solid color-mix(in oklch, var(--ne-selection-color, var(--gold-soft)) 80%, transparent);
+  background: color-mix(in oklch, var(--ne-selection-color, var(--gold)) 8%, transparent);
   pointer-events: none;
 }
 
@@ -143,8 +143,8 @@
   background-image:
     radial-gradient(circle at 0 0, oklch(61% 0.022 88 / 0.56) 0 1px, transparent 1.4px),
     radial-gradient(circle at 0 0, oklch(48% 0.014 80 / 0.52) 0 1px, transparent 1.3px),
-    linear-gradient(to right, oklch(44% 0.012 80 / 0.24) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(44% 0.012 80 / 0.24) 1px, transparent 1px);
+    linear-gradient(to right, oklch(44% 0.012 80 / 0.24) var(--ne-grid-thickness, 1px), transparent var(--ne-grid-thickness, 1px)),
+    linear-gradient(to bottom, oklch(44% 0.012 80 / 0.24) var(--ne-grid-thickness, 1px), transparent var(--ne-grid-thickness, 1px));
   background-size:
     var(--ne-grid-major-size) var(--ne-grid-major-size),
     var(--ne-grid-size) var(--ne-grid-size),

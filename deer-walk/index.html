@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deer Walk — Studio Lighting</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #ccc; }
+  canvas { display: block; }
+
+  #panel-toggle {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    width: 36px; height: 36px; border: 1px solid #333; border-radius: 6px;
+    background: rgba(18,18,18,0.85); color: #aaa; font-size: 18px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px); transition: all 0.2s;
+  }
+  #panel-toggle:hover { background: rgba(40,40,40,0.9); color: #fff; border-color: #555; }
+  #panel-toggle.open { right: 336px; }
+
+  #panel {
+    position: fixed; top: 0; right: 0; width: 320px; height: 100%;
+    background: rgba(14,14,14,0.92); border-left: 1px solid #222;
+    backdrop-filter: blur(12px); overflow-y: auto; z-index: 99;
+    transform: translateX(100%); transition: transform 0.3s ease;
+    scrollbar-width: thin; scrollbar-color: #333 transparent;
+  }
+  #panel.open { transform: translateX(0); }
+  #panel::-webkit-scrollbar { width: 4px; }
+  #panel::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  .panel-header {
+    padding: 20px 16px 12px; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: #666;
+    border-bottom: 1px solid #1a1a1a; position: sticky; top: 0;
+    background: rgba(14,14,14,0.95); backdrop-filter: blur(12px); z-index: 1;
+  }
+
+  .section {
+    border-bottom: 1px solid #1a1a1a; padding: 12px 16px;
+  }
+  .section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #555; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    user-select: none;
+  }
+  .section-title .dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .section-title .chevron {
+    margin-left: auto; font-size: 10px; transition: transform 0.2s;
+  }
+  .section-title.collapsed .chevron { transform: rotate(-90deg); }
+  .section-body { display: flex; flex-direction: column; gap: 8px; }
+  .section-body.collapsed { display: none; }
+
+  .control-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .control-row label {
+    font-size: 11px; color: #666; width: 58px; flex-shrink: 0; text-align: right;
+  }
+  .control-row input[type="range"] {
+    flex: 1; height: 3px; -webkit-appearance: none; appearance: none;
+    background: #2a2a2a; border-radius: 2px; outline: none;
+  }
+  .control-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px;
+    background: #888; border-radius: 50%; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .control-row input[type="range"]::-webkit-slider-thumb:hover { background: #bbb; }
+  .control-row input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px; background: #888; border-radius: 50%;
+    cursor: pointer; border: none;
+  }
+  .control-row .val {
+    font-size: 10px; color: #555; width: 38px; text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .control-row input[type="color"] {
+    width: 28px; height: 20px; border: 1px solid #333; border-radius: 3px;
+    background: none; cursor: pointer; padding: 0;
+  }
+  .control-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 1px; }
+  .control-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+
+  .btn-row { display: flex; gap: 6px; margin-top: 4px; }
+  .btn {
+    flex: 1; padding: 6px 0; font-size: 11px; border: 1px solid #333;
+    border-radius: 4px; background: rgba(255,255,255,0.03); color: #888;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .btn:hover { background: rgba(255,255,255,0.06); color: #bbb; border-color: #444; }
+  .btn.active { background: rgba(255,255,255,0.08); color: #ddd; border-color: #555; }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between; padding: 2px 0;
+  }
+  .toggle-row span { font-size: 11px; color: #666; }
+  .toggle {
+    width: 32px; height: 16px; border-radius: 8px; background: #2a2a2a;
+    position: relative; cursor: pointer; transition: background 0.2s;
+  }
+  .toggle.on { background: #444; }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 12px; height: 12px; border-radius: 50%; background: #666;
+    transition: all 0.2s;
+  }
+  .toggle.on::after { left: 18px; background: #bbb; }
+
+  #loading {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: #000; z-index: 200; transition: opacity 0.5s;
+  }
+  #loading span {
+    font-size: 13px; color: #444; letter-spacing: 0.1em;
+  }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+
+  #info-bar {
+    position: fixed; bottom: 12px; left: 16px; font-size: 10px;
+    color: #333; z-index: 50; user-select: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading"><span>LOADING MODEL...</span></div>
+
+<button id="panel-toggle" title="Toggle controls">☰</button>
+
+<div id="panel">
+  <div class="panel-header">Controls</div>
+
+  <div class="section" id="sec-camera">
+    <div class="section-title" data-target="camera-body">
+      <span class="dot" style="background:#666"></span> Camera <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="camera-body">
+      <div class="control-row">
+        <label>Distance</label>
+        <input type="range" id="cam-dist" min="1" max="20" step="0.1" value="5">
+        <span class="val" id="cam-dist-val">5.0</span>
+      </div>
+      <div class="control-row">
+        <label>Height</label>
+        <input type="range" id="cam-height" min="-5" max="10" step="0.1" value="2">
+        <span class="val" id="cam-height-val">2.0</span>
+      </div>
+      <div class="control-row">
+        <label>FOV</label>
+        <input type="range" id="cam-fov" min="15" max="120" step="1" value="45">
+        <span class="val" id="cam-fov-val">45</span>
+      </div>
+      <div class="toggle-row">
+        <span>Auto-rotate</span>
+        <div class="toggle" id="cam-autorotate"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-anim">
+    <div class="section-title" data-target="anim-body">
+      <span class="dot" style="background:#666"></span> Animation <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="anim-body">
+      <div class="control-row">
+        <label>Speed</label>
+        <input type="range" id="anim-speed" min="0" max="3" step="0.05" value="1">
+        <span class="val" id="anim-speed-val">1.00</span>
+      </div>
+      <div class="toggle-row">
+        <span>Playing</span>
+        <div class="toggle on" id="anim-playing"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-key">
+    <div class="section-title" data-target="key-body">
+      <span class="dot" style="background:#f0d070"></span> Key Light <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="key-body">
+      <div class="control-row">
+        <label>Intensity</label>
+        <input type="range" id="key-intensity" min="0" max="30" step="0.1" value="12">
+        <span class="val" id="key-intensity-val">12.0</span>
+      </div>
+      <div class="control-row">
+        <label>Color</label>
+        <input type="color" id="key-color" value="#fff5e0">
+        <span style="flex:1"></span>
+      </div>
+      <div class="control-row">
+        <label>X</label>
+        <input type="range" id="key-x" min="-10" max="10" step="0.1" value="4">
+        <span class="val" id="key-x-val">4.0</span>
+      </div>
+      <div class="control-row">
+        <label>Y</label>
+        <input type="range" id="key-y" min="-2" max="15" step="0.1" value="5">
+        <span class="val" id="key-y-val">5.0</span>
+      </div>
+      <div class="control-row">
+        <label>Z</label>
+        <input type="range" id="key-z" min="-10" max="10" step="0.1" value="3">
+        <span class="val" id="key-z-val">3.0</span>
+      </div>
+      <div class="toggle-row">
+        <span>Enabled</span>
+        <div class="toggle on" id="key-enabled"></div>
+      </div>
+      <div class="toggle-row">
+        <span>Show helper</span>
+        <div class="toggle on" id="key-helper"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-fill">
+    <div class="section-title" data-target="fill-body">
+      <span class="dot" style="background:#a0c0f0"></span> Fill Light <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="fill-body">
+      <div class="control-row">
+        <label>Intensity</label>
+        <input type="range" id="fill-intensity" min="0" max="30" step="0.1" value="6">
+        <span class="val" id="fill-intensity-val">6.0</span>
+      </div>
+      <div class="control-row">
+        <label>Color</label>
+        <input type="color" id="fill-color" value="#c0d8ff">
+        <span style="flex:1"></span>
+      </div>
+      <div class="control-row">
+        <label>X</label>
+        <input type="range" id="fill-x" min="-10" max="10" step="0.1" value="-3">
+        <span class="val" id="fill-x-val">-3.0</span>
+      </div>
+      <div class="control-row">
+        <label>Y</label>
+        <input type="range" id="fill-y" min="-2" max="15" step="0.1" value="3">
+        <span class="val" id="fill-y-val">3.0</span>
+      </div>
+      <div class="control-row">
+        <label>Z</label>
+        <input type="range" id="fill-z" min="-10" max="10" step="0.1" value="2">
+        <span class="val" id="fill-z-val">2.0</span>
+      </div>
+      <div class="toggle-row">
+        <span>Enabled</span>
+        <div class="toggle on" id="fill-enabled"></div>
+      </div>
+      <div class="toggle-row">
+        <span>Show helper</span>
+        <div class="toggle on" id="fill-helper"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-rim">
+    <div class="section-title" data-target="rim-body">
+      <span class="dot" style="background:#f0a0a0"></span> Rim Light <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="rim-body">
+      <div class="control-row">
+        <label>Intensity</label>
+        <input type="range" id="rim-intensity" min="0" max="30" step="0.1" value="8">
+        <span class="val" id="rim-intensity-val">8.0</span>
+      </div>
+      <div class="control-row">
+        <label>Color</label>
+        <input type="color" id="rim-color" value="#ffe0d0">
+        <span style="flex:1"></span>
+      </div>
+      <div class="control-row">
+        <label>X</label>
+        <input type="range" id="rim-x" min="-10" max="10" step="0.1" value="-1">
+        <span class="val" id="rim-x-val">-1.0</span>
+      </div>
+      <div class="control-row">
+        <label>Y</label>
+        <input type="range" id="rim-y" min="-2" max="15" step="0.1" value="4">
+        <span class="val" id="rim-y-val">4.0</span>
+      </div>
+      <div class="control-row">
+        <label>Z</label>
+        <input type="range" id="rim-z" min="-10" max="10" step="0.1" value="-4">
+        <span class="val" id="rim-z-val">-4.0</span>
+      </div>
+      <div class="toggle-row">
+        <span>Enabled</span>
+        <div class="toggle on" id="rim-enabled"></div>
+      </div>
+      <div class="toggle-row">
+        <span>Show helper</span>
+        <div class="toggle on" id="rim-helper"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-env">
+    <div class="section-title" data-target="env-body">
+      <span class="dot" style="background:#555"></span> Environment <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="env-body">
+      <div class="control-row">
+        <label>Ambient</label>
+        <input type="range" id="env-ambient" min="0" max="2" step="0.01" value="0.15">
+        <span class="val" id="env-ambient-val">0.15</span>
+      </div>
+      <div class="control-row">
+        <label>Amb Color</label>
+        <input type="color" id="env-ambient-color" value="#404050">
+        <span style="flex:1"></span>
+      </div>
+      <div class="toggle-row">
+        <span>Ground plane</span>
+        <div class="toggle on" id="env-ground"></div>
+      </div>
+      <div class="toggle-row">
+        <span>Shadows</span>
+        <div class="toggle on" id="env-shadows"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-pixel">
+    <div class="section-title" data-target="pixel-body">
+      <span class="dot" style="background:#80ff80"></span> Pixelation <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="pixel-body">
+      <div class="toggle-row">
+        <span>Enabled</span>
+        <div class="toggle" id="pixel-enabled"></div>
+      </div>
+      <div class="control-row">
+        <label>Pixel Size</label>
+        <input type="range" id="pixel-size" min="1" max="32" step="1" value="4">
+        <span class="val" id="pixel-size-val">4</span>
+      </div>
+      <div class="control-row">
+        <label>Colors</label>
+        <input type="range" id="pixel-colors" min="2" max="256" step="1" value="256">
+        <span class="val" id="pixel-colors-val">256</span>
+      </div>
+      <div class="control-row">
+        <label>Dither</label>
+        <input type="range" id="pixel-dither" min="0" max="1" step="0.01" value="0">
+        <span class="val" id="pixel-dither-val">0.0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="btn-row">
+      <div class="btn" id="btn-reset">Reset All</div>
+      <div class="btn" id="btn-front">Front View</div>
+    </div>
+    <div class="btn-row" style="margin-top:6px">
+      <div class="btn" id="btn-side">Side View</div>
+      <div class="btn" id="btn-top">Top View</div>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <div class="btn" id="btn-export" style="background:rgba(80,200,120,0.08);border-color:#2a5a3a;color:#6dbf8b">Export Config</div>
+    </div>
+  </div>
+</div>
+
+<div id="info-bar">Scroll to zoom · Drag to orbit · Right-drag to pan</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x000000);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(3, 2.5, 5);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 1;
+controls.maxDistance = 20;
+controls.update();
+
+const ambientLight = new THREE.AmbientLight(0x404050, 0.15);
+scene.add(ambientLight);
+
+function makeLight(color, intensity, pos, name) {
+  const light = new THREE.SpotLight(color, intensity);
+  light.position.set(...pos);
+  light.target.position.set(0, 0.5, 0);
+  light.angle = Math.PI / 3;
+  light.penumbra = 0.6;
+  light.decay = 1.5;
+  light.castShadow = true;
+  light.shadow.mapSize.set(2048, 2048);
+  light.shadow.bias = -0.0005;
+  light.shadow.normalBias = 0.02;
+  light.shadow.camera.near = 0.5;
+  light.shadow.camera.far = 30;
+  light.name = name;
+  scene.add(light);
+  scene.add(light.target);
+
+  const helperGeo = new THREE.SphereGeometry(0.08, 8, 8);
+  const helperMat = new THREE.MeshBasicMaterial({ color });
+  const helper = new THREE.Mesh(helperGeo, helperMat);
+  helper.position.copy(light.position);
+  helper.update = () => { helper.position.copy(light.position); };
+  scene.add(helper);
+
+  return { light, helper };
+}
+
+const keyLight = makeLight(0xfff5e0, 12, [4, 5, 3], 'key');
+const fillLight = makeLight(0xc0d8ff, 6, [-3, 3, 2], 'fill');
+const rimLight = makeLight(0xffe0d0, 8, [-1, 4, -4], 'rim');
+
+const groundGeo = new THREE.PlaneGeometry(30, 30);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9, metalness: 0.0 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+let mixer = null;
+let currentAction = null;
+let deerModel = null;
+
+const loader = new GLTFLoader();
+loader.load('source/Deer walk.glb', (gltf) => {
+  deerModel = gltf.scene;
+
+  const box = new THREE.Box3().setFromObject(deerModel);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const targetHeight = 2.0;
+  const scale = targetHeight / size.y;
+  deerModel.scale.setScalar(scale);
+
+  const scaledBox = new THREE.Box3().setFromObject(deerModel);
+  const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+  deerModel.position.x -= scaledCenter.x;
+  deerModel.position.z -= scaledCenter.z;
+  deerModel.position.y -= scaledBox.min.y;
+
+  deerModel.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      mats.forEach(m => {
+        m.side = THREE.DoubleSide;
+        if (m.transparent) {
+          m.transparent = false;
+          m.depthWrite = true;
+          m.alphaTest = 0.5;
+        }
+        m.depthWrite = true;
+        m.needsUpdate = true;
+      });
+    }
+  });
+
+  scene.add(deerModel);
+
+  if (gltf.animations.length > 0) {
+    mixer = new THREE.AnimationMixer(deerModel);
+    const clip = gltf.animations[0];
+    const filteredTracks = clip.tracks.filter(t => {
+      const isRoot = t.name.startsWith('Armature.') || t.name.split('.')[0] === clip.tracks[0].name.split('.')[0];
+      const isPosition = t.name.endsWith('.position');
+      if (isRoot && isPosition) return false;
+      return true;
+    });
+    const cleanClip = new THREE.AnimationClip(clip.name, clip.duration, filteredTracks);
+    currentAction = mixer.clipAction(cleanClip);
+    currentAction.setLoop(THREE.LoopRepeat);
+    currentAction.play();
+  }
+
+  controls.target.set(0, targetHeight * 0.5, 0);
+  controls.update();
+
+  document.getElementById('loading').classList.add('hidden');
+  setTimeout(() => document.getElementById('loading').remove(), 600);
+}, (progress) => {
+}, (error) => {
+  console.error('Error loading model:', error);
+  document.querySelector('#loading span').textContent = 'FAILED TO LOAD MODEL';
+});
+
+const PixelShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    pixelSize: { value: 4.0 },
+    colorLevels: { value: 256.0 },
+    ditherAmount: { value: 0.0 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform vec2 resolution;
+    uniform float pixelSize;
+    uniform float colorLevels;
+    uniform float ditherAmount;
+    varying vec2 vUv;
+
+    float dither8x8(vec2 position) {
+      int x = int(mod(position.x, 8.0));
+      int y = int(mod(position.y, 8.0));
+      int index = x + y * 8;
+      float limit = 0.0;
+      if (index ==  0) limit = 0.015625;
+      else if (index ==  1) limit = 0.515625;
+      else if (index ==  2) limit = 0.140625;
+      else if (index ==  3) limit = 0.640625;
+      else if (index ==  4) limit = 0.046875;
+      else if (index ==  5) limit = 0.546875;
+      else if (index ==  6) limit = 0.171875;
+      else if (index ==  7) limit = 0.671875;
+      else if (index ==  8) limit = 0.765625;
+      else if (index ==  9) limit = 0.265625;
+      else if (index == 10) limit = 0.890625;
+      else if (index == 11) limit = 0.390625;
+      else if (index == 12) limit = 0.796875;
+      else if (index == 13) limit = 0.296875;
+      else if (index == 14) limit = 0.921875;
+      else if (index == 15) limit = 0.421875;
+      else if (index == 16) limit = 0.203125;
+      else if (index == 17) limit = 0.703125;
+      else if (index == 18) limit = 0.078125;
+      else if (index == 19) limit = 0.578125;
+      else if (index == 20) limit = 0.234375;
+      else if (index == 21) limit = 0.734375;
+      else if (index == 22) limit = 0.109375;
+      else if (index == 23) limit = 0.609375;
+      else if (index == 24) limit = 0.953125;
+      else if (index == 25) limit = 0.453125;
+      else if (index == 26) limit = 0.828125;
+      else if (index == 27) limit = 0.328125;
+      else if (index == 28) limit = 0.984375;
+      else if (index == 29) limit = 0.484375;
+      else if (index == 30) limit = 0.859375;
+      else if (index == 31) limit = 0.359375;
+      else if (index == 32) limit = 0.0625;
+      else if (index == 33) limit = 0.5625;
+      else if (index == 34) limit = 0.1875;
+      else if (index == 35) limit = 0.6875;
+      else if (index == 36) limit = 0.03125;
+      else if (index == 37) limit = 0.53125;
+      else if (index == 38) limit = 0.15625;
+      else if (index == 39) limit = 0.65625;
+      else if (index == 40) limit = 0.8125;
+      else if (index == 41) limit = 0.3125;
+      else if (index == 42) limit = 0.9375;
+      else if (index == 43) limit = 0.4375;
+      else if (index == 44) limit = 0.78125;
+      else if (index == 45) limit = 0.28125;
+      else if (index == 46) limit = 0.90625;
+      else if (index == 47) limit = 0.40625;
+      else if (index == 48) limit = 0.25;
+      else if (index == 49) limit = 0.75;
+      else if (index == 50) limit = 0.125;
+      else if (index == 51) limit = 0.625;
+      else if (index == 52) limit = 0.21875;
+      else if (index == 53) limit = 0.71875;
+      else if (index == 54) limit = 0.09375;
+      else if (index == 55) limit = 0.59375;
+      else if (index == 56) limit = 1.0;
+      else if (index == 57) limit = 0.5;
+      else if (index == 58) limit = 0.875;
+      else if (index == 59) limit = 0.375;
+      else if (index == 60) limit = 0.96875;
+      else if (index == 61) limit = 0.46875;
+      else if (index == 62) limit = 0.84375;
+      else if (index == 63) limit = 0.34375;
+      return limit;
+    }
+
+    void main() {
+      vec2 dxy = pixelSize / resolution;
+      vec2 coord = dxy * floor(vUv / dxy) + dxy * 0.5;
+      vec4 color = texture2D(tDiffuse, coord);
+
+      if (colorLevels < 256.0) {
+        float levels = colorLevels - 1.0;
+        vec2 pixelCoord = vUv * resolution;
+        float d = dither8x8(pixelCoord) - 0.5;
+        color.rgb += ditherAmount * d / levels;
+        color.rgb = floor(color.rgb * levels + 0.5) / levels;
+      }
+
+      gl_FragColor = color;
+    }
+  `
+};
+
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+const pixelPass = new ShaderPass(PixelShader);
+pixelPass.enabled = false;
+composer.addPass(pixelPass);
+
+let pixelationEnabled = false;
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  if (mixer) mixer.update(delta);
+  if (deerModel && controls.autoRotate) {
+    const bb = new THREE.Box3().setFromObject(deerModel);
+    const c = bb.getCenter(new THREE.Vector3());
+    controls.target.set(c.x, c.y, c.z);
+  }
+  controls.update();
+  keyLight.helper.update();
+  fillLight.helper.update();
+  rimLight.helper.update();
+  if (pixelationEnabled) {
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  pixelPass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+});
+
+const panel = document.getElementById('panel');
+const toggle = document.getElementById('panel-toggle');
+toggle.addEventListener('click', () => {
+  panel.classList.toggle('open');
+  toggle.classList.toggle('open');
+  toggle.textContent = panel.classList.contains('open') ? '✕' : '☰';
+});
+
+document.querySelectorAll('.section-title').forEach(title => {
+  title.addEventListener('click', () => {
+    const targetId = title.dataset.target;
+    if (!targetId) return;
+    const body = document.getElementById(targetId);
+    title.classList.toggle('collapsed');
+    body.classList.toggle('collapsed');
+  });
+});
+
+document.querySelectorAll('.toggle').forEach(el => {
+  el.addEventListener('click', () => el.classList.toggle('on'));
+});
+
+function bindSlider(id, callback) {
+  const slider = document.getElementById(id);
+  const valEl = document.getElementById(id + '-val');
+  const handler = () => {
+    const v = parseFloat(slider.value);
+    if (valEl) valEl.textContent = v % 1 === 0 ? v.toString() : v.toFixed(1);
+    callback(v);
+  };
+  slider.addEventListener('input', handler);
+  handler();
+}
+
+function bindColor(id, callback) {
+  const picker = document.getElementById(id);
+  picker.addEventListener('input', () => callback(picker.value));
+}
+
+function bindToggle(id, callback) {
+  const el = document.getElementById(id);
+  el.addEventListener('click', () => {
+    setTimeout(() => callback(el.classList.contains('on')), 0);
+  });
+}
+
+bindSlider('cam-dist', (v) => {
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(controls.target).addScaledVector(dir, v);
+});
+
+bindSlider('cam-height', (v) => {
+  camera.position.y = v;
+});
+
+bindSlider('cam-fov', (v) => {
+  camera.fov = v;
+  camera.updateProjectionMatrix();
+});
+
+bindToggle('cam-autorotate', (on) => {
+  controls.autoRotate = on;
+  controls.autoRotateSpeed = 1.5;
+});
+
+bindSlider('anim-speed', (v) => {
+  if (mixer) mixer.timeScale = v;
+});
+
+bindToggle('anim-playing', (on) => {
+  if (currentAction) {
+    if (on) currentAction.paused = false;
+    else currentAction.paused = true;
+  }
+});
+
+function bindLightControls(prefix, lightObj) {
+  bindSlider(`${prefix}-intensity`, (v) => { lightObj.light.intensity = v; });
+  bindColor(`${prefix}-color`, (hex) => { lightObj.light.color.set(hex); });
+  bindSlider(`${prefix}-x`, (v) => { lightObj.light.position.x = v; });
+  bindSlider(`${prefix}-y`, (v) => { lightObj.light.position.y = v; });
+  bindSlider(`${prefix}-z`, (v) => { lightObj.light.position.z = v; });
+  bindToggle(`${prefix}-enabled`, (on) => { lightObj.light.visible = on; });
+  bindToggle(`${prefix}-helper`, (on) => { lightObj.helper.visible = on; });
+}
+
+bindLightControls('key', keyLight);
+bindLightControls('fill', fillLight);
+bindLightControls('rim', rimLight);
+
+bindSlider('env-ambient', (v) => { ambientLight.intensity = v; });
+bindColor('env-ambient-color', (hex) => { ambientLight.color.set(hex); });
+bindToggle('env-ground', (on) => { ground.visible = on; });
+bindToggle('env-shadows', (on) => { renderer.shadowMap.enabled = on; });
+
+bindToggle('pixel-enabled', (on) => {
+  pixelationEnabled = on;
+  pixelPass.enabled = on;
+});
+bindSlider('pixel-size', (v) => { pixelPass.uniforms.pixelSize.value = v; });
+bindSlider('pixel-colors', (v) => { pixelPass.uniforms.colorLevels.value = v; });
+bindSlider('pixel-dither', (v) => { pixelPass.uniforms.ditherAmount.value = v; });
+
+function resetCamera(pos, target) {
+  camera.position.set(...pos);
+  controls.target.set(...target);
+  controls.update();
+  document.getElementById('cam-dist').value = camera.position.distanceTo(controls.target);
+  document.getElementById('cam-dist-val').textContent = parseFloat(document.getElementById('cam-dist').value).toFixed(1);
+  document.getElementById('cam-height').value = camera.position.y;
+  document.getElementById('cam-height-val').textContent = camera.position.y.toFixed(1);
+}
+
+document.getElementById('btn-front').addEventListener('click', () => resetCamera([0, 1.5, 5], [0, 1, 0]));
+document.getElementById('btn-side').addEventListener('click', () => resetCamera([5, 1.5, 0], [0, 1, 0]));
+document.getElementById('btn-top').addEventListener('click', () => resetCamera([0, 8, 0.1], [0, 1, 0]));
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  resetCamera([3, 2.5, 5], [0, 1, 0]);
+  camera.fov = 45;
+  camera.updateProjectionMatrix();
+  document.getElementById('cam-fov').value = 45;
+  document.getElementById('cam-fov-val').textContent = '45';
+
+  const defaults = {
+    'key-intensity': 12, 'key-x': 4, 'key-y': 5, 'key-z': 3,
+    'fill-intensity': 6, 'fill-x': -3, 'fill-y': 3, 'fill-z': 2,
+    'rim-intensity': 8, 'rim-x': -1, 'rim-y': 4, 'rim-z': -4,
+    'env-ambient': 0.15, 'anim-speed': 1,
+    'pixel-size': 4, 'pixel-colors': 256, 'pixel-dither': 0
+  };
+  const colorDefaults = {
+    'key-color': '#fff5e0', 'fill-color': '#c0d8ff', 'rim-color': '#ffe0d0',
+    'env-ambient-color': '#404050'
+  };
+
+  Object.entries(defaults).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+  });
+  Object.entries(colorDefaults).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+  });
+
+  ['key-enabled', 'key-helper', 'fill-enabled', 'fill-helper', 'rim-enabled', 'rim-helper',
+   'env-ground', 'env-shadows', 'anim-playing'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('on')) { el.classList.add('on'); el.click(); }
+  });
+
+  pixelationEnabled = false;
+  pixelPass.enabled = false;
+  const pxEl = document.getElementById('pixel-enabled');
+  if (pxEl.classList.contains('on')) pxEl.classList.remove('on');
+
+  controls.autoRotate = false;
+  const arEl = document.getElementById('cam-autorotate');
+  if (arEl.classList.contains('on')) arEl.classList.remove('on');
+
+  if (currentAction) currentAction.paused = false;
+  if (mixer) mixer.timeScale = 1;
+});
+
+function vec3Round(v, d = 4) {
+  return [parseFloat(v.x.toFixed(d)), parseFloat(v.y.toFixed(d)), parseFloat(v.z.toFixed(d))];
+}
+
+function colorHex(c) {
+  return '#' + c.getHexString();
+}
+
+function buildConfig() {
+  return {
+    camera: {
+      position: vec3Round(camera.position),
+      target: vec3Round(controls.target),
+      fov: camera.fov,
+      autoRotate: controls.autoRotate,
+      autoRotateSpeed: controls.autoRotateSpeed,
+    },
+    animation: {
+      speed: mixer ? mixer.timeScale : 1,
+      playing: currentAction ? !currentAction.paused : true,
+    },
+    lights: {
+      key: {
+        position: vec3Round(keyLight.light.position),
+        intensity: keyLight.light.intensity,
+        color: colorHex(keyLight.light.color),
+        enabled: keyLight.light.visible,
+        angle: parseFloat(keyLight.light.angle.toFixed(4)),
+        penumbra: keyLight.light.penumbra,
+      },
+      fill: {
+        position: vec3Round(fillLight.light.position),
+        intensity: fillLight.light.intensity,
+        color: colorHex(fillLight.light.color),
+        enabled: fillLight.light.visible,
+        angle: parseFloat(fillLight.light.angle.toFixed(4)),
+        penumbra: fillLight.light.penumbra,
+      },
+      rim: {
+        position: vec3Round(rimLight.light.position),
+        intensity: rimLight.light.intensity,
+        color: colorHex(rimLight.light.color),
+        enabled: rimLight.light.visible,
+        angle: parseFloat(rimLight.light.angle.toFixed(4)),
+        penumbra: rimLight.light.penumbra,
+      },
+    },
+    environment: {
+      ambientIntensity: ambientLight.intensity,
+      ambientColor: colorHex(ambientLight.color),
+      groundPlane: ground.visible,
+      shadows: renderer.shadowMap.enabled,
+    },
+    pixelation: {
+      enabled: pixelationEnabled,
+      pixelSize: pixelPass.uniforms.pixelSize.value,
+      colorLevels: pixelPass.uniforms.colorLevels.value,
+      dither: pixelPass.uniforms.ditherAmount.value,
+    },
+  };
+}
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const config = buildConfig();
+  const json = JSON.stringify(config, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'config.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>

@@ -1,18 +1,17 @@
 toolbox:
   label: Toolbox
   category: Agent Brain
-  desc: "Built-in tool toggles. All tools are enabled by default — toggle off tools you want to disable."
+  desc: Built-in tool toggles. All tools are enabled by default — toggle off tools you want to disable.
   defaultWidth: 320
   defaultHeight: 480
   resizable: true
-  in: []
+  in:
+  - id: disabled_tools
+    label: Disabled Tools
+    kind: hidden
+    default: ''
   out:
-    - id: out
-      label: Tools
-      type: any
-  props:
-    - id: disabled_tools
-      label: Disabled Tools
-      kind: hidden
-      default: ""
+  - id: out
+    label: Tools
+    type: any
   src: web/nodes/agent-brain/toolbox.js

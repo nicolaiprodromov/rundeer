@@ -14,17 +14,25 @@ function _nextLoopId(ctx) {
   const ctx = helpers.loopCtx[loopId];
   const bundle = inputs.bundle;
   const items = Array.isArray(bundle) ? bundle : (bundle ? [bundle] : []);
-  const i = ctx ? ctx.i : 0;
-  outputs.item = items[i] !== undefined ? items[i] : "";
-  outputs.index = i;
-  outputs.count = items.length;
+  const times = Math.max(0, parseInt(props.times, 10) || 0);
+  if (ctx) {
+    outputs.item = ctx.items[ctx.i] !== undefined ? ctx.items[ctx.i] : "";
+    outputs.prev = ctx.prev !== undefined ? ctx.prev : "";
+    outputs.index = ctx.i;
+    outputs.count = ctx.n;
+  } else {
+    outputs.item = items[0] !== undefined ? items[0] : "";
+    outputs.prev = inputs.seed !== undefined ? inputs.seed : "";
+    outputs.index = 0;
+    outputs.count = items.length > 0 ? items.length : times;
+  }
 },
 
   createPair(canvasX, canvasY, opts, ctx) {
     const loopId = _nextLoopId(ctx);
     const decDef = ctx.NODE_BY_TYPE["loop-decompose"];
     const decProps = {};
-    for (const p of decDef.props || []) decProps[p.id] = p.default ?? "";
+    for (const p of (decDef.inputs || []).filter((e) => e.kind)) decProps[p.id] = p.default ?? "";
     Object.assign(decProps, opts.props || {});
     decProps.loop_id = loopId;
     const decId = ctx.genNodeId(opts.id);
@@ -51,7 +59,7 @@ function _nextLoopId(ctx) {
     };
     const outDef = ctx.NODE_BY_TYPE["loop-output"];
     const outProps = {};
-    for (const p of outDef.props || []) outProps[p.id] = p.default ?? "";
+    for (const p of (outDef.inputs || []).filter((e) => e.kind)) outProps[p.id] = p.default ?? "";
     outProps.loop_id = loopId;
     const outId = ctx.genNodeId();
     ctx.graph.nodes[outId] = {

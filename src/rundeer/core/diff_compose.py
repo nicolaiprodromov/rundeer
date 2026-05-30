@@ -29,6 +29,8 @@ from PIL import Image, ImageFilter
 from skimage.measure import label
 from skimage.morphology import closing, dilation, disk
 
+from rundeer.core.paths import atomic_pil
+
 
 def composite_edit(
     prev_path: Path,
@@ -118,7 +120,7 @@ def composite_edit(
         alpha_img = alpha_img.filter(ImageFilter.GaussianBlur(float(feather)))
 
     out = Image.composite(edit, prev, alpha_img)
-    out.save(output_path, format="PNG")
+    atomic_pil(out, output_path, format="PNG")
 
     new_frozen = mask | fm
 

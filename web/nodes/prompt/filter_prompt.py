@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, Dict, List
 from urllib.parse import parse_qs, urlparse
 
 from rundeer.core import paths as rpaths
+from web.config.settings_manager import get_cached_settings
 from web.nodes._shared.helpers import IMAGE_EXTS, safe_project_path
 
 
@@ -64,10 +64,15 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     prompt_text = str(payload.get("prompt") or "")
     instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
     model_override = str(payload.get("model") or "").strip()
-    model_name = model_override or (os.environ.get("RUNDEER_LLM_MODEL") or "").strip()
+    if not model_override:
+        data = get_cached_settings(root)
+        prov = str((data.get("settings") or {}).get("Agent", {}).get("Provider") or "")
+        parts = prov.strip().rsplit("/", 1)
+        model_override = parts[0] if parts else ""
+    model_name = model_override
 
     if not model_name:
-        return {"error": "RUNDEER_LLM_MODEL not set (provide via .env or model prop)", "filtered_prompt": prompt_text}
+        return {"error": "no model configured in settings", "filtered_prompt": prompt_text}
 
     from rundeer.core.models import resolve_llm_api_key
     api_key = resolve_llm_api_key(model_name)

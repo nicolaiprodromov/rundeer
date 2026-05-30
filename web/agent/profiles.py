@@ -85,7 +85,7 @@ def _read_registry(root: Path, *, model: str = "") -> Dict[str, Any]:
         cleaned.append({
             "id": agent_id,
             "name": str(item.get("name") or ("Default" if agent_id == DEFAULT_AGENT_ID else agent_id)),
-            "model": str(item.get("model") or model or ""),
+            "model": str(model or item.get("model") or ""),
             "created_at": item.get("created_at") or time.time(),
             "updated_at": item.get("updated_at") or item.get("created_at") or time.time(),
         })

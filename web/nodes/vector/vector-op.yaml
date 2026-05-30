@@ -1,23 +1,22 @@
 vector-op:
   label: Vector
   category: Vector
-  desc: "Per-pixel vector op between two fields (image, UV map, vector, or scalar). Mirrors Blender's Vector Math node."
+  desc: Per-pixel vector op between two fields (image, UV map, vector, or scalar). Mirrors Blender's Vector Math node.
   in:
-    - id: a
-      label: A
-      type: any
-    - id: b
-      label: B
-      type: any
+  - id: a
+    label: A
+    type: any
+  - id: b
+    label: B
+    type: any
+  - id: op
+    label: Operation
+    kind: select
+    options: [add, subtract, multiply, divide, scale, dot, cross, normalize, length, floor, fract, min, max, mix]
+    default: add
   out:
-    - id: out
-      label: Out
-      type: any
-  props:
-    - id: op
-      label: Operation
-      kind: select
-      options: [add, subtract, multiply, divide, scale, dot, cross, normalize, length, floor, fract, min, max, mix]
-      default: add
+  - id: out
+    label: Out
+    type: any
   src: web/nodes/vector/vector-op.js
   api: /api/uv/vector

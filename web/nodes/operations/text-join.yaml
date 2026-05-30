@@ -1,22 +1,21 @@
 text-join:
   label: Join
   category: Operations
-  desc: "Concatenate two values as strings"
+  desc: Concatenate two values as strings
   in:
-    - id: a
-      label: A
-      type: any
-    - id: b
-      label: B
-      type: any
+  - id: a
+    label: A
+    type: any
+  - id: b
+    label: B
+    type: any
+  - id: sep
+    label: Separator
+    kind: text
+    default: ' '
+    placeholder: ' '
   out:
-    - id: out
-      label: Joined
-      type: text
-  props:
-    - id: sep
-      label: Separator
-      kind: text
-      default: " "
-      placeholder: " "
+  - id: out
+    label: Joined
+    type: text
   src: web/nodes/operations/text-join.js

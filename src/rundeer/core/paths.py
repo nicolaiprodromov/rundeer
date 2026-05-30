@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import tempfile
 from pathlib import Path
 
 
@@ -89,4 +91,42 @@ def agent_dir(root: Path | str) -> Path:
     return data_path(root, "agent")
 
 
+def settings_yaml_path(root: Path | str) -> Path:
+    return Path(root) / "web" / "config" / "settings.yaml"
+
+
+def atomic_wb(dest: Path, data: bytes) -> Path:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=dest.parent, prefix=".~")
+    try:
+        os.write(fd, data)
+        os.close(fd)
+        fd = -1
+        os.rename(tmp, str(dest))
+    except BaseException:
+        if fd >= 0:
+            os.close(fd)
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+    return dest
+
+
+def atomic_pil(img, dest: Path, **kw) -> Path:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name("." + dest.stem + ".atmp" + dest.suffix)
+    img.save(tmp, **kw)
+    tmp.rename(dest)
+    return dest
+
+
+def atomic_np(arr, dest: Path) -> Path:
+    import numpy as np
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name("." + dest.stem + ".atmp.npy")
+    np.save(tmp, arr)
+    tmp.rename(dest)
+    return dest
 

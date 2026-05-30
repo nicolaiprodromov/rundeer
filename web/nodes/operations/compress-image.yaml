@@ -1,30 +1,29 @@
 compress-image:
   label: Compress
   category: Operations
-  desc: "Compress images (re-encode), videos (re-encode), bundles (zip), or text (LLM summary)"
+  desc: Compress images (re-encode), videos (re-encode), bundles (zip), or text (LLM summary)
   in:
-    - id: in
-      label: Input
-      type: any
-    - id: instructions
-      label: Compression Instructions
-      type: text
+  - id: in
+    label: Input
+    type: any
+  - id: instructions
+    label: Compression Instructions
+    type: text
+  - id: quality
+    label: Quality (0–100)
+    kind: range
+    min: 1
+    max: 100
+    step: 1
+    default: 75
+  - id: max_dimension
+    label: Max Dimension (px, 0=keep)
+    kind: number
+    default: 0
   out:
-    - id: out
-      label: Compressed
-      type: any
-  props:
-    - id: quality
-      label: "Quality (0–100)"
-      kind: range
-      min: 1
-      max: 100
-      step: 1
-      default: 75
-    - id: max_dimension
-      label: "Max Dimension (px, 0=keep)"
-      kind: number
-      default: 0
+  - id: out
+    label: Compressed
+    type: any
   traits: [heavy]
   src: web/nodes/operations/compress-image.js
   api: /api/compress

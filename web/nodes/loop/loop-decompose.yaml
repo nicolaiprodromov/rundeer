@@ -1,26 +1,38 @@
 loop-decompose:
-  label: "Loop · Decompose"
+  label: Loop · Decompose
   category: Loop
-  desc: "Iterate over each item of a bundle"
+  desc: Iterate a bundle or a fixed number of times, with previous-iteration feedback
   in:
-    - id: bundle
-      label: Bundle
-      type: any
+  - id: bundle
+    label: Bundle
+    type: any
+  - id: seed
+    label: Seed
+    type: any
+  - id: times
+    label: Times
+    type: number
+    kind: number
+    default: 1
+    min: 0
+    step: 1
+  - id: loop_id
+    label: Loop ID
+    kind: text
+    default: loop1
+    placeholder: unique loop name
   out:
-    - id: item
-      label: Item
-      type: any
-    - id: index
-      label: Index
-      type: number
-    - id: count
-      label: Count
-      type: number
-  props:
-    - id: loop_id
-      label: Loop ID
-      kind: text
-      default: "loop1"
-      placeholder: "unique loop name"
+  - id: item
+    label: Item
+    type: any
+  - id: prev
+    label: Prev
+    type: any
+  - id: index
+    label: Index
+    type: number
+  - id: count
+    label: Count
+    type: number
   pairWith: loop-output
   src: web/nodes/loop/loop-decompose.js

@@ -1,20 +1,19 @@
 loop-output:
-  label: "Loop · Output"
+  label: Loop · Output
   category: Loop
-  desc: "Collect each iteration's value back into a bundle"
+  desc: Collect each iteration's value back into a bundle
   in:
-    - id: item
-      label: Item
-      type: any
+  - id: item
+    label: Item
+    type: any
+  - id: loop_id
+    label: Loop ID
+    kind: text
+    default: loop1
+    placeholder: matches Decompose
   out:
-    - id: out
-      label: Bundle
-      type: any
-  props:
-    - id: loop_id
-      label: Loop ID
-      kind: text
-      default: "loop1"
-      placeholder: "matches Decompose"
+  - id: out
+    label: Bundle
+    type: any
   traits: [heavy, producesBundle]
   src: web/nodes/loop/loop-output.js

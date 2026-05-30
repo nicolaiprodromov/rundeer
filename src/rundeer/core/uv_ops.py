@@ -21,7 +21,7 @@ from typing import Any, Iterable, Optional, Sequence, Tuple
 import numpy as np
 from PIL import Image
 
-from rundeer.core.paths import cache_dir as project_cache_dir
+from rundeer.core.paths import cache_dir as project_cache_dir, atomic_pil, atomic_np
 
 
 
@@ -76,9 +76,9 @@ def save_map(arr: np.ndarray, project_root: Path, tag: str) -> Tuple[Path, Path]
     npy = cache / f"{tag}_{key}.npy"
     png = cache / f"{tag}_{key}.preview.png"
     if not npy.exists():
-        np.save(npy, arr)
+        atomic_np(arr, npy)
     if not png.exists():
-        Image.fromarray(_map_to_preview_rgb(arr), mode="RGB").save(png)
+        atomic_pil(Image.fromarray(_map_to_preview_rgb(arr), mode="RGB"), png)
     return npy, png
 
 
@@ -97,7 +97,7 @@ def save_image(arr: np.ndarray, project_root: Path, tag: str) -> Path:
     png = cache / f"{tag}_{key}.png"
     if not png.exists():
         u8 = (arr * 255.0 + 0.5).astype(np.uint8)
-        Image.fromarray(u8, mode="RGBA").save(png)
+        atomic_pil(Image.fromarray(u8, mode="RGBA"), png)
     return png
 
 

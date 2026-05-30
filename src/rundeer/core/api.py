@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -58,8 +60,13 @@ class GrokClient:
             params["image_urls"] = image_urls
         if resolution:
             params["resolution"] = resolution
+        t0 = time.monotonic()
         responses = self._client.image.sample_batch(prompt, model, n, **params)
-        return list(responses)
+        result = list(responses)
+        dt = time.monotonic() - t0
+        sys.stderr.write(f"[api-timing] generate_image model={model} n={n} elapsed={dt:.2f}s\n")
+        sys.stderr.flush()
+        return result
 
     def generate_video(
         self,
@@ -79,9 +86,6 @@ class GrokClient:
             prompt = raw[:4096].decode("utf-8", errors="ignore")
         params: Dict[str, Any] = {}
         if video_url:
-
-
-
             params["video_url"] = video_url
         else:
             params["duration"] = duration
@@ -91,7 +95,12 @@ class GrokClient:
                 params["image_url"] = image
             if reference_images:
                 params["reference_image_urls"] = list(reference_images)
-        return self._client.video.generate(prompt, model=model, **params)
+        t0 = time.monotonic()
+        result = self._client.video.generate(prompt, model=model, **params)
+        dt = time.monotonic() - t0
+        sys.stderr.write(f"[api-timing] generate_video model={model} elapsed={dt:.2f}s\n")
+        sys.stderr.flush()
+        return result
 
     def extend_video(
         self,
@@ -101,9 +110,14 @@ class GrokClient:
         duration: int = 6,
     ) -> Any:
         self._acquire_request_slot()
-        return self._client.video.extend(
+        t0 = time.monotonic()
+        result = self._client.video.extend(
             prompt,
             model,
             source,
             duration=duration,
         )
+        dt = time.monotonic() - t0
+        sys.stderr.write(f"[api-timing] extend_video model={model} elapsed={dt:.2f}s\n")
+        sys.stderr.flush()
+        return result

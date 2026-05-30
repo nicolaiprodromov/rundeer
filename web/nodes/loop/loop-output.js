@@ -5,29 +5,42 @@
     return n.type === "loop-decompose" && String(n.props.loop_id || "loop1") === loopId;
   });
   if (!decomposeNodeId) throw new Error(`loop-output: no matching loop-decompose with loop_id="${loopId}"`);
-  const decomposeBundleEdges = helpers.activeIncomingEdges(decomposeNodeId, "bundle");
-  let bundleValue = [];
-  if (decomposeBundleEdges.length > 0) {
-    const edge = decomposeBundleEdges[0];
+  const decNode = helpers.graph.nodes[decomposeNodeId];
+  const decBundleEdges = helpers.activeIncomingEdges(decomposeNodeId, "bundle");
+  let items = [];
+  if (decBundleEdges.length > 0) {
+    const edge = decBundleEdges[0];
     const src = await helpers.resolveNodeWithPausedWork(helpers.work, edge.fromNode, helpers.cache, helpers.loopCtx, helpers.opts);
     const v = src[edge.fromSocket];
-    bundleValue = Array.isArray(v) ? v : (v ? [v] : []);
+    items = Array.isArray(v) ? v : (v ? [v] : []);
+  }
+  const times = Math.max(0, parseInt(decNode?.props?.times, 10) || 0);
+  const n = items.length > 0 ? items.length : times;
+  let seed = decNode?.props?.seed ?? "";
+  const seedEdges = helpers.activeIncomingEdges(decomposeNodeId, "seed");
+  if (seedEdges.length > 0) {
+    const edge = seedEdges[0];
+    const src = await helpers.resolveNodeWithPausedWork(helpers.work, edge.fromNode, helpers.cache, helpers.loopCtx, helpers.opts);
+    seed = src[edge.fromSocket];
   }
   const itemEdges = helpers.activeIncomingEdges(helpers.nodeId, "item");
   const collected = [];
-  for (let i = 0; i < bundleValue.length; i++) {
+  let lastVal = seed;
+  for (let i = 0; i < n; i++) {
     await helpers.waitForGraphRunReady(helpers.opts);
-    const subCtx = { ...helpers.loopCtx, [loopId]: { i, total: bundleValue.length, items: bundleValue } };
+    const subCtx = { ...helpers.loopCtx, [loopId]: { i, n, items, prev: lastVal } };
     const subCache = {};
+    let v;
     if (itemEdges.length > 0) {
       const edge = itemEdges[0];
       const r = await helpers.resolveNodeWithPausedWork(helpers.work, edge.fromNode, subCache, subCtx, helpers.opts);
-      const v = r[edge.fromSocket];
-      if (Array.isArray(v)) collected.push(...v);
-      else collected.push(v);
+      v = r[edge.fromSocket];
     } else {
-      collected.push(node.props.item ?? "");
+      v = node.props.item ?? "";
     }
+    if (Array.isArray(v)) collected.push(...v);
+    else collected.push(v);
+    lastVal = v;
   }
   if (itemEdges.length > 0) {
     const srcNodeId = itemEdges[0].fromNode;

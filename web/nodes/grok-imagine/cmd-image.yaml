@@ -1,89 +1,80 @@
 cmd-image:
   label: Image
   category: Grok Imagine
-  desc: "Generate images through a style brain"
+  desc: Generate images through a style brain
   in:
-    - id: trigger
-      label: Run
-      type: run
-    - id: subject
-      label: Subject
-      type: text
-    - id: input
-      label: Reference Images
-      type: image
-      multi: true
+  - id: trigger
+    label: Run
+    type: run
+  - id: subject
+    label: Subject
+    type: text
+  - id: input
+    label: Reference Images
+    type: image
+    multi: true
+  - id: style
+    label: Style
+    kind: text
+    default: Moebius
+    placeholder: Moebius
+    group: run
+  - id: iterations
+    label: Iterations
+    kind: number
+    default: 1
+    group: run
+  - id: concurrency
+    label: Concurrency
+    kind: number
+    default: null
+    placeholder: auto
+    group: run
+  - id: output_dir
+    label: Output Dir
+    kind: text
+    default: .rundeer/data/outputs
+    group: run
+  - id: output_name
+    label: Output Name
+    kind: text
+    default: output
+    group: run
+  - id: model
+    label: Image Model
+    kind: text
+    default: grok-imagine-image
+    group: run
+  - id: aspect_ratio
+    label: Aspect Ratio
+    kind: text
+    default: '1:1'
+    group: media
+  - id: resolution
+    label: Resolution
+    kind: text
+    default: ''
+    placeholder: 1k or 2k
+    group: media
+  - id: reference_ids
+    label: Style Reference IDs
+    kind: text
+    default: ''
+    placeholder: e.g. 0,1,2
+    group: references
+  - id: pad_reference
+    label: Pad References
+    kind: checkbox
+    default: true
+    group: references
+  - id: ref_quality
+    label: JPEG Quality
+    kind: number
+    default: 85
+    group: references
   out:
-    - id: out
-      label: "Run →"
-      type: image
-  props:
-    - id: style
-      category: Run
-      label: Style
-      kind: text
-      default: "Moebius"
-      placeholder: "Moebius"
-    - id: iterations
-      category: Run
-      label: Iterations
-      kind: number
-      default: 1
-    - id: concurrency
-      category: Run
-      label: Concurrency
-      kind: number
-      default: null
-      placeholder: "auto"
-    - id: output_dir
-      category: Run
-      label: Output Dir
-      kind: text
-      default: ".rundeer/data/outputs"
-    - id: output_name
-      category: Run
-      label: Output Name
-      kind: text
-      default: "output"
-    - id: model
-      category: Run
-      label: Image Model
-      kind: text
-      default: "grok-imagine-image"
-    - id: aspect_ratio
-      category: Media
-      label: Aspect Ratio
-      kind: text
-      default: "1:1"
-    - id: resolution
-      category: Media
-      label: Resolution
-      kind: text
-      default: ""
-      placeholder: "1k or 2k"
-    - id: reference_ids
-      category: References
-      label: Style Reference IDs
-      kind: text
-      default: ""
-      placeholder: "e.g. 0,1,2"
-    - id: pad_reference
-      category: References
-      label: Pad References
-      kind: checkbox
-      default: true
-    - id: ref_quality
-      category: References
-      label: JPEG Quality
-      kind: number
-      default: 85
+  - id: out
+    label: Run →
+    type: image
   traits: [command, heavy]
-  aliases:
-    inputs:
-      run: trigger
-      prompt: subject
-      reference: input
-    outputs:
-      image: out
-      result: out
   src: web/nodes/grok-imagine/cmd-image.js

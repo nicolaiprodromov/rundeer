@@ -85,9 +85,9 @@ function propGroupLabel(groupId) {
 function propGroupDefaultCollapsed(node, groupId) {
   const def = NODE_BY_TYPE[node?.type];
   const groupSocketIds = new Set(
-    (def?.props || [])
-      .filter((prop) => propGroupId(prop) === groupId)
-      .map((prop) => prop.id)
+    (def?.inputs || [])
+      .filter((e) => e.kind && propGroupId(e) === groupId)
+      .map((e) => e.id)
   );
   const hasWiredSocket = activeIncomingEdges(node?.id).some((edge) => groupSocketIds.has(edge.toSocket));
   if (hasWiredSocket) return false;
@@ -99,9 +99,9 @@ function propGroupDefaultCollapsed(node, groupId) {
 function propGroupSummary(node, groupId, count) {
   const def = NODE_BY_TYPE[node?.type];
   const groupSocketIds = new Set(
-    (def?.props || [])
-      .filter((prop) => propGroupId(prop) === groupId)
-      .map((prop) => prop.id)
+    (def?.inputs || [])
+      .filter((e) => e.kind && propGroupId(e) === groupId)
+      .map((e) => e.id)
   );
   if (activeIncomingEdges(node?.id).some((edge) => groupSocketIds.has(edge.toSocket))) return "wired";
   if (groupId === "highlights") return String(node?.props?.highlight_pairs || "").trim() ? "on" : "off";
@@ -496,8 +496,9 @@ const vp = { x: 0, y: 0, zoom: 1 };
 const ZOOM_MIN = 0.08;
 const ZOOM_MAX = 2.75;
 const ZOOM_WHEEL_SENSITIVITY = 0.0018;
-const GRID_CELL_SIZE = 32;
+let GRID_CELL_SIZE = 32;
 const GRID_MAJOR_EVERY = 5;
+let _gridOpacityOverride = null;
 
 function clampValue(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -531,7 +532,8 @@ function updateViewportGrid() {
   wrap.style.setProperty("--ne-grid-y", px(positiveModulo(vp.y, minor)));
   wrap.style.setProperty("--ne-grid-major-x", px(positiveModulo(vp.x, major)));
   wrap.style.setProperty("--ne-grid-major-y", px(positiveModulo(vp.y, major)));
-  wrap.style.setProperty("--ne-grid-opacity", String(clampValue(0.18 + vp.zoom * 0.11, 0.22, 0.42)));
+  const opacity = _gridOpacityOverride != null ? clampValue(_gridOpacityOverride, 0, 1) : clampValue(0.18 + vp.zoom * 0.11, 0.22, 0.42);
+  wrap.style.setProperty("--ne-grid-opacity", String(opacity));
 }
 
 function screenToCanvas(sx, sy) {
@@ -582,7 +584,7 @@ function addNode(type, canvasX, canvasY, opts = {}) {
   if (!def) return null;
   const id = genNodeId(opts.id);
   const props = {};
-  for (const p of def.props || []) props[p.id] = p.default ?? "";
+  for (const p of (def.inputs || []).filter(e => e.kind)) props[p.id] = p.default ?? "";
   Object.assign(props, opts.props || {});
   graph.nodes[id] = {
     id, type, x: canvasX, y: canvasY, props,
@@ -644,25 +646,8 @@ function removeSelectedNodes() {
   return ids.length;
 }
 
-function socketTypeForProp(propDef) {
-  if (propDef.socketType) return propDef.socketType;
-  if (propDef.kind === "checkbox") return "boolean";
-  if (propDef.kind === "number" || propDef.kind === "range") return "number";
-  if (propDef.kind === "color") return "color";
-  return "text";
-}
-
 function inputSocketDefsForDef(def) {
-  return [
-    ...(def?.inputs || []),
-    ...(def?.props || []).map((prop) => ({
-      id: prop.id,
-      label: prop.label,
-      type: socketTypeForProp(prop),
-      multi: false,
-      _isProp: true,
-    })),
-  ];
+  return (def?.inputs || []);
 }
 
 function canonicalInputSocketId(nodeId, socketId) {
@@ -676,11 +661,7 @@ function inputSocketDef(nodeId, socketId) {
   const def = NODE_BY_TYPE[graph.nodes[nodeId]?.type];
   if (!def) return null;
   socketId = canonicalInputSocketId(nodeId, socketId);
-  const direct = (def.inputs || []).find((sock) => sock.id === socketId);
-  if (direct) return direct;
-  const propDef = (def.props || []).find((prop) => prop.id === socketId);
-  if (!propDef) return null;
-  return { id: propDef.id, label: propDef.label, type: socketTypeForProp(propDef), multi: false };
+  return (def.inputs || []).find((sock) => sock.id === socketId) || null;
 }
 
 function outputSocketDef(nodeId, socketId) {
@@ -692,10 +673,7 @@ function outputSocketDef(nodeId, socketId) {
 function nodeInputSocketIds(nodeId) {
   const def = NODE_BY_TYPE[graph.nodes[nodeId]?.type];
   if (!def) return [];
-  return [
-    ...(def.inputs || []).map((sock) => sock.id),
-    ...(def.props || []).map((prop) => prop.id),
-  ];
+  return (def.inputs || []).map((s) => s.id);
 }
 
 function nodeOutputSocketIds(nodeId) {
@@ -1445,40 +1423,26 @@ function buildNodeElement(id, node) {
 
     if (_reg?.buildBody) {
       body.appendChild(_reg.buildBody(id, node, _nodeUICtx()));
-    } else if ((def.props || []).length > 0) {
-      body.appendChild(buildNodeFields(id, node, def));
     }
 
-    
-    
-    const inputRows = [];
-    for (const sock of def.inputs || []) {
+    for (const sock of (def.inputs || []).filter(s => !s.kind)) {
       if (!isInputSocketVisible(node, def, sock)) continue;
       if (sock.multi) {
-        
-        
-        
         const matches = graph.edges
           .filter((e) => e.toNode === id && e.toSocket === sock.id);
         matches.forEach((edge, i) => {
-          inputRows.push(buildSocketRow(id, sock, true, { multiIndex: i + 1, edgeId: edge.id }));
+          body.appendChild(buildSocketRow(id, sock, true, { multiIndex: i + 1, edgeId: edge.id }));
         });
-        inputRows.push(buildSocketRow(id, sock, true, {
+        body.appendChild(buildSocketRow(id, sock, true, {
           multiIndex: matches.length + 1, isMultiPlaceholder: true,
         }));
       } else {
-        inputRows.push(buildSocketRow(id, sock, true));
+        body.appendChild(buildSocketRow(id, sock, true));
       }
     }
-    if (inputRows.length > 0) {
-      if (shouldWrapSocketSection(inputRows)) {
-        body.appendChild(buildNodePanel(id, "inputs", "inputs", inputRows, {
-          summary: String(inputRows.length),
-          aggregateInputSocketIds: (def.inputs || []).map((sock) => sock.id),
-        }));
-      } else {
-        body.appendChild(inputRows[0]);
-      }
+
+    if ((def.inputs || []).some(e => e.kind)) {
+      body.appendChild(buildNodeFields(id, node, def));
     }
 
     
@@ -2876,14 +2840,131 @@ function buildPreviewContent(node) {
     wrap.appendChild(makeSingleMediaPreview(node, value, "image"));
   } else if (kind === "video") {
     wrap.appendChild(makeSingleMediaPreview(node, value, "video"));
+  } else if (_hasAnsi(value)) {
+    wrap.appendChild(buildAnsiPreview(node, value));
+  } else if (_srcIsPreformatted(node.id)) {
+    wrap.appendChild(_buildPrePreview(node, value));
   } else {
     wrap.appendChild(buildReadonlyMarkdownViewer(node, value, previewMarkdownContextNodeId(node.id)));
   }
   return wrap;
 }
 
+function _srcIsPreformatted(nodeId) {
+  const edge = graph.edges.find((e) => e.toNode === nodeId);
+  if (!edge) return false;
+  const src = graph.nodes[edge.fromNode];
+  return src && TERMINAL_TYPES.has(src.type);
+}
 
+function _buildPrePreview(node, value) {
+  const wrap = document.createElement("div");
+  wrap.className = "ne-pre-preview";
+  const toolbar = document.createElement("div");
+  toolbar.className = "ne-string-toolbar";
+  const copyBtn = makeTextCopyButton("Copy", () => value);
+  const spacer = document.createElement("span");
+  spacer.className = "ne-string-spacer";
+  const meta = document.createElement("span");
+  meta.className = "ne-string-meta";
+  const lines = value.split("\n").length;
+  meta.textContent = `${value.length}c · ${lines}L`;
+  toolbar.append(spacer, meta, copyBtn);
+  [wrap, toolbar].forEach((el) => {
+    el.addEventListener("mousedown", (e) => {
+      e.stopPropagation();
+      if (!ix.selection.has(node.id)) selectOnly(node.id);
+    });
+  });
+  const pre = document.createElement("pre");
+  pre.className = "ne-pre-text";
+  pre.textContent = value;
+  pre.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+  wrap.append(toolbar, pre);
+  return wrap;
+}
 
+const _ANSI_RE = /\x1b\[[\d;]*[A-Za-z]/;
+function _hasAnsi(s) { return _ANSI_RE.test(s); }
+
+function buildAnsiPreview(node, value) {
+  const nodeId = node.id;
+  const wrap = document.createElement("div");
+  wrap.className = "ne-ansi-preview";
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "ne-string-toolbar";
+  const copyBtn = makeTextCopyButton("Copy raw text", () => value);
+  const spacer = document.createElement("span");
+  spacer.className = "ne-string-spacer";
+  const meta = document.createElement("span");
+  meta.className = "ne-string-meta";
+  meta.textContent = `${value.length}c`;
+  toolbar.append(spacer, meta, copyBtn);
+
+  const container = document.createElement("div");
+  container.className = "ne-ansi-container";
+
+  [wrap, toolbar, container].forEach((el) => {
+    el.addEventListener("mousedown", (e) => {
+      e.stopPropagation();
+      if (!ix.selection.has(nodeId)) selectOnly(nodeId);
+    });
+  });
+
+  wrap.append(toolbar, container);
+
+  const _boot = () => {
+    if (typeof Terminal === "undefined" || typeof FitAddon === "undefined") {
+      setTimeout(_boot, 200);
+      return;
+    }
+    const term = new Terminal({
+      cursorBlink: false,
+      disableStdin: true,
+      fontSize: 12,
+      fontFamily: "'Geist Mono', 'Consolas', monospace",
+      theme: {
+        background: "#0d0d0d",
+        foreground: "#d4d4d4",
+        cursor: "transparent",
+        selectionBackground: "rgba(255,255,255,0.15)",
+        black: "#0d0d0d",
+        red: "#f44747",
+        green: "#6a9955",
+        yellow: "#dcdcaa",
+        blue: "#569cd6",
+        magenta: "#c586c0",
+        cyan: "#4ec9b0",
+        white: "#d4d4d4",
+        brightBlack: "#808080",
+        brightRed: "#f44747",
+        brightGreen: "#6a9955",
+        brightYellow: "#dcdcaa",
+        brightBlue: "#569cd6",
+        brightMagenta: "#c586c0",
+        brightCyan: "#4ec9b0",
+        brightWhite: "#ffffff",
+      },
+      scrollback: 5000,
+      convertEol: true,
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(container);
+    requestAnimationFrame(() => {
+      try { fitAddon.fit(); } catch (_) {}
+      term.write(value);
+    });
+    const ro = new ResizeObserver(() => {
+      try { fitAddon.fit(); } catch (_) {}
+    });
+    ro.observe(container);
+    node._ansiPreview = { term, fitAddon, ro };
+  };
+  requestAnimationFrame(_boot);
+  return wrap;
+}
 
 function inferPreviewMediaKind(node, resultKind, value) {
   const k = String(resultKind || "").toLowerCase();
@@ -3201,15 +3282,10 @@ function buildPropValueControl(nodeId, propDef, currentValue, opts = {}) {
 
 function buildNodeFields(nodeId, node, def) {
   const fields = document.createDocumentFragment();
-  
-  
-  
   const isPrimitive = def.category === "Primitives";
-  const allProps = def.props || [];
+  const allProps = (def.inputs || []).filter(e => e.kind);
   let inlinePropIds = new Set();
   if (isPrimitive && allProps.length > 0) {
-    
-    
     const propsToInline = def.allInline ? allProps : [allProps[0]];
     for (const p of propsToInline) {
       inlinePropIds.add(p.id);
@@ -3243,8 +3319,7 @@ function buildInlinePropRow(nodeId, propDef, currentValue) {
   const sock = {
     id: propDef.id,
     label: propDef.label,
-    type: socketTypeForProp(propDef),
-    _isProp: true,
+    type: propDef.type || "text",
   };
   const row = buildSocketRow(nodeId, sock, true, { isPropSocket: true });
   row.classList.add("ne-inline-prop-row");
@@ -3337,7 +3412,8 @@ function renderConnections() {
     const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
     pathEl.setAttribute("d", path);
     pathEl.setAttribute("stroke", color);
-    pathEl.setAttribute("stroke-width", isBundle ? "2.6" : "2.2");
+    const baseThickness = getYamlSetting("settings.Nodes.Links.thickness", 2);
+    pathEl.setAttribute("stroke-width", isBundle ? String(baseThickness + 0.4) : String(baseThickness));
     pathEl.setAttribute("fill", "none");
     pathEl.setAttribute("stroke-linecap", "round");
     if (muted) pathEl.setAttribute("stroke-dasharray", "2 5");
@@ -3445,6 +3521,14 @@ function findSocketTargetAt(clientX, clientY, radius = SOCKET_HIT_RADIUS) {
 }
 
 function makeBezierPath(from, to) {
+  const interp = getYamlSetting("settings.Nodes.Links.interpolation");
+  if (interp === "linear") {
+    return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+  }
+  if (interp === "step") {
+    const midX = (from.x + to.x) / 2;
+    return `M ${from.x} ${from.y} H ${midX} V ${to.y} H ${to.x}`;
+  }
   const dx = Math.max(Math.abs(to.x - from.x) * 0.5, 60);
   return `M ${from.x} ${from.y} C ${from.x + dx} ${from.y} ${to.x - dx} ${to.y} ${to.x} ${to.y}`;
 }
@@ -3802,11 +3886,20 @@ function nodeResizeMin(node) {
     }
   }
 
-  
-  const props = def?.props || [];
-  if (props.length > 0) {
+  const allInputs = def?.inputs || [];
+  for (const sock of allInputs.filter(s => !s.kind)) {
+    if (sock.multi) {
+      const matches = graph.edges.filter((e) => e.toNode === node.id && e.toSocket === sock.id).length;
+      contentH += Math.max(1, matches + 1) * SOCKET_ROW;
+    } else {
+      contentH += SOCKET_ROW;
+    }
+  }
+
+  const widgetEntries = allInputs.filter(s => s.kind);
+  if (widgetEntries.length > 0) {
     const groups = new Map();
-    for (const prop of props) {
+    for (const prop of widgetEntries) {
       if (prop.group === null) {
         if (prop.mdEditor) contentH += stringEditorMinRowHeight(node, prop);
         else contentH += prop.kind === "textarea" ? TEXTAREA_ROW : PROP_ROW;
@@ -3826,28 +3919,6 @@ function nodeResizeMin(node) {
           else contentH += prop.kind === "textarea" ? TEXTAREA_ROW : PROP_ROW;
         }
       }
-    }
-  }
-
-  
-  const inputs = def?.inputs || [];
-  if (inputs.length > 0) {
-    let rows = 0;
-    for (const sock of inputs) {
-      if (sock.multi) {
-        const matches = graph.edges.filter((e) => e.toNode === node.id && e.toSocket === sock.id).length;
-        rows += Math.max(1, matches + 1);
-      } else {
-        rows += 1;
-      }
-    }
-    if (shouldWrapSocketSection(Array.from({ length: rows }))) {
-      contentH += PANEL_HEAD;
-      if (!isNodePanelCollapsed(node, "inputs", false)) {
-        contentH += rows * SOCKET_ROW;
-      }
-    } else {
-      contentH += rows * SOCKET_ROW;
     }
   }
 
@@ -4460,8 +4531,9 @@ const SHORTCUT_BY_ID = Object.fromEntries(SHORTCUT_DEFINITIONS.map((def) => [def
 let shortcutCaptureAction = null;
 
 function shortcutState() {
-  if (!webStore.state.shortcuts || typeof webStore.state.shortcuts !== "object") webStore.state.shortcuts = {};
-  return webStore.state.shortcuts;
+  const cached = getYamlSetting("settings.Shortcuts");
+  if (cached && typeof cached === "object" && !Array.isArray(cached)) return cached;
+  return {};
 }
 
 function normalizeShortcutKey(key) {
@@ -4556,23 +4628,28 @@ function setShortcut(actionId, combo) {
   const def = SHORTCUT_BY_ID[actionId];
   if (!def) return;
   const normalized = normalizeShortcutCombo(combo);
-  const store = shortcutState();
-  if (!normalized || normalized === normalizeShortcutCombo(def.default)) delete store[actionId];
-  else store[actionId] = normalized;
-  scheduleWebStoreSave();
+  const current = Object.assign({}, shortcutState());
+  current[actionId] = normalized || normalizeShortcutCombo(def.default);
+  saveYamlSetting("settings.Shortcuts", current);
+  if (_yamlSettingsCache && _yamlSettingsCache.settings) _yamlSettingsCache.settings.Shortcuts = current;
   renderShortcutSettings();
 }
 
 function resetShortcut(actionId) {
-  delete shortcutState()[actionId];
-  scheduleWebStoreSave();
+  const def = SHORTCUT_BY_ID[actionId];
+  const current = Object.assign({}, shortcutState());
+  current[actionId] = normalizeShortcutCombo(def ? def.default : "");
+  saveYamlSetting("settings.Shortcuts", current);
+  if (_yamlSettingsCache && _yamlSettingsCache.settings) _yamlSettingsCache.settings.Shortcuts = current;
   renderShortcutSettings();
 }
 
 function resetAllShortcuts() {
-  webStore.state.shortcuts = {};
   shortcutCaptureAction = null;
-  scheduleWebStoreSave();
+  const defaults = {};
+  for (const def of SHORTCUT_DEFINITIONS) defaults[def.id] = normalizeShortcutCombo(def.default);
+  saveYamlSetting("settings.Shortcuts", defaults);
+  if (_yamlSettingsCache && _yamlSettingsCache.settings) _yamlSettingsCache.settings.Shortcuts = defaults;
   renderShortcutSettings();
 }
 
@@ -4606,56 +4683,46 @@ function handleShortcutCaptureKeydown(e) {
 function renderShortcutSettings() {
   const root = document.getElementById("shortcutsList");
   if (!root) return;
-  const groups = [];
-  for (const def of SHORTCUT_DEFINITIONS) {
-    let group = groups.find((item) => item.name === def.group);
-    if (!group) {
-      group = { name: def.group, items: [] };
-      groups.push(group);
-    }
-    group.items.push(def);
-  }
   const frag = document.createDocumentFragment();
-  for (const group of groups) {
-    const section = document.createElement("section");
-    section.className = "shortcut-group";
-    const title = document.createElement("div");
-    title.className = "shortcut-group-title";
-    title.textContent = group.name;
-    section.appendChild(title);
-    for (const def of group.items) {
-      const row = document.createElement("div");
-      row.className = "shortcut-row";
+  const toolbar = document.createElement("div");
+  toolbar.className = "shortcut-toolbar";
+  const countEl = document.createElement("span");
+  countEl.className = "shortcut-count";
+  countEl.textContent = `${SHORTCUT_DEFINITIONS.length} bindings`;
+  const resetAllBtn = document.createElement("button");
+  resetAllBtn.type = "button";
+  resetAllBtn.className = "btn btn-ghost btn-tiny";
+  resetAllBtn.textContent = "Reset All";
+  resetAllBtn.addEventListener("click", resetAllShortcuts);
+  toolbar.append(countEl, resetAllBtn);
+  frag.appendChild(toolbar);
+  for (const def of SHORTCUT_DEFINITIONS) {
+    const row = document.createElement("div");
+    row.className = "shortcut-row";
 
-      const name = document.createElement("div");
-      name.className = "shortcut-name";
-      const strong = document.createElement("strong");
-      strong.textContent = def.label;
-      const desc = document.createElement("span");
-      desc.textContent = def.description || "";
-      name.append(strong, desc);
+    const name = document.createElement("div");
+    name.className = "shortcut-name";
+    const strong = document.createElement("strong");
+    strong.textContent = def.id;
+    name.appendChild(strong);
 
-      const key = document.createElement("button");
-      key.type = "button";
-      key.className = "shortcut-key" + (shortcutCaptureAction === def.id ? " is-capturing" : "");
-      key.textContent = shortcutCaptureAction === def.id ? "Press keys" : formatShortcut(shortcutFor(def.id));
-      key.addEventListener("click", () => beginShortcutCapture(def.id));
+    const key = document.createElement("button");
+    key.type = "button";
+    key.className = "shortcut-key" + (shortcutCaptureAction === def.id ? " is-capturing" : "");
+    key.textContent = shortcutCaptureAction === def.id ? "Press keys" : formatShortcut(shortcutFor(def.id));
+    key.addEventListener("click", () => beginShortcutCapture(def.id));
 
-      const reset = document.createElement("button");
-      reset.type = "button";
-      reset.className = "btn btn-ghost btn-tiny shortcut-reset";
-      reset.textContent = "Reset";
-      reset.disabled = !Object.prototype.hasOwnProperty.call(shortcutState(), def.id);
-      reset.addEventListener("click", () => resetShortcut(def.id));
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "btn btn-ghost btn-tiny shortcut-reset";
+    reset.textContent = "Reset";
+    reset.disabled = normalizeShortcutCombo(shortcutState()[def.id] || def.default) === normalizeShortcutCombo(def.default);
+    reset.addEventListener("click", () => resetShortcut(def.id));
 
-      row.append(name, key, reset);
-      section.appendChild(row);
-    }
-    frag.appendChild(section);
+    row.append(name, key, reset);
+    frag.appendChild(row);
   }
   root.replaceChildren(frag);
-  const meta = document.getElementById("settingsPageMeta");
-  if (meta) meta.textContent = `${SHORTCUT_DEFINITIONS.length} shortcuts · .rundeer/data/web-state.json`;
 }
 
 function selectedSliderPreviewNodeId() {
@@ -4973,9 +5040,9 @@ function togglePanel(which) {
   const shell = document.querySelector(".ne-shell");
   if (!shell) return;
   if (which === "palette") {
-    shell.classList.toggle("hide-palette");
+    shell.classList.toggle("hide-nmenu");
     applyPaletteLayout({ commitHandleSide: true });
-    setHint(shell.classList.contains("hide-palette") ? "node menu hidden (T)" : "node menu shown (T)");
+    setHint(shell.classList.contains("hide-nmenu") ? "node menu hidden (T)" : "node menu shown (T)");
   } else if (which === "n") {
     const state = paletteLayoutState();
     state.bodyCollapsed = !state.bodyCollapsed;
@@ -5114,7 +5181,7 @@ function renderAddMenuList(query) {
   const list = document.getElementById("addMenuList");
   list.innerHTML = "";
   let firstItem = null;
-  for (const cat of paletteCategoriesForDisplay()) {
+  for (const cat of nmenuCategoriesForDisplay()) {
     const matching = cat.nodes.filter((n) => !query || n.label.toLowerCase().includes(query) || n.type.includes(query) || n.desc.toLowerCase().includes(query));
     if (matching.length === 0) continue;
 
@@ -6148,8 +6215,8 @@ async function runGraph(opts = {}) {
     const n = graph.nodes[id];
     if (isNodeMuted(n)) return false;
     if (COMMAND_TYPES.has(n.type)) return true;
+    if (TERMINAL_TYPES.has(n.type)) return true;
     if (PREVIEW_TYPES.has(n.type)) {
-      if (TERMINAL_TYPES.has(n.type)) return true;
       return activeIncomingEdges(id).length > 0;
     }
     return false;
@@ -6263,8 +6330,9 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         const i = ctx.i | 0;
         const out = {
           item: ctx.items[i] !== undefined ? ctx.items[i] : "",
+          prev: ctx.prev !== undefined ? ctx.prev : "",
           index: i,
-          count: ctx.items.length,
+          count: ctx.n,
         };
         cache[cacheKey] = out;
         finishNodeWork(work, "done");
@@ -6334,34 +6402,19 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
     } else if (matchingEdges.length > 0) {
       const edge = matchingEdges[0];
       const sourceOutputs = await resolveNode(edge.fromNode, cache, loopCtx, opts);
-      inputs[sock.id] = adaptForDest(sourceOutputs[edge.fromSocket], edge, sock.type);
+      let v = adaptForDest(sourceOutputs[edge.fromSocket], edge, sock.type);
+      if (sock.kind) v = coerceWiredPropValue(sock, v);
+      inputs[sock.id] = v;
     } else {
       inputs[sock.id] = node.props[sock.id] ?? "";
     }
   }
-  
-  
-  for (const propDef of def.props || []) {
-    if ((def.inputs || []).some((s) => s.id === propDef.id)) continue;
-    const matching = activeIncomingEdges(nodeId, propDef.id);
-    if (matching.length > 0) {
-      const edge = matching[0];
-      const sourceOutputs = await resolveNode(edge.fromNode, cache, loopCtx, opts);
-      inputs[propDef.id] = coerceWiredPropValue(propDef, sourceOutputs[edge.fromSocket]);
-    }
-  }
 
-  
-  
-  
-  
-  
   const props = { ...node.props };
-  for (const propDef of def.props || []) {
-    if ((def.inputs || []).some((s) => s.id === propDef.id)) continue;
-    const wired = inputs[propDef.id];
+  for (const sock of (def.inputs || []).filter(e => e.kind)) {
+    const wired = inputs[sock.id];
     if (wired !== undefined && wired !== "" && wired !== null) {
-      props[propDef.id] = wired;
+      props[sock.id] = wired;
     }
   }
 
@@ -7218,8 +7271,14 @@ function setupAgentPalette() {
     drag.addEventListener("mousedown", (e) => {
       if (paletteLayoutState().fullscreen) return;
       e.preventDefault();
-      const state = normalizedPaletteState();
-      start = { x: e.clientX, y: e.clientY, px: state.x, py: state.y };
+      const snap = normalizedPaletteState();
+      const vp = paletteNodeViewportRect();
+      const ep = 8;
+      const maxL = Math.max(ep, vp.width - snap.w - ep);
+      const maxT = Math.max(ep, vp.height - snap.h - ep);
+      const cx = Math.round(Math.max(ep, Math.min(snap.x, maxL)));
+      const cy = Math.round(Math.max(ep, Math.min(snap.y, maxT)));
+      start = { x: e.clientX, y: e.clientY, px: cx, py: cy };
       root.classList.add("is-dragging");
       document.body.style.cursor = "grabbing";
     });
@@ -8252,7 +8311,7 @@ function setGraphStatus(text, cls) {
 
 
 
-function paletteCategoriesForDisplay() {
+function nmenuCategoriesForDisplay() {
   return NODE_CATALOG.map((cat) => {
     if (cat.category === "Loop") {
       return {
@@ -8273,32 +8332,32 @@ function paletteCategoriesForDisplay() {
 }
 
 function renderPalette(query = "") {
-  const host = document.getElementById("paletteCategories");
+  const host = document.getElementById("nmenuCategories");
   host.innerHTML = "";
   const q = query.toLowerCase();
-  for (const cat of paletteCategoriesForDisplay()) {
+  for (const cat of nmenuCategoriesForDisplay()) {
     const matching = cat.nodes.filter((n) => !q || n.label.toLowerCase().includes(q) || n.type.includes(q) || n.desc.toLowerCase().includes(q));
     if (matching.length === 0) continue;
     const catEl = document.createElement("div");
-    catEl.className = "ne-category is-open";
+    catEl.className = "ne-nmenu-cat is-open";
     catEl.dataset.category = cat.category;
     const head = document.createElement("button");
     head.type = "button";
-    head.className = "ne-category-head";
-    head.innerHTML = `<span class="ne-category-caret">▸</span><span class="ne-category-dot"></span>${escHtml(cat.category)}`;
+    head.className = "ne-nmenu-cat-head";
+    head.innerHTML = `<span class="ne-nmenu-cat-caret">▸</span><span class="ne-nmenu-cat-dot"></span>${escHtml(cat.category)}`;
     head.addEventListener("click", () => catEl.classList.toggle("is-open"));
     catEl.appendChild(head);
     const body = document.createElement("div");
-    body.className = "ne-category-body";
+    body.className = "ne-nmenu-cat-body";
     for (const nodeDef of matching) {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "ne-node-btn";
+      btn.className = "ne-nmenu-btn";
       btn.draggable = true;
       btn.dataset.nodeType = nodeDef.type;
       btn.dataset.category = cat.category;
       btn.title = nodeDef.desc;
-      btn.innerHTML = `<span class="ne-node-dot"></span>${escHtml(nodeDef.label)}`;
+      btn.innerHTML = `<span class="ne-nmenu-dot"></span>${escHtml(nodeDef.label)}`;
       btn.addEventListener("click", () => {
         const wrap = document.getElementById("canvasWrap");
         const rect = wrap.getBoundingClientRect();
@@ -8326,7 +8385,7 @@ async function loadState() {
     const projectEl = document.getElementById("projectRoot");
     if (projectEl) projectEl.textContent = data.projectRoot || "?";
     const env = data.env || {};
-    const keysOk = Boolean(env.GROK_IMAGINE_API_KEY || env.WXWAI_API_KEY || env.OPENAI_API_KEY || env.ANTHROPIC_API_KEY || env.RUNDEER_LLM_MODEL);
+    const keysOk = Boolean(env.GROK_IMAGINE_API_KEY || env.OPENAI_API_KEY || env.ANTHROPIC_API_KEY);
     const keyEl = document.getElementById("keyStatus");
     if (keyEl) {
       keyEl.textContent = keysOk ? "ok" : "missing";
@@ -8345,20 +8404,12 @@ async function loadState() {
         model: data.agent.model || "agent",
         apiKeyPresent: Boolean(data.agent.api_key_present),
         getGraphSnapshot: () => {
-          
-          
-          
-          
-          
-          
           const active = getActiveTab();
           const isBrain = !!(active && active.kind === "brain");
           if (!isBrain) {
-            return {
-              nodes: graph && graph.nodes ? graph.nodes : {},
-              edges: graph && Array.isArray(graph.edges) ? graph.edges : [],
-              selection: ix && ix.selection ? [...ix.selection] : [],
-            };
+            const s = serializeGraph();
+            s.selection = ix && ix.selection ? [...ix.selection] : [];
+            return s;
           }
           const wf = (tabsState.tabs || []).find((t) => (t.kind || "workflow") === "workflow");
           const snap = (wf && wf.snapshot) || null;
@@ -8395,6 +8446,9 @@ async function loadState() {
           return null;
         },
       });
+    }
+    if (data.pty && data.pty.port) {
+      window._rundeerPtyPort = data.pty.port;
     }
   } catch (_) {
     const projectEl = document.getElementById("projectRoot");
@@ -8435,7 +8489,7 @@ function applyAgentPatchOp(op) {
             continue;
           }
           if (def && typeof setNodePropValue === "function") {
-            const propDef = (def.props || []).find((p) => p.id === k);
+            const propDef = (def.inputs || []).find((p) => p.kind && p.id === k);
             if (propDef) {
               setNodePropValue(id, propDef, v);
               continue;
@@ -8605,12 +8659,13 @@ function formatBytes(n) {
 
 
 function setActiveView(name, opts = {}) {
-  if (name !== "explore" && name !== "nodes" && name !== "runs" && name !== "graphs" && name !== "settings") name = "nodes";
+  if (name === "runs" || name === "graphs") name = "settings";
+  if (name !== "explore" && name !== "nodes" && name !== "settings") name = "nodes";
   const shell = document.querySelector(".ne-shell");
   if (!shell) return;
   shell.dataset.activeView = name;
   document.querySelectorAll(".view-tab").forEach((b) => {
-    if (!b.dataset.view) return; 
+    if (!b.dataset.view) return;
     const active = b.dataset.view === name;
     b.classList.toggle("is-active", active);
     b.setAttribute("aria-selected", String(active));
@@ -8618,28 +8673,15 @@ function setActiveView(name, opts = {}) {
   document.querySelectorAll(".ne-view").forEach((v) => {
     v.hidden = v.dataset.view !== name;
   });
-  
   if (name === "explore") initExplore();
-  if (name === "runs" && window.refreshRunsList) window.refreshRunsList();
-  if (name === "graphs") renderGraphsPage();
-  if (name === "settings") renderShortcutSettings();
-  
-  const url = name === "explore"
-    ? "/explore"
-    : name === "runs"
-      ? "/runs"
-      : name === "graphs"
-        ? "/graphs"
-        : name === "settings"
-          ? "/settings"
-          : "/nodes";
+  if (name === "settings") initSettingsView();
+  const url = name === "explore" ? "/explore" : name === "settings" ? "/settings" : "/nodes";
   if (location.pathname !== url) {
     try {
       if (opts.history === false) history.replaceState({ view: name }, "", url);
       else history.pushState({ view: name }, "", url);
     } catch (_) {}
   }
-  
   if (name === "nodes") {
     requestAnimationFrame(() => { applyViewport(); renderConnections(); });
   }
@@ -8648,9 +8690,7 @@ function setActiveView(name, opts = {}) {
 function initialViewFromPath() {
   const p = location.pathname || "/";
   if (p === "/explore") return "explore";
-  if (p === "/runs") return "runs";
-  if (p === "/graphs") return "graphs";
-  if (p === "/settings") return "settings";
+  if (p === "/runs" || p === "/graphs" || p === "/settings") return "settings";
   if (p === "/nodes") return "nodes";
   return "nodes";
 }
@@ -8871,10 +8911,11 @@ function setupSidePanelResizers() {
 
   
 
-  const bind = (resizerId, varName, layoutKey, side) => {
+  const bind = (resizerId, varName, layoutKey) => {
     const resizer = document.getElementById(resizerId);
     if (!resizer) return;
     let dragging = false;
+    const curSide = () => shell.classList.contains("nmenu-right") ? "right" : "left";
     const applyWidth = (w) => {
       const value = `${Math.round(w)}px`;
       shell.style.setProperty(varName, value);
@@ -8891,7 +8932,7 @@ function setupSidePanelResizers() {
       const rect = shell.getBoundingClientRect();
       const minW = 140;
       const maxW = Math.max(minW, rect.width - 400);
-      let w = side === "left" ? (e.clientX - rect.left) : (rect.right - e.clientX);
+      let w = curSide() === "left" ? (e.clientX - rect.left) : (rect.right - e.clientX);
       w = Math.max(minW, Math.min(maxW, w));
       applyWidth(w);
     });
@@ -8908,7 +8949,7 @@ function setupSidePanelResizers() {
     });
   };
 
-  bind("paletteResizer", "--palette-w", "paletteW", "left");
+  bind("nmenuResizer", "--palette-w", "paletteW");
 }
 
 function setupExploreResizer() {
@@ -8942,6 +8983,475 @@ function setupExploreResizer() {
   });
 }
 
+function setupSettingsResizers() {
+  const shell = document.getElementById("settingsShell");
+  if (!shell) return;
+  const gapPx = 6;
+
+  let dragging1 = false;
+  let dragging2 = false;
+
+  const r1 = document.getElementById("settingsResizer1");
+  const r2 = document.getElementById("settingsResizer2");
+
+  if (r1) {
+    r1.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      dragging1 = true;
+      r1.classList.add("is-active");
+      document.body.style.cursor = "col-resize";
+    });
+  }
+
+  if (r2) {
+    r2.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      dragging2 = true;
+      r2.classList.add("is-active");
+      document.body.style.cursor = "col-resize";
+    });
+  }
+
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging1 && !dragging2) return;
+    const rect = shell.getBoundingClientRect();
+    const w = rect.width;
+    if (w < 1) return;
+    const x = e.clientX - rect.left;
+
+    if (dragging1) {
+      const pct = Math.max(15, Math.min(45, (x / w) * 100));
+      shell.style.setProperty("--st-split1", `${pct.toFixed(1)}%`);
+    }
+
+    if (dragging2) {
+      const split1Str = getComputedStyle(shell).getPropertyValue("--st-split1").trim();
+      const split1Pct = parseFloat(split1Str) || 28;
+      const leftEdgeOfCenter = (split1Pct / 100) * w + gapPx;
+      const centerW = x - leftEdgeOfCenter;
+      const centerPct = (centerW / w) * 100;
+      const clamped = Math.max(15, Math.min(50, centerPct));
+      const total = split1Pct + clamped;
+      if (total < 85) {
+        shell.style.setProperty("--st-split2", `${clamped.toFixed(1)}%`);
+      }
+    }
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (dragging1) {
+      dragging1 = false;
+      if (r1) r1.classList.remove("is-active");
+      document.body.style.cursor = "";
+      const cur = getComputedStyle(shell).getPropertyValue("--st-split1").trim();
+      if (cur) { webLayoutState().settingsSplit1 = cur; scheduleWebStoreSave(); }
+    }
+    if (dragging2) {
+      dragging2 = false;
+      if (r2) r2.classList.remove("is-active");
+      document.body.style.cursor = "";
+      const cur = getComputedStyle(shell).getPropertyValue("--st-split2").trim();
+      if (cur) { webLayoutState().settingsSplit2 = cur; scheduleWebStoreSave(); }
+    }
+  });
+
+  const ws = webLayoutState();
+  if (ws.settingsSplit1) shell.style.setProperty("--st-split1", ws.settingsSplit1);
+  if (ws.settingsSplit2) shell.style.setProperty("--st-split2", ws.settingsSplit2);
+}
+
+let _yamlSettingsCache = null;
+let _yamlSaveTimer = null;
+let _categoryStyleEl = null;
+
+function getYamlSetting(keyPath, fallback) {
+  if (!_yamlSettingsCache) return fallback;
+  let obj = _yamlSettingsCache;
+  for (const k of keyPath.split(".")) {
+    if (obj == null || typeof obj !== "object") return fallback;
+    obj = obj[k];
+  }
+  return obj == null ? fallback : obj;
+}
+
+async function fetchYamlSettings() {
+  try {
+    const data = await fetchJSON("/api/settings-yaml");
+    _yamlSettingsCache = data;
+    return data;
+  } catch (e) { return null; }
+}
+
+function saveYamlSetting(path, value) {
+  if (_yamlSaveTimer) clearTimeout(_yamlSaveTimer);
+  _yamlSaveTimer = setTimeout(async () => {
+    try {
+      const result = await fetchJSON("/api/settings-yaml", {
+        method: "POST",
+        body: JSON.stringify({ path, value }),
+      });
+      _yamlSettingsCache = result;
+      document.dispatchEvent(new CustomEvent("settingsChanged", { detail: { path, value } }));
+    } catch (e) {}
+  }, 300);
+}
+
+function renderSettingsForm(data) {
+  const root = document.getElementById("yamlSettingsForm");
+  if (!root) return;
+  root.innerHTML = "";
+  if (!data || !data.settings) return;
+  const frag = document.createDocumentFragment();
+  _renderSection(frag, data.settings, "settings", 0);
+  root.appendChild(frag);
+}
+
+function _settingsExpandedState() {
+  const layout = webLayoutState();
+  if (!layout.settingsExpanded || typeof layout.settingsExpanded !== "object") layout.settingsExpanded = {};
+  return layout.settingsExpanded;
+}
+
+function _makeSectionDetails(fullPath, depth) {
+  const details = document.createElement("details");
+  details.className = "yaml-section";
+  details.dataset.depth = String(depth);
+  const expanded = _settingsExpandedState();
+  if (fullPath in expanded) details.open = expanded[fullPath];
+  else details.open = depth < 1;
+  details.addEventListener("toggle", () => {
+    _settingsExpandedState()[fullPath] = details.open;
+    scheduleWebStoreSave();
+  });
+  return details;
+}
+
+function _renderSection(parent, obj, path, depth) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+  for (const [key, value] of Object.entries(obj)) {
+    const fullPath = `${path}.${key}`;
+    if (key === "Shortcuts") {
+      const details = _makeSectionDetails(fullPath, depth);
+      const summary = document.createElement("summary");
+      summary.textContent = "Shortcuts";
+      details.appendChild(summary);
+      const inner = document.createElement("div");
+      inner.className = "shortcut-list";
+      inner.id = "shortcutsList";
+      details.appendChild(inner);
+      parent.appendChild(details);
+      requestAnimationFrame(() => renderShortcutSettings());
+    } else if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      const details = _makeSectionDetails(fullPath, depth);
+      const summary = document.createElement("summary");
+      summary.textContent = key;
+      details.appendChild(summary);
+      _renderSection(details, value, fullPath, depth + 1);
+      parent.appendChild(details);
+    } else if (Array.isArray(value)) {
+      _renderListField(parent, key, value, fullPath, depth);
+    } else {
+      _renderField(parent, key, value, fullPath, depth);
+    }
+  }
+}
+
+const SETTINGS_FIELD_META = {
+  "settings.UI.Header.menu": { options: ["compact", "detailed"] },
+  "settings.UI.Tree.Node Menu.position": { options: ["left", "right"] },
+  "settings.Nodes.Links.interpolation": { options: ["bezier", "linear", "step"] },
+};
+
+function _renderField(parent, key, value, path, depth) {
+  const row = document.createElement("div");
+  row.className = "yaml-field";
+  row.dataset.depth = String(depth);
+  const label = document.createElement("label");
+  label.className = "yaml-field-label";
+  label.textContent = key;
+  row.appendChild(label);
+
+  let input;
+  const meta = SETTINGS_FIELD_META[path];
+  if (meta && meta.options) {
+    input = document.createElement("select");
+    input.className = "yaml-select";
+    for (const opt of meta.options) {
+      const o = document.createElement("option");
+      o.value = opt;
+      o.textContent = opt;
+      if (String(value) === opt) o.selected = true;
+      input.appendChild(o);
+    }
+    input.addEventListener("change", () => saveYamlSetting(path, input.value));
+    row.appendChild(input);
+    _findFieldsContainer(parent).appendChild(row);
+    return;
+  }
+  if (typeof value === "boolean") {
+    input = document.createElement("input");
+    input.type = "checkbox";
+    input.className = "yaml-toggle";
+    input.checked = value;
+    input.addEventListener("change", () => saveYamlSetting(path, input.checked));
+  } else if (typeof value === "string" && value.startsWith("oklch(")) {
+    const wrap = document.createElement("div");
+    wrap.className = "yaml-color-wrap";
+    const swatch = document.createElement("div");
+    swatch.className = "yaml-color-swatch";
+    swatch.style.background = value;
+    input = document.createElement("input");
+    input.type = "text";
+    input.value = value;
+    input.addEventListener("input", () => {
+      swatch.style.background = input.value;
+      saveYamlSetting(path, input.value);
+    });
+    wrap.appendChild(swatch);
+    wrap.appendChild(input);
+    row.appendChild(label);
+    row.appendChild(wrap);
+    _findFieldsContainer(parent).appendChild(row);
+    return;
+  } else if (typeof value === "number") {
+    input = document.createElement("input");
+    input.type = "number";
+    input.value = value;
+    input.addEventListener("input", () => {
+      const v = input.value === "" ? null : Number(input.value);
+      saveYamlSetting(path, v);
+    });
+  } else if (value === null || value === undefined) {
+    input = document.createElement("input");
+    input.type = "text";
+    input.value = "";
+    input.placeholder = "auto";
+    input.addEventListener("input", () => {
+      const v = input.value.trim();
+      const num = Number(v);
+      saveYamlSetting(path, v === "" ? null : isNaN(num) ? v : num);
+    });
+  } else {
+    input = document.createElement("input");
+    input.type = "text";
+    input.value = String(value);
+    input.addEventListener("input", () => saveYamlSetting(path, input.value));
+  }
+  row.appendChild(input);
+  _findFieldsContainer(parent).appendChild(row);
+}
+
+function _findFieldsContainer(parent) {
+  let container = parent.querySelector(":scope > .yaml-fields:last-of-type");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "yaml-fields";
+    parent.appendChild(container);
+  }
+  return container;
+}
+
+function _renderListField(parent, key, value, path, depth) {
+  const wrap = document.createElement("div");
+  wrap.className = "yaml-list-field";
+  wrap.dataset.depth = String(depth);
+  const label = document.createElement("div");
+  label.className = "yaml-field-label";
+  label.textContent = key;
+  wrap.appendChild(label);
+  const items = document.createElement("div");
+  items.className = "yaml-list-items";
+  for (let i = 0; i < value.length; i++) {
+    const item = document.createElement("span");
+    item.className = "yaml-list-item";
+    item.textContent = String(value[i]);
+    items.appendChild(item);
+  }
+  wrap.appendChild(items);
+  _findFieldsContainer(parent).appendChild(wrap);
+}
+
+let _settingsInitialized = false;
+
+async function initSettingsView() {
+  if (!_settingsInitialized) {
+    setupSettingsResizers();
+    _settingsInitialized = true;
+  }
+  refreshRunsList();
+  renderGraphsPage();
+  const data = await fetchYamlSettings();
+  if (data) renderSettingsForm(data);
+}
+
+function applyCategoryColors(categories) {
+  if (!_categoryStyleEl) {
+    _categoryStyleEl = document.createElement("style");
+    _categoryStyleEl.id = "dynamic-category-colors";
+    document.head.appendChild(_categoryStyleEl);
+  }
+  if (!categories || typeof categories !== "object") return;
+  let css = "";
+  for (const [name, color] of Object.entries(categories)) {
+    if (!color || typeof color !== "string") continue;
+    const escaped = CSS.escape(name);
+    css += `[data-category="${escaped}"] { --node-accent: ${color}; }\n`;
+  }
+  _categoryStyleEl.textContent = css;
+}
+
+function applyYamlSettingsToUI() {
+  const title = getYamlSetting("settings.UI.Header.title");
+  if (title) {
+    const el = document.querySelector(".wordmark-title");
+    if (el) el.textContent = title;
+  }
+  const version = getYamlSetting("settings.UI.Header.version");
+  if (version != null) {
+    const el = document.getElementById("versionTag");
+    if (el) el.textContent = String(version);
+  }
+  const cellSize = getYamlSetting("settings.UI.Tree.Canvas.cell_size");
+  if (typeof cellSize === "number" && cellSize > 0) GRID_CELL_SIZE = cellSize;
+  const opacity = getYamlSetting("settings.UI.Tree.Canvas.opacity");
+  if (typeof opacity === "number") _gridOpacityOverride = opacity;
+  const thickness = getYamlSetting("settings.UI.Tree.Canvas.thickness");
+  if (typeof thickness === "number" && thickness > 0) {
+    const wrap = document.getElementById("canvasWrap");
+    if (wrap) wrap.style.setProperty("--ne-grid-thickness", `${thickness}px`);
+  }
+  const selColor = getYamlSetting("settings.UI.Tree.Canvas.selection_color");
+  if (typeof selColor === "string" && selColor) {
+    const wrap = document.getElementById("canvasWrap");
+    if (wrap) wrap.style.setProperty("--ne-selection-color", selColor);
+  }
+  const headerMenu = getYamlSetting("settings.UI.Header.menu");
+  if (headerMenu) {
+    const isFull = headerMenu === "detailed" || headerMenu === "full";
+    const masthead = document.querySelector(".masthead");
+    if (masthead) {
+      masthead.classList.remove("masthead-compact", "masthead-full");
+      masthead.classList.add(isFull ? "masthead-full" : "masthead-compact");
+    }
+    const wm = document.querySelector(".wordmark");
+    if (wm) {
+      wm.classList.remove("wordmark-compact", "wordmark-full");
+      wm.classList.add(isFull ? "wordmark-full" : "wordmark-compact");
+    }
+  }
+  const headerReverse = getYamlSetting("settings.UI.Header.reverse");
+  if (typeof headerReverse === "boolean") {
+    const masthead = document.querySelector(".masthead");
+    if (masthead) masthead.classList.toggle("masthead-reverse", headerReverse);
+  }
+  const headerWorkspace = getYamlSetting("settings.UI.Header.workspace");
+  {
+    const el = document.getElementById("projectRoot");
+    if (el) el.style.display = headerWorkspace ? "" : "none";
+  }
+  const nodeMenuPos = getYamlSetting("settings.UI.Tree.Node Menu.position");
+  if (nodeMenuPos === "right") {
+    document.querySelector(".ne-shell")?.classList.add("nmenu-right");
+  }
+  const paletteCfg = getYamlSetting("settings.UI.Tree.Palette");
+  if (paletteCfg && typeof paletteCfg === "object") {
+    const pLayout = paletteLayoutState();
+    if (pLayout.w == null && typeof paletteCfg.width === "number") pLayout.w = paletteCfg.width;
+    if (pLayout.h == null && typeof paletteCfg.height === "number") pLayout.h = paletteCfg.height;
+    if (pLayout.x == null && typeof paletteCfg.x_pos === "number") pLayout.x = paletteCfg.x_pos;
+    if (pLayout.y == null && typeof paletteCfg.y_pos === "number") pLayout.y = paletteCfg.y_pos;
+    if (pLayout.conversationCollapsed == null && typeof paletteCfg.conv_display === "boolean") pLayout.conversationCollapsed = !paletteCfg.conv_display;
+    if (pLayout.fullscreen == null && typeof paletteCfg.fullscreen === "boolean") pLayout.fullscreen = paletteCfg.fullscreen;
+  }
+  const categories = getYamlSetting("settings.Nodes.Categories");
+  if (categories && typeof categories === "object") applyCategoryColors(categories);
+}
+
+document.addEventListener("settingsChanged", (e) => {
+  const { path, value } = e.detail || {};
+  if (!path) return;
+
+  if (path === "settings.UI.Header.title") {
+    const el = document.querySelector(".wordmark-title");
+    if (el && typeof value === "string") el.textContent = value;
+  }
+
+  if (path === "settings.UI.Header.version") {
+    const el = document.getElementById("versionTag");
+    if (el && value != null) el.textContent = String(value);
+  }
+
+  if (path === "settings.UI.Tree.Canvas.cell_size" && typeof value === "number" && value > 0) {
+    GRID_CELL_SIZE = value;
+    updateViewportGrid();
+  }
+
+  if (path === "settings.UI.Tree.Canvas.opacity" && typeof value === "number") {
+    _gridOpacityOverride = value;
+    updateViewportGrid();
+  }
+
+  if (path === "settings.UI.Tree.Canvas.thickness" && typeof value === "number" && value > 0) {
+    const wrap = document.getElementById("canvasWrap");
+    if (wrap) wrap.style.setProperty("--ne-grid-thickness", `${value}px`);
+  }
+
+  if (path === "settings.UI.Tree.Canvas.selection_color" && typeof value === "string") {
+    const wrap = document.getElementById("canvasWrap");
+    if (wrap) wrap.style.setProperty("--ne-selection-color", value);
+  }
+
+  if (path === "settings.Nodes.Links.thickness") {
+    renderConnections();
+  }
+
+  if (path === "settings.UI.Header.menu" && typeof value === "string") {
+    const isFull = value === "detailed" || value === "full";
+    const masthead = document.querySelector(".masthead");
+    if (masthead) {
+      masthead.classList.remove("masthead-compact", "masthead-full");
+      masthead.classList.add(isFull ? "masthead-full" : "masthead-compact");
+    }
+    const wm = document.querySelector(".wordmark");
+    if (wm) {
+      wm.classList.remove("wordmark-compact", "wordmark-full");
+      wm.classList.add(isFull ? "wordmark-full" : "wordmark-compact");
+    }
+  }
+
+  if (path === "settings.UI.Header.reverse" && typeof value === "boolean") {
+    const masthead = document.querySelector(".masthead");
+    if (masthead) masthead.classList.toggle("masthead-reverse", value);
+  }
+
+  if (path === "settings.UI.Header.workspace" && typeof value === "boolean") {
+    const el = document.getElementById("projectRoot");
+    if (el) el.style.display = value ? "" : "none";
+  }
+
+  if (path === "settings.Nodes.Categories" && value && typeof value === "object") {
+    applyCategoryColors(value);
+  }
+
+  if (path.startsWith("settings.Nodes.Categories.") && typeof value === "string") {
+    const cats = getYamlSetting("settings.Nodes.Categories");
+    if (cats && typeof cats === "object") applyCategoryColors(cats);
+  }
+
+  if (path === "settings.UI.Tree.Node Menu.position" && typeof value === "string") {
+    const shell = document.querySelector(".ne-shell");
+    if (shell) shell.classList.toggle("nmenu-right", value === "right");
+  }
+
+  if (path === "settings.Nodes.Links.interpolation") {
+    renderConnections();
+  }
+
+  if (path === "settings.UI.Explore.ignore_patterns") {
+    explore.open = new Set([""]);
+    loadExploreTree();
+  }
+});
 
 
 async function loadYamlNodeDefs() {
@@ -9001,6 +9511,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadYamlNodeDefs();
   _ensureToolboxCache({ fetchJSON });
   loadState();
+  await fetchYamlSettings();
+  applyYamlSettingsToUI();
   renderPalette();
   applyViewport();
   setupSidePanelResizers();
@@ -9073,7 +9585,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     hideAddMenu();
   });
 
-  document.getElementById("paletteSearch").addEventListener("input", (e) => renderPalette(e.target.value.trim()));
+  document.getElementById("nmenuSearch").addEventListener("input", (e) => renderPalette(e.target.value.trim()));
 
   
   document.getElementById("runGraphBtn").addEventListener("click", () => runGraph());
@@ -9104,8 +9616,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (runsPageRefresh) runsPageRefresh.addEventListener("click", () => refreshRunsList());
   const graphsPageRefresh = document.getElementById("graphsPageRefresh");
   if (graphsPageRefresh) graphsPageRefresh.addEventListener("click", () => refreshSavedGraphs());
-  const resetShortcutsBtn = document.getElementById("resetShortcutsBtn");
-  if (resetShortcutsBtn) resetShortcutsBtn.addEventListener("click", resetAllShortcuts);
+
 
   
   
@@ -9160,6 +9671,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   setInterval(refreshRunsList, 4000);
   
   schedulePreviewRefresh();
+
+  if (window.__rundeerSplash) window.__rundeerSplash.resolve();
 
   
   window.addEventListener("beforeunload", () => {

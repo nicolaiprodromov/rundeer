@@ -8,11 +8,11 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 PROVIDER_KEY_MAP: Dict[str, str] = {
-    "xai": "WXWAI_API_KEY",
+    "xai": "GROK_IMAGINE_API_KEY",
     "openai": "OPENAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
 }
@@ -79,10 +79,10 @@ def _get_provider_models(prefix: str) -> List[str]:
 PROXY_RESPONSES_URL = "https://cli-chat-proxy.grok.com/v1/responses"
 GROK_CLIENT_VERSION = "0.1.218"
 PROXY_MODELS = {
-    "sxs-claude-opus-4-6", "sxs-gpt-5-3-codex", "sxs-gpt-5-4",
+    "sxs-claude-opus-4-8", "sxs-gpt-5-3-codex", "sxs-gpt-5-4",
     "sxs-glm-5", "sxs-kimi-k2-5", "sxs-glm-5p1",
 }
-GROK_RAW_DEFAULT_MODEL = "sxs-claude-opus-4-6"
+GROK_RAW_DEFAULT_MODEL = "sxs-claude-opus-4-8"
 
 
 def resolve_llm_api_key(model: str) -> Optional[str]:
@@ -93,24 +93,31 @@ def resolve_llm_api_key(model: str) -> Optional[str]:
     return None
 
 
-def available_llm_providers() -> List[Dict[str, Any]]:
+def available_llm_providers(*, configured_model: str = "") -> List[Dict[str, Any]]:
     providers: List[Dict[str, Any]] = []
     for prefix, env_var in PROVIDER_KEY_MAP.items():
         key_set = bool(os.environ.get(env_var))
+        models = _get_provider_models(prefix) if key_set else PROVIDER_MODELS.get(prefix, [])
+        if configured_model and configured_model.startswith(f"{prefix}/") and configured_model not in models:
+            models = list(models) + [configured_model]
         providers.append({
             "id": prefix,
             "name": prefix,
             "key_set": key_set,
-            "models": _get_provider_models(prefix) if key_set else PROVIDER_MODELS.get(prefix, []),
+            "models": models,
         })
 
     grok_raw_available = _grok_auth_path().is_file()
     grok_raw_model = os.environ.get("GROK_RAW_MODEL") or GROK_RAW_DEFAULT_MODEL
+    grok_models = [f"grok_raw/{grok_raw_model}"] if grok_raw_available else []
+    if configured_model and configured_model.startswith("grok_raw/") and configured_model not in grok_models:
+        grok_models = list(grok_models) + [configured_model]
+        grok_raw_available = grok_raw_available or True
     providers.append({
         "id": "grok_raw",
         "name": "grok_raw",
         "key_set": grok_raw_available,
-        "models": [f"grok_raw/{grok_raw_model}"] if grok_raw_available else [],
+        "models": grok_models,
     })
 
     return providers
@@ -129,7 +136,7 @@ class VisionConfig:
 
 
 def load_vision_config() -> VisionConfig:
-    provider = os.environ.get("RUNDEER_VISION_PROVIDER") or "grok_imagine"
+    provider = "grok_imagine"
     api_key = os.environ.get("GROK_IMAGINE_API_KEY") or None
     base_url = os.environ.get("GROK_IMAGINE_BASE_URL") or None
     return VisionConfig(provider=provider, api_key=api_key, base_url=base_url)
@@ -205,7 +212,7 @@ class GrokRawLLM:
     def __init__(self, model: Optional[str] = None, max_tokens: Optional[int] = None):
         raw_model = model or os.environ.get("GROK_RAW_MODEL") or GROK_RAW_DEFAULT_MODEL
         self.model = raw_model.removeprefix("grok_raw/") if raw_model.startswith("grok_raw/") else raw_model
-        self.max_tokens = max_tokens or int(os.environ.get("GROK_RAW_MAX_TOKENS") or 16384)
+        self.max_tokens = max_tokens or 16384
 
     async def acompletion(self, messages: List[Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
         token = _load_grok_token()
@@ -217,11 +224,11 @@ class GrokRawLLM:
 
         loop = asyncio.get_running_loop()
         if use_proxy:
-            input_items = self._to_responses_input(messages)
-            proxy_tools = self._to_responses_tools(tools) if tools else None
+            system, anth_messages = self._to_anthropic(messages)
+            proxy_tools = self._to_anthropic_tools(tools) if tools else None
             result = await loop.run_in_executor(
                 None,
-                lambda: self._chat_proxy_buffered(input_items, token, tools=proxy_tools),
+                lambda: self._chat_proxy_buffered(system, anth_messages, token, tools=proxy_tools),
             )
             return self._proxy_to_openai_format(result)
         else:
@@ -243,12 +250,12 @@ class GrokRawLLM:
         queue: asyncio.Queue = asyncio.Queue()
 
         if use_proxy:
-            input_items = self._to_responses_input(messages)
-            proxy_tools = self._to_responses_tools(tools) if tools else None
+            system, anth_messages = self._to_anthropic(messages)
+            proxy_tools = self._to_anthropic_tools(tools) if tools else None
 
             def _run_proxy():
                 try:
-                    for chunk in self._stream_proxy(input_items, token, tools=proxy_tools):
+                    for chunk in self._stream_proxy(system, anth_messages, token, tools=proxy_tools):
                         loop.call_soon_threadsafe(queue.put_nowait, chunk)
                 except Exception as exc:
                     loop.call_soon_threadsafe(queue.put_nowait, exc)
@@ -277,58 +284,87 @@ class GrokRawLLM:
             yield item
 
     @staticmethod
-    def _to_responses_input(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        items: List[Dict[str, Any]] = []
+    def _image_source(url: str) -> Optional[Dict[str, Any]]:
+        if url.startswith("data:"):
+            head, _, b64 = url.partition(",")
+            if not b64:
+                return None
+            media = head[5:].split(";", 1)[0] or "image/png"
+            return {"type": "base64", "media_type": media, "data": b64}
+        return {"type": "url", "url": url}
+
+    @classmethod
+    def _to_anthropic(cls, messages: List[Dict[str, Any]]) -> Tuple[str, List[Dict[str, Any]]]:
+        system_parts: List[str] = []
+        out: List[Dict[str, Any]] = []
+
+        def push(role: str, blocks: List[Dict[str, Any]]) -> None:
+            if not blocks:
+                return
+            if out and out[-1]["role"] == role:
+                out[-1]["content"].extend(blocks)
+            else:
+                out.append({"role": role, "content": list(blocks)})
+
         for m in messages:
             role = m.get("role")
             if role == "system":
-                items.append({"role": "developer", "content": str(m.get("content") or "")})
+                txt = str(m.get("content") or "").strip()
+                if txt:
+                    system_parts.append(txt)
             elif role == "user":
                 content = m.get("content")
+                blocks: List[Dict[str, Any]] = []
                 if isinstance(content, list):
-                    parts: List[Dict[str, Any]] = []
                     for block in content:
                         if not isinstance(block, dict):
                             continue
                         if block.get("type") == "text":
-                            parts.append({"type": "input_text", "text": block.get("text", "")})
+                            blocks.append({"type": "text", "text": block.get("text", "")})
                         elif block.get("type") == "image_url":
                             url = (block.get("image_url") or {}).get("url", "")
-                            if url:
-                                parts.append({"type": "input_image", "image_url": url})
-                    items.append({"role": "user", "content": parts if parts else ""})
+                            src = cls._image_source(url) if url else None
+                            if src:
+                                blocks.append({"type": "image", "source": src})
                 else:
-                    items.append({"role": "user", "content": str(content or "")})
+                    blocks.append({"type": "text", "text": str(content or "")})
+                push("user", blocks)
             elif role == "assistant":
-                content = m.get("content")
-                if content:
-                    items.append({"role": "assistant", "content": str(content)})
+                blocks = []
+                text = m.get("content")
+                if text:
+                    blocks.append({"type": "text", "text": str(text)})
                 for tc in (m.get("tool_calls") or []):
                     fn = tc.get("function") or {}
-                    items.append({
-                        "type": "function_call",
-                        "call_id": tc.get("id") or "",
+                    raw = fn.get("arguments") or "{}"
+                    try:
+                        args = json.loads(raw) if isinstance(raw, str) else dict(raw or {})
+                    except json.JSONDecodeError:
+                        args = {}
+                    blocks.append({
+                        "type": "tool_use",
+                        "id": tc.get("id") or "",
                         "name": fn.get("name") or "",
-                        "arguments": fn.get("arguments") or "{}",
+                        "input": args if isinstance(args, dict) else {},
                     })
+                push("assistant", blocks)
             elif role == "tool":
-                items.append({
-                    "type": "function_call_output",
-                    "call_id": m.get("tool_call_id") or "",
-                    "output": str(m.get("content") or ""),
-                })
-        return items
+                push("user", [{
+                    "type": "tool_result",
+                    "tool_use_id": m.get("tool_call_id") or "",
+                    "content": str(m.get("content") or ""),
+                }])
+        return "\n\n".join(system_parts), out
 
     @staticmethod
-    def _to_responses_tools(chat_tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _to_anthropic_tools(chat_tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         out: List[Dict[str, Any]] = []
         for t in chat_tools:
             fn = t.get("function") or {}
             out.append({
-                "type": "function",
                 "name": fn.get("name") or "",
                 "description": fn.get("description") or "",
-                "parameters": fn.get("parameters") or {},
+                "input_schema": fn.get("parameters") or {"type": "object", "properties": {}},
             })
         return out
 
@@ -336,7 +372,11 @@ class GrokRawLLM:
     def _open_sse(url: str, body: Dict[str, Any], headers: Dict[str, str]) -> Any:
         payload = json.dumps(body).encode()
         req = urllib.request.Request(url, data=payload, headers=headers)
-        return urllib.request.urlopen(req, timeout=_STREAM_TIMEOUT)
+        try:
+            return urllib.request.urlopen(req, timeout=_STREAM_TIMEOUT)
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode(errors="replace").strip()
+            raise RuntimeError(f"proxy {exc.code}: {detail or exc.reason}") from None
 
     def _stream_xai(self, messages: List[Dict[str, Any]], token: str, *, tools: Optional[List[Dict[str, Any]]] = None) -> Any:
         body: Dict[str, Any] = {
@@ -397,16 +437,21 @@ class GrokRawLLM:
         finally:
             resp.close()
 
-    def _stream_proxy(self, input_items: List[Dict[str, Any]], token: str, *, tools: Optional[List[Dict[str, Any]]] = None) -> Any:
+    def _proxy_body(self, system: str, messages: List[Dict[str, Any]], tools: Optional[List[Dict[str, Any]]]) -> Dict[str, Any]:
         body: Dict[str, Any] = {
             "model": self.model,
-            "input": input_items,
-            "max_output_tokens": self.max_tokens,
+            "messages": messages,
+            "max_tokens": self.max_tokens,
             "stream": True,
         }
+        if system:
+            body["system"] = system
         if tools:
             body["tools"] = tools
-        headers = {
+        return body
+
+    def _proxy_headers(self, token: str) -> Dict[str, str]:
+        return {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
             "X-XAI-Token-Auth": "xai-grok-cli",
@@ -416,94 +461,68 @@ class GrokRawLLM:
             "user-agent": f"xai-grok-workspace/{GROK_CLIENT_VERSION}",
         }
 
-        resp = self._open_sse(PROXY_RESPONSES_URL, body, headers)
-        pending_tool_calls: Dict[int, Dict[str, Any]] = {}
+    def _stream_proxy(self, system: str, messages: List[Dict[str, Any]], token: str, *, tools: Optional[List[Dict[str, Any]]] = None) -> Any:
+        body = self._proxy_body(system, messages, tools)
+        resp = self._open_sse(PROXY_RESPONSES_URL, body, self._proxy_headers(token))
+        blocks: Dict[int, Dict[str, Any]] = {}
+        prompt_tokens = 0
         try:
             for raw_line in _iter_sse_lines(resp):
                 evt = _parse_sse_line(raw_line)
                 if evt is None:
                     continue
-
                 evt_type = evt.get("type", "")
 
-                if evt_type == "response.output_text.delta":
-                    delta_text = evt.get("delta", "")
-                    if delta_text:
+                if evt_type == "message_start":
+                    usage = (evt.get("message") or {}).get("usage") or {}
+                    prompt_tokens = usage.get("input_tokens") or 0
+
+                elif evt_type == "content_block_start":
+                    idx = evt.get("index", 0)
+                    cb = evt.get("content_block") or {}
+                    blocks[idx] = {"type": cb.get("type")}
+                    if cb.get("type") == "tool_use":
+                        blocks[idx]["id"] = cb.get("id") or f"call_{idx}"
+                        blocks[idx]["name"] = cb.get("name") or ""
                         yield _NS(
                             choices=[_NS(
-                                delta=_NS(content=delta_text, reasoning_content=None, tool_calls=None),
+                                delta=_NS(content=None, reasoning_content=None, tool_calls=[_NS(
+                                    index=idx, id=cb.get("id") or f"call_{idx}",
+                                    function=_NS(name=cb.get("name") or "", arguments=None),
+                                )]),
                                 finish_reason=None,
                             )],
                             usage=None,
                         )
 
-                elif evt_type == "response.reasoning_summary_text.delta":
-                    delta_text = evt.get("delta", "")
-                    if delta_text:
-                        yield _NS(
-                            choices=[_NS(
-                                delta=_NS(content=None, reasoning_content=delta_text, tool_calls=None),
-                                finish_reason=None,
-                            )],
-                            usage=None,
-                        )
+                elif evt_type == "content_block_delta":
+                    idx = evt.get("index", 0)
+                    delta = evt.get("delta") or {}
+                    dtype = delta.get("type")
+                    if dtype == "text_delta":
+                        yield _NS(choices=[_NS(delta=_NS(content=delta.get("text", ""), reasoning_content=None, tool_calls=None), finish_reason=None)], usage=None)
+                    elif dtype == "thinking_delta":
+                        t = delta.get("thinking", "")
+                        if t:
+                            yield _NS(choices=[_NS(delta=_NS(content=None, reasoning_content=t, tool_calls=None), finish_reason=None)], usage=None)
+                    elif dtype == "input_json_delta":
+                        frag = delta.get("partial_json", "")
+                        if frag:
+                            yield _NS(choices=[_NS(delta=_NS(content=None, reasoning_content=None, tool_calls=[_NS(index=idx, id=None, function=_NS(name=None, arguments=frag))]), finish_reason=None)], usage=None)
 
-                elif evt_type == "response.output_item.added":
-                    item = evt.get("item") or {}
-                    if item.get("type") == "function_call":
-                        idx = evt.get("output_index", len(pending_tool_calls))
-                        call_id = item.get("call_id") or f"call_{idx}"
-                        name = item.get("name") or ""
-                        pending_tool_calls[idx] = {"call_id": call_id, "name": name}
-                        yield _NS(
-                            choices=[_NS(
-                                delta=_NS(
-                                    content=None,
-                                    reasoning_content=None,
-                                    tool_calls=[_NS(
-                                        index=idx,
-                                        id=call_id,
-                                        function=_NS(name=name, arguments=None),
-                                    )],
-                                ),
-                                finish_reason=None,
-                            )],
-                            usage=None,
-                        )
-
-                elif evt_type == "response.function_call_arguments.delta":
-                    idx = evt.get("output_index", 0)
-                    args_delta = evt.get("delta", "")
-                    if args_delta:
-                        yield _NS(
-                            choices=[_NS(
-                                delta=_NS(
-                                    content=None,
-                                    reasoning_content=None,
-                                    tool_calls=[_NS(
-                                        index=idx,
-                                        id=None,
-                                        function=_NS(name=None, arguments=args_delta),
-                                    )],
-                                ),
-                                finish_reason=None,
-                            )],
-                            usage=None,
-                        )
-
-                elif evt_type == "response.completed":
-                    r = evt.get("response", {})
-                    u = r.get("usage", {})
-                    finish = "tool_calls" if pending_tool_calls else "stop"
+                elif evt_type == "message_delta":
+                    stop = (evt.get("delta") or {}).get("stop_reason")
+                    finish = "tool_calls" if stop == "tool_use" else ("length" if stop == "max_tokens" else "stop")
+                    u = evt.get("usage") or {}
+                    completion_tokens = u.get("output_tokens") or 0
+                    if u.get("input_tokens"):
+                        prompt_tokens = u.get("input_tokens")
                     yield _NS(
-                        choices=[_NS(
-                            delta=_NS(content=None, reasoning_content=None, tool_calls=None),
-                            finish_reason=finish,
-                        )],
+                        choices=[_NS(delta=_NS(content=None, reasoning_content=None, tool_calls=None), finish_reason=finish)],
                         usage=_NS(
-                            prompt_tokens=u.get("input_tokens") or 0,
-                            completion_tokens=u.get("output_tokens") or 0,
-                            total_tokens=u.get("total_tokens") or 0,
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            total_tokens=prompt_tokens + completion_tokens,
                         ),
                     )
         finally:
@@ -533,75 +552,49 @@ class GrokRawLLM:
 
     def _chat_proxy_buffered(
         self,
-        input_items: List[Dict[str, Any]],
+        system: str,
+        messages: List[Dict[str, Any]],
         token: str,
         *,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        body: Dict[str, Any] = {
-            "model": self.model,
-            "input": input_items,
-            "max_output_tokens": self.max_tokens,
-            "stream": True,
-        }
-        if tools:
-            body["tools"] = tools
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "X-XAI-Token-Auth": "xai-grok-cli",
-            "x-authenticateresponse": "authenticate-response",
-            "x-grok-client-version": GROK_CLIENT_VERSION,
-            "x-grok-model-override": self.model,
-            "user-agent": f"xai-grok-workspace/{GROK_CLIENT_VERSION}",
-        }
-        payload = json.dumps(body).encode()
-        req = urllib.request.Request(
-            PROXY_RESPONSES_URL,
-            data=payload,
-            headers=headers,
-        )
-        resp = urllib.request.urlopen(req, timeout=_STREAM_TIMEOUT)
+        body = self._proxy_body(system, messages, tools)
+        resp = self._open_sse(PROXY_RESPONSES_URL, body, self._proxy_headers(token))
         text_parts: List[str] = []
         reasoning_parts: List[str] = []
         usage: Dict[str, Any] = {}
         model: Optional[str] = None
-        function_calls: Dict[int, Dict[str, Any]] = {}
+        blocks: Dict[int, Dict[str, Any]] = {}
         try:
             for raw_line in _iter_sse_lines(resp):
                 evt = _parse_sse_line(raw_line)
                 if evt is None:
                     continue
                 evt_type = evt.get("type", "")
-                if evt_type == "response.output_text.delta":
-                    text_parts.append(evt.get("delta", ""))
-                elif evt_type == "response.reasoning_summary_text.delta":
-                    reasoning_parts.append(evt.get("delta", ""))
-                elif evt_type == "response.output_item.added":
-                    item = evt.get("item") or {}
-                    if item.get("type") == "function_call":
-                        idx = evt.get("output_index", len(function_calls))
-                        function_calls[idx] = {
-                            "call_id": item.get("call_id") or "",
-                            "name": item.get("name") or "",
-                            "arguments": "",
-                        }
-                elif evt_type == "response.function_call_arguments.delta":
-                    idx = evt.get("output_index", 0)
-                    if idx in function_calls:
-                        function_calls[idx]["arguments"] += evt.get("delta", "")
-                elif evt_type == "response.function_call_arguments.done":
-                    idx = evt.get("output_index", 0)
-                    if idx in function_calls:
-                        function_calls[idx]["arguments"] = evt.get("arguments") or function_calls[idx]["arguments"]
-                        if evt.get("call_id"):
-                            function_calls[idx]["call_id"] = evt["call_id"]
-                        if evt.get("name"):
-                            function_calls[idx]["name"] = evt["name"]
-                elif evt_type == "response.completed":
-                    r = evt.get("response", {})
-                    usage = r.get("usage", {})
-                    model = r.get("model")
+                if evt_type == "message_start":
+                    msg = evt.get("message") or {}
+                    model = msg.get("model") or model
+                    usage = msg.get("usage") or usage
+                elif evt_type == "content_block_start":
+                    idx = evt.get("index", 0)
+                    cb = evt.get("content_block") or {}
+                    blocks[idx] = {"type": cb.get("type")}
+                    if cb.get("type") == "tool_use":
+                        blocks[idx].update({"call_id": cb.get("id") or "", "name": cb.get("name") or "", "arguments": ""})
+                elif evt_type == "content_block_delta":
+                    idx = evt.get("index", 0)
+                    delta = evt.get("delta") or {}
+                    dtype = delta.get("type")
+                    if dtype == "text_delta":
+                        text_parts.append(delta.get("text", ""))
+                    elif dtype == "thinking_delta":
+                        reasoning_parts.append(delta.get("thinking", ""))
+                    elif dtype == "input_json_delta" and idx in blocks:
+                        blocks[idx]["arguments"] += delta.get("partial_json", "")
+                elif evt_type == "message_delta":
+                    u = evt.get("usage") or {}
+                    if u:
+                        usage = {**usage, **u}
         finally:
             resp.close()
 
@@ -611,8 +604,13 @@ class GrokRawLLM:
             "usage": usage,
             "model": model,
         }
+        function_calls = [
+            {"call_id": b["call_id"], "name": b["name"], "arguments": b["arguments"]}
+            for idx, b in sorted(blocks.items())
+            if b.get("type") == "tool_use"
+        ]
         if function_calls:
-            result["function_calls"] = [function_calls[idx] for idx in sorted(function_calls.keys())]
+            result["function_calls"] = function_calls
         return result
 
     @staticmethod
@@ -636,15 +634,17 @@ class GrokRawLLM:
                     },
                 })
             message["tool_calls"] = tool_calls
+        prompt_tokens = usage.get("input_tokens") or 0
+        completion_tokens = usage.get("output_tokens") or 0
         return {
             "choices": [{
                 "message": message,
                 "finish_reason": "tool_calls" if fcs else "stop",
             }],
             "usage": {
-                "prompt_tokens": usage.get("input_tokens") or 0,
-                "completion_tokens": usage.get("output_tokens") or 0,
-                "total_tokens": usage.get("total_tokens") or 0,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": usage.get("total_tokens") or (prompt_tokens + completion_tokens),
             },
             "model": result.get("model"),
         }

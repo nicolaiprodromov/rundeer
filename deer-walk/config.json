@@ -1,0 +1,71 @@
+{
+  "camera": {
+    "position": [
+      3.3417,
+      2,
+      3.5044
+    ],
+    "target": [
+      0,
+      1,
+      0
+    ],
+    "fov": 45,
+    "autoRotate": true,
+    "autoRotateSpeed": 1.5
+  },
+  "animation": {
+    "speed": 0.7,
+    "playing": true
+  },
+  "lights": {
+    "key": {
+      "position": [
+        4,
+        5,
+        3
+      ],
+      "intensity": 30,
+      "color": "#fff5e0",
+      "enabled": true,
+      "angle": 1.0472,
+      "penumbra": 0.6
+    },
+    "fill": {
+      "position": [
+        -3,
+        3,
+        2
+      ],
+      "intensity": 12.2,
+      "color": "#c0d8ff",
+      "enabled": true,
+      "angle": 1.0472,
+      "penumbra": 0.6
+    },
+    "rim": {
+      "position": [
+        -1,
+        4,
+        -4
+      ],
+      "intensity": 30,
+      "color": "#ffe0d0",
+      "enabled": true,
+      "angle": 1.0472,
+      "penumbra": 0.6
+    }
+  },
+  "environment": {
+    "ambientIntensity": 0.15,
+    "ambientColor": "#404050",
+    "groundPlane": false,
+    "shadows": true
+  },
+  "pixelation": {
+    "enabled": true,
+    "pixelSize": 8,
+    "colorLevels": 2,
+    "dither": 0.98
+  }
+}

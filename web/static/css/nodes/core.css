@@ -255,11 +255,7 @@
   padding: 8px 0 10px;
 }
 
-.ne-node[data-category="Primitives"] .ne-node-header { background: color-mix(in oklch, oklch(83% 0.130 88) 6%, var(--surface-3)); }
-.ne-node[data-category="Operations"] .ne-node-header { background: color-mix(in oklch, oklch(78% 0.150 190) 8%, var(--surface-3)); }
-.ne-node[data-category="Prompt"] .ne-node-header { background: color-mix(in oklch, oklch(70% 0.135 304) 8%, var(--surface-3)); }
-.ne-node[data-category="Grok Imagine"] .ne-node-header { background: color-mix(in oklch, oklch(72% 0.10 220) 8%, var(--surface-3)); }
-.ne-node[data-category="Coordinates"] .ne-node-header { background: color-mix(in oklch, oklch(74% 0.16 340) 9%, var(--surface-3)); }
+
 
 
 .ne-node.is-lazy-target {
@@ -267,9 +263,7 @@
   outline-offset: 2px;
 }
 
-.ne-node[data-category="Loop"] .ne-node-header {
-  background: color-mix(in oklch, oklch(70% 0.12 200) 14%, var(--surface-3));
-}
+
 
 .ne-node {
   --node-accent: var(--line-strong);
@@ -298,21 +292,12 @@
 .ne-node-header {
   position: relative;
   padding: 9px 10px 9px 12px;
-  background: color-mix(in oklch, var(--node-accent) 20%, var(--surface-3));
-  border-bottom: 1px solid color-mix(in oklch, var(--node-accent) 24%, var(--line));
+  background: var(--node-accent, var(--surface-3));
+  border-bottom: 1px solid oklch(0% 0 0 / 0.12);
   border-radius: 6px 6px 0 0;
 }
 .ne-node-header::after {
-  
-  content: "";
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: -1px;
-  height: 1px;
-  background: color-mix(in oklch, var(--node-accent) 36%, transparent);
-  pointer-events: none;
-  opacity: 0.7;
+  display: none;
 }
 
 .ne-node-type-dot {
@@ -333,22 +318,7 @@
   color: var(--text);
 }
 
-.ne-node[data-category="Primitives"] { --node-accent: oklch(72% 0.180 235); }
-.ne-node[data-category="Operations"] { --node-accent: oklch(78% 0.150 190); }
-.ne-node[data-category="Prompt"]     { --node-accent: oklch(72% 0.210 315); }
-.ne-node[data-category="Grok Imagine"]   { --node-accent: oklch(84% 0.190 82); }
-.ne-node[data-category="Loop"]       { --node-accent: oklch(76% 0.180 165); }
-.ne-node[data-category="Output"]     { --node-accent: oklch(74% 0.180 35); }
 
-
-.ne-node[data-category="Primitives"] .ne-node-header,
-.ne-node[data-category="Operations"] .ne-node-header,
-.ne-node[data-category="Prompt"] .ne-node-header,
-.ne-node[data-category="Grok Imagine"] .ne-node-header,
-.ne-node[data-category="Loop"] .ne-node-header,
-.ne-node[data-category="Output"] .ne-node-header {
-  background: color-mix(in oklch, var(--node-accent) 18%, var(--surface-3));
-}
 
 .ne-node-close,
 .ne-node-refresh,
@@ -548,18 +518,7 @@ body.is-resizing .ne-node-resize {
 }
 
 
-.ne-node[data-category="Primitives"],
-[data-category="Primitives"] { --node-accent: oklch(72% 0.180 235); }
-.ne-node[data-category="Operations"],
-[data-category="Operations"] { --node-accent: oklch(78% 0.150 190); }
-.ne-node[data-category="Prompt"],
-[data-category="Prompt"] { --node-accent: oklch(72% 0.210 315); }
-.ne-node[data-category="Grok Imagine"],
-[data-category="Grok Imagine"] { --node-accent: oklch(84% 0.190 82); }
-.ne-node[data-category="Loop"],
-[data-category="Loop"] { --node-accent: oklch(76% 0.180 165); }
-.ne-node[data-category="Output"],
-[data-category="Output"] { --node-accent: oklch(74% 0.180 35); }
+
 
 .ne-node {
   background: color-mix(in oklch, var(--surface-2) 78%, var(--surface-3));
@@ -575,20 +534,13 @@ body.is-resizing .ne-node-resize {
     0 8px 24px oklch(0% 0 0 / 0.34);
 }
 
-.ne-node-header,
-.ne-node[data-category="Primitives"] .ne-node-header,
-.ne-node[data-category="Operations"] .ne-node-header,
-.ne-node[data-category="Prompt"] .ne-node-header,
-.ne-node[data-category="Grok Imagine"] .ne-node-header,
-.ne-node[data-category="Loop"] .ne-node-header,
-.ne-node[data-category="Output"] .ne-node-header {
+.ne-node-header {
   padding: 7px 9px 7px 11px;
-  background: color-mix(in oklch, var(--node-accent, var(--gold)) 72%, var(--surface-3));
-  border-bottom-color: color-mix(in oklch, var(--node-accent, var(--gold)) 72%, var(--line));
+  background: var(--node-accent, var(--surface-3));
+  border-bottom-color: oklch(0% 0 0 / 0.12);
   border-radius: var(--radius) var(--radius) 0 0;
   box-shadow:
-    inset 0 -1px 0 color-mix(in oklch, var(--node-accent, var(--gold)) 18%, transparent),
-    inset 0 1px 0 color-mix(in oklch, var(--text) 4%, transparent);
+    inset 0 1px 0 oklch(100% 0 0 / 0.08);
 }
 
 .ne-node-label {
@@ -630,8 +582,8 @@ body.is-resizing .ne-node-resize {
 .ne-node-type-dot {
   width: 8px;
   height: 8px;
-  background: var(--node-accent, var(--gold));
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--node-accent, currentColor) 16%, transparent);
+  background: oklch(100% 0 0 / 0.45);
+  box-shadow: 0 0 0 1.5px oklch(0% 0 0 / 0.1);
 }
 
 .ne-node-refresh,

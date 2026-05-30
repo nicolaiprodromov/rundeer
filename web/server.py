@@ -22,8 +22,9 @@ from urllib.parse import parse_qs, quote, unquote, urlparse, urlunparse
 
 from rundeer import __version__
 from rundeer.core import paths as rpaths
+from rundeer.core.paths import atomic_pil, atomic_wb
 from rundeer.core.bootstrap import ensure_rundeer_dir
-from rundeer.core.config import brain_dir, normalize_config, normalize_rate_limits, normalize_web_settings
+from rundeer.core.config import brain_dir, normalize_config
 from rundeer.web.animator import log_line, run_console
 from web.node_defs import get_node_defs
 
@@ -35,10 +36,13 @@ from web.nodes.operations.resize_media import resize_media_node
 from web.nodes.output.canvas import canvas_media_node
 from web.nodes.prompt.filter_prompt import filter_prompt
 from web.nodes.bundle.folder_bundle import list_folder
+import fnmatch
+from web.config.settings_manager import get_cached_settings, load_settings_yaml, merge_settings_yaml
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 NODES_DIR = Path(__file__).resolve().parent / "nodes"
+SPLASH_DIR = Path(__file__).resolve().parent.parent / "deer-walk"
 TEXT_EXTS = {".md", ".txt", ".json", ".py", ".csv", ".log"}
 ARTIFACT_EXTS = IMAGE_EXTS | VIDEO_EXTS | {".json", ".csv"}
 SKIP_DIRS = {
@@ -67,6 +71,7 @@ def serve(
 ) -> int:
     root = (project_root or Path.cwd()).resolve()
     ensure_rundeer_dir(root)
+    load_settings_yaml(root)
     httpd = RundeerWebServer((host, port), RundeerWebHandler, project_root=root)
     actual_port = httpd.server_address[1]
     shown_host = "localhost" if host == "0.0.0.0" else host
@@ -97,6 +102,15 @@ def serve(
         except Exception as exc:
             log_line(f"agent failed to start: {exc}", dim=True)
 
+    try:
+        from web.nodes.terminal.pty_ws import start_pty_ws_server
+        pty_handle = start_pty_ws_server(str(root), actual_port, host=host)
+        httpd.pty_handle = pty_handle
+        httpd.pty_port = pty_handle.ws_port
+        log_line(f"pty ws on ws://{shown_host}:{pty_handle.ws_port}", dim=True)
+    except Exception as exc:
+        log_line(f"pty ws failed to start: {exc}", dim=True)
+
     if open_browser:
         try:
             webbrowser.open(url)
@@ -109,6 +123,12 @@ def serve(
             handle = getattr(httpd, "agent_handle", None)
             if handle is not None:
                 handle.stop()
+        except Exception:
+            pass
+        try:
+            pty_h = getattr(httpd, "pty_handle", None)
+            if pty_h is not None:
+                pty_h.stop()
         except Exception:
             pass
         httpd.shutdown()
@@ -133,6 +153,8 @@ class RundeerWebServer(ThreadingHTTPServer):
         self.agent_handle: Any = None
         self.agent_port: Optional[int] = None
         self.agent_settings: Any = None
+        self.pty_handle: Any = None
+        self.pty_port: Optional[int] = None
 
     def record_request(self, method: str, path: str) -> None:
         with self.runs_lock:
@@ -164,10 +186,20 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         query = parse_qs(parsed.query)
         self.server.record_request("GET", path)
         try:
-            if path in {"/", "/index.html", "/nodes", "/explore", "/runs", "/graphs", "/settings"}:
+            if path in {"/", "/index.html", "/nodes", "/explore", "/settings", "/runs", "/graphs"}:
                 self._send_static(STATIC_DIR / "node-editor.html")
             elif path.startswith("/static/"):
                 self._send_static(safe_static_path(path.removeprefix("/static/")))
+            elif path.startswith("/splash-assets/"):
+                rel = unquote(path.removeprefix("/splash-assets/")).lstrip("/")
+                fpath = (SPLASH_DIR / rel).resolve()
+                splash_root = SPLASH_DIR.resolve()
+                if fpath != splash_root and splash_root not in fpath.parents:
+                    raise PermissionError("splash path escapes directory")
+                if not fpath.is_file():
+                    self._send_error(HTTPStatus.NOT_FOUND, "not found")
+                    return
+                self._send_file(fpath, cache=True)
             elif path.startswith("/nodes/"):
                 rel = unquote(path.removeprefix("/nodes/")).lstrip("/")
                 fpath = (NODES_DIR / rel).resolve()
@@ -181,9 +213,10 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
                 light = (query.get("light") or ["0"])[0] in {"1", "true", "yes"}
                 state = build_state(self.server.project_root, light=light)
                 state["agent"] = _agent_state(self.server)
+                state["pty"] = {"port": getattr(self.server, "pty_port", None)}
                 self._send_json(state)
-            elif path == "/api/settings":
-                self._send_json(load_settings(self.server.project_root))
+            elif path == "/api/settings-yaml":
+                self._send_json(load_settings_yaml(self.server.project_root))
             elif path == "/api/artifacts":
                 extra_dirs = query.get("dir") or []
                 self._send_json({"artifacts": list_artifacts(self.server.project_root, extra_dirs=extra_dirs)})
@@ -266,8 +299,8 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             elif parsed.path.startswith("/api/runs/") and parsed.path.endswith("/display-log"):
                 run_id = parsed.path.removeprefix("/api/runs/").removesuffix("/display-log").strip("/")
                 self._send_json(save_run_display_log(self.server, run_id, payload))
-            elif parsed.path == "/api/settings":
-                self._send_json(save_settings(self.server.project_root, payload))
+            elif parsed.path == "/api/settings-yaml":
+                self._send_json(merge_settings_yaml(self.server.project_root, payload))
             elif parsed.path == "/api/graphs":
                 self._send_json({"graph": save_graph(self.server.project_root, payload)})
             elif parsed.path == "/api/graphs/delete":
@@ -763,53 +796,6 @@ def read_project_config(root: Path) -> Dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
-def write_project_config(root: Path, config: Dict[str, Any]) -> None:
-    path = config_path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
-
-
-def load_settings(root: Path) -> Dict[str, Any]:
-    raw = read_project_config(root)
-    normalized = normalize_config(dict(raw))
-    return {
-        "configPath": relpath(root, config_path(root)),
-        "settings": {
-            "rate_limits": normalized.get("rate_limits", normalize_rate_limits({})),
-            "web": normalized.get("web", normalize_web_settings({})),
-        },
-    }
-
-
-def save_settings(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
-    incoming = payload.get("settings") if isinstance(payload.get("settings"), dict) else payload
-    raw = read_project_config(root)
-    if not raw:
-        raw = {}
-    if isinstance(incoming.get("rate_limits"), dict):
-        raw["rate_limits"] = normalize_rate_limits(incoming["rate_limits"])
-    if isinstance(incoming.get("web"), dict):
-        raw["web"] = normalize_web_settings(incoming["web"])
-    schema = raw.setdefault("_schema", {})
-    if isinstance(schema, dict):
-        schema.update({
-            "rate_limits.enabled": "Enable API request rate limiting.",
-            "rate_limits.per_second": "Maximum API requests per second. null/0 = unlimited.",
-            "rate_limits.per_minute": "Maximum API requests per minute. null/0 = unlimited.",
-            "rate_limits.per_hour": "Maximum API requests per hour. null/0 = unlimited.",
-            "rate_limits.per_day": "Maximum API requests per day. null/0 = unlimited.",
-            "web.artifact_view": "Default web artifact browser view: grid or tree.",
-            "web.artifact_size": "Default artifact tile size: sm, md, or lg.",
-            "web.dock_expanded": "Open the artifact dock in expanded mode by default.",
-            "web.output_open_on_run": "Expand Output when a web run starts.",
-            "web.output_panel_open": "Show the Output section on web load.",
-            "web.files_panel_open": "Show the Files section on web load.",
-            "web.artifacts_panel_open": "Show the Artifacts section on web load.",
-        })
-    write_project_config(root, raw)
-    return load_settings(root)
-
-
 def chat_completions_url(base_url: str) -> str:
     raw = (base_url or "https://api.x.ai/v1").strip() or "https://api.x.ai/v1"
     if "://" not in raw:
@@ -826,7 +812,7 @@ def chat_completions_url(base_url: str) -> str:
 
 
 def env_summary(root: Path) -> Dict[str, bool]:
-    keys = ["GROK_IMAGINE_API_KEY", "WXWAI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "RUNDEER_LLM_MODEL"]
+    keys = ["GROK_IMAGINE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
     return {key: bool(os.environ.get(key) or env_file_has_key(root, key)) for key in keys}
 
 
@@ -1014,22 +1000,25 @@ def _generate_thumbnail(src: Path, dest: Path, size: int) -> None:
                 if im.mode in ("RGBA", "LA", "P"):
                     im = im.convert("RGB")
                 im.thumbnail((size, size), Image.LANCZOS)
-                im.save(dest, format="JPEG", quality=82, optimize=True, progressive=True)
+                atomic_pil(im, dest, format="JPEG", quality=82, optimize=True, progressive=True)
         elif suffix in VIDEO_EXTS or suffix in ANIMATED_EXTS:
             if shutil.which("ffmpeg") is None:
                 _write_placeholder_thumb(dest, size)
             else:
+                tmp_ff = dest.with_name("." + dest.name + ".atmp")
                 cmd = [
                     "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
                     "-ss", "0", "-i", str(src),
                     "-frames:v", "1",
                     "-vf", f"scale='min({size},iw)':'min({size},ih)':force_original_aspect_ratio=decrease",
                     "-q:v", "3",
-                    str(dest),
+                    str(tmp_ff),
                 ]
                 try:
                     subprocess.run(cmd, check=True, capture_output=True, timeout=30)
+                    tmp_ff.rename(dest)
                 except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                    tmp_ff.unlink(missing_ok=True)
                     _write_placeholder_thumb(dest, size)
         else:
             _write_placeholder_thumb(dest, size)
@@ -1040,11 +1029,12 @@ def _generate_thumbnail(src: Path, dest: Path, size: int) -> None:
 def _write_placeholder_thumb(dest: Path, size: int) -> None:
     try:
         from PIL import Image
-        Image.new("RGB", (max(16, size // 8), max(16, size // 8)), (24, 24, 24)).save(
+        atomic_pil(
+            Image.new("RGB", (max(16, size // 8), max(16, size // 8)), (24, 24, 24)),
             dest, format="JPEG", quality=70
         )
     except Exception:
-        dest.write_bytes(b"")
+        atomic_wb(dest, b"")
 
 
 def iter_files(base: Path, root: Path) -> Iterable[Path]:
@@ -1057,25 +1047,27 @@ def iter_files(base: Path, root: Path) -> Iterable[Path]:
                 yield path
 
 
+def _explore_ignore_patterns(root: Path) -> list:
+    data = get_cached_settings(root)
+    raw = (data.get("settings") or {}).get("UI", {}).get("Explore", {}).get("ignore_patterns", "")
+    if not raw or not isinstance(raw, str):
+        return []
+    return [p.strip() for p in raw.split(",") if p.strip()]
+
+
+def _matches_ignore(name: str, patterns: list) -> bool:
+    n = name.rstrip("/")
+    return any(fnmatch.fnmatch(n, p.rstrip("/")) for p in patterns)
+
+
 def skip_dir(path: Path, root: Path) -> bool:
-    if path.name in SKIP_DIRS:
-        return True
-    try:
-        rel_parts = path.resolve().relative_to(root.resolve()).parts
-    except ValueError:
-        return False
-    blocked = ((".rundeer", "data", "cache"), (".rundeer", "data", "runs"), (".rundeer", "web", "runs"))
-    return any(rel_parts[: len(prefix)] == prefix for prefix in blocked)
+    return _matches_ignore(path.name, _explore_ignore_patterns(root))
 
 
 def skip_file(path: Path, root: Path) -> bool:
     if is_sensitive_file(path, root):
         return True
-    try:
-        rel_parts = path.resolve().relative_to(root.resolve()).parts
-    except ValueError:
-        return False
-    return path.name.startswith(".") and (not rel_parts or rel_parts[0] not in ALLOWED_DOTFILE_ROOTS)
+    return _matches_ignore(path.name, _explore_ignore_patterns(root))
 
 
 def file_payload(root: Path, path: Path, *, reference_id: Optional[int] = None) -> Dict[str, Any]:

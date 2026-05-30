@@ -37,7 +37,7 @@ class AgentRuntimeConfig:
 
     system_prompt: str = ""
     settings: Dict[str, Any] = field(default_factory=dict)
-    tool_overrides: Dict[str, ToolOverride] = field(default_factory=dict)
+    tool_overrides: Optional[Dict[str, ToolOverride]] = None
     warnings: List[str] = field(default_factory=list)
     include_time: Optional[str] = None
     include_graph_context: bool = False
@@ -49,7 +49,7 @@ class AgentRuntimeConfig:
             "schema": SCHEMA_VERSION,
             "system_prompt": self.system_prompt,
             "settings": dict(self.settings),
-            "tool_overrides": {
+            "tool_overrides": None if self.tool_overrides is None else {
                 name: {
                     "enabled": ov.enabled,
                     "description": ov.description,
@@ -432,8 +432,12 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
         if model:
             merged["model"] = model
         for key in ("max_tool_iterations", "max_file_bytes", "max_list_entries", "max_web_search_per_turn"):
-            if props.get(key) not in (None, "", []):
-                merged[key] = _as_int(props.get(key), 0)
+            v = props.get(key)
+            if v not in (None, "", []):
+                try:
+                    merged[key] = int(v)
+                except (TypeError, ValueError):
+                    pass
         if "vision_enabled" in props:
             merged["vision_enabled"] = _as_bool(props.get("vision_enabled"), True)
         temp = _as_float(props.get("temperature"), default=None)
@@ -479,42 +483,45 @@ def compile_brain_graph(graph: Dict[str, Any]) -> AgentRuntimeConfig:
 
 
     tool_source_nodes = _collect_text_sources(graph, brain_id, "tools")
-    seen_names: set = set()
-    for node in tool_source_nodes:
-        ntype = node.get("type")
-        if ntype == "toolbox":
+    if tool_source_nodes:
+        overrides: Dict[str, ToolOverride] = {}
+        seen_names: set = set()
+        for node in tool_source_nodes:
+            ntype = node.get("type")
+            if ntype == "toolbox":
+                props = node.get("props") or {}
+                disabled_raw = str(props.get("disabled_tools") or "")
+                for dname in disabled_raw.split(","):
+                    dname = dname.strip()
+                    if dname and dname not in seen_names:
+                        seen_names.add(dname)
+                        overrides[dname] = ToolOverride(enabled=False)
+                continue
+            if ntype != "tool-flag":
+                continue
             props = node.get("props") or {}
-            disabled_raw = str(props.get("disabled_tools") or "")
-            for dname in disabled_raw.split(","):
-                dname = dname.strip()
-                if dname and dname not in seen_names:
-                    seen_names.add(dname)
-                    cfg.tool_overrides[dname] = ToolOverride(enabled=False)
-            continue
-        if ntype != "tool-flag":
-            continue
-        props = node.get("props") or {}
-        name = str(props.get("tool_name") or "").strip()
-        if not name or name in seen_names:
-            continue
-        seen_names.add(name)
-        enabled = _as_bool(props.get("enabled"), True)
-        desc = str(props.get("description") or "").strip() or None
-        cat = str(props.get("category") or "").strip() or None
-        destructive_raw = props.get("destructive")
-        destructive: Optional[bool]
-        if isinstance(destructive_raw, str) and destructive_raw.strip() == "":
-            destructive = None
-        elif destructive_raw is None:
-            destructive = None
-        else:
-            destructive = _as_bool(destructive_raw, False)
-        cfg.tool_overrides[name] = ToolOverride(
-            enabled=enabled,
-            description=desc,
-            category=cat,
-            destructive=destructive,
-        )
+            name = str(props.get("tool_name") or "").strip()
+            if not name or name in seen_names:
+                continue
+            seen_names.add(name)
+            enabled = _as_bool(props.get("enabled"), True)
+            desc = str(props.get("description") or "").strip() or None
+            cat = str(props.get("category") or "").strip() or None
+            destructive_raw = props.get("destructive")
+            destructive: Optional[bool]
+            if isinstance(destructive_raw, str) and destructive_raw.strip() == "":
+                destructive = None
+            elif destructive_raw is None:
+                destructive = None
+            else:
+                destructive = _as_bool(destructive_raw, False)
+            overrides[name] = ToolOverride(
+                enabled=enabled,
+                description=desc,
+                category=cat,
+                destructive=destructive,
+            )
+        cfg.tool_overrides = overrides
 
 
 
@@ -585,7 +592,7 @@ def save_brain_graph(root: Path, graph: Dict[str, Any], agent_id: Optional[str] 
     try:
         with audit_log_path(root, resolved_agent_id).open("a", encoding="utf-8") as fh:
             ts = time.strftime("%Y-%m-%dT%H:%M:%S")
-            fh.write(f"{ts}\tsaved\tprompt_chars={len(compiled.system_prompt)}\ttools={len(compiled.tool_overrides)}\n")
+            fh.write(f"{ts}\tsaved\tprompt_chars={len(compiled.system_prompt)}\ttools={0 if compiled.tool_overrides is None else len(compiled.tool_overrides)}\n")
     except OSError:
         pass
     return compiled
@@ -614,15 +621,19 @@ def _runtime_from_dict(data: Dict[str, Any]) -> AgentRuntimeConfig:
         include_app_context=bool(data.get("include_app_context")),
         include_workspace_context=bool(data.get("include_workspace_context")),
     )
-    for name, ov in (data.get("tool_overrides") or {}).items():
-        if not isinstance(ov, dict):
-            continue
-        cfg.tool_overrides[name] = ToolOverride(
-            enabled=_as_bool(ov.get("enabled"), True),
-            description=(ov.get("description") or None),
-            category=(ov.get("category") or None),
-            destructive=(None if ov.get("destructive") is None else _as_bool(ov.get("destructive"))),
-        )
+    raw_overrides = data.get("tool_overrides")
+    if isinstance(raw_overrides, dict):
+        overrides: Dict[str, ToolOverride] = {}
+        for name, ov in raw_overrides.items():
+            if not isinstance(ov, dict):
+                continue
+            overrides[name] = ToolOverride(
+                enabled=_as_bool(ov.get("enabled"), True),
+                description=(ov.get("description") or None),
+                category=(ov.get("category") or None),
+                destructive=(None if ov.get("destructive") is None else _as_bool(ov.get("destructive"))),
+            )
+        cfg.tool_overrides = overrides
     return cfg
 
 
@@ -641,8 +652,11 @@ def build_default_graph(root: Path) -> Dict[str, Any]:
 
 def load_or_seed_brain_graph(root: Path, agent_id: Optional[str] = None) -> Dict[str, Any]:
     existing = load_brain_graph(root, agent_id)
-    if existing is not None and not _requires_reseed(existing):
-        return existing
+    if existing is not None:
+        nodes = existing.get("nodes") or {}
+        types = {str(n.get("type") or "") for n in nodes.values() if isinstance(n, dict)}
+        if {"agent", "brain"}.issubset(types):
+            return existing
     graph = build_default_graph(root)
     graph["agent_id"] = normalize_agent_id(agent_id)
     return graph

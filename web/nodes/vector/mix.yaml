@@ -1,41 +1,40 @@
 mix:
   label: Mix
   category: Vector
-  desc: "Blend two inputs by a factor. A/B default to color controls; factor can be a number or an image/map. Mirrors Blender's Mix node."
-  in: []
+  desc: Blend two inputs by a factor. A/B default to color controls; factor can be a number or an image/map. Mirrors Blender's Mix node.
+  in:
+  - id: factor
+    label: Factor
+    kind: range
+    min: 0
+    max: 1
+    step: 0.01
+    default: 0.5
+    passthroughWired: true
+    type: any
+  - id: a
+    label: A
+    kind: color
+    default: '#000000'
+    type: any
+  - id: b
+    label: B
+    kind: color
+    default: '#ffffff'
+    type: any
+  - id: mode
+    label: Mode
+    kind: select
+    options: [mix, add, multiply, screen, overlay]
+    default: mix
+  - id: clamp
+    label: Clamp Factor
+    kind: checkbox
+    default: true
   out:
-    - id: out
-      label: Out
-      type: any
-  props:
-    - id: factor
-      label: Factor
-      kind: range
-      min: 0
-      max: 1
-      step: 0.01
-      default: 0.5
-      socketType: any
-      passthroughWired: true
-    - id: a
-      label: A
-      kind: color
-      default: "#000000"
-      socketType: any
-    - id: b
-      label: B
-      kind: color
-      default: "#ffffff"
-      socketType: any
-    - id: mode
-      label: Mode
-      kind: select
-      options: [mix, add, multiply, screen, overlay]
-      default: mix
-    - id: clamp
-      label: Clamp Factor
-      kind: checkbox
-      default: true
+  - id: out
+    label: Out
+    type: any
   traits: [liveUpdate]
   src: web/nodes/vector/mix.js
   api: /api/uv/mix

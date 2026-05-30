@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from web.node_defs import get_node_defs
+from web.node_defs import get_node_defs, get_node_def_by_type, search_node_defs_fn
 
 TRIGGER_TYPES = {d["type"] for d in get_node_defs() if any(s.get("type") == "run" for s in d.get("outputs", []))}
 
@@ -92,3 +92,52 @@ def validate_graph_tool(graph: Any) -> Dict[str, Any]:
     if g["nodes"] and not has_trigger:
         issues.append({"severity": "warning", "kind": "no-trigger", "message": "graph has nodes but no run-trigger"})
     return {"issue_count": len(issues), "issues": issues, "node_count": len(g["nodes"]), "edge_count": len(g["edges"])}
+
+
+def get_node_def_tool(*, node_type: str) -> Dict[str, Any]:
+    d = get_node_def_by_type(node_type)
+    if d is None:
+        return {"error": f"unknown node type: {node_type}"}
+    ins = []
+    for s in d.get("inputs", []):
+        if not isinstance(s, dict):
+            continue
+        entry: Dict[str, Any] = {"id": s["id"], "label": s.get("label", s["id"])}
+        if s.get("type"):
+            entry["type"] = s["type"]
+        if s.get("multi"):
+            entry["multi"] = True
+        if s.get("kind"):
+            entry["kind"] = s["kind"]
+        if "default" in s:
+            entry["default"] = s["default"]
+        if s.get("options"):
+            entry["options"] = s["options"]
+        if s.get("min") is not None:
+            entry["min"] = s["min"]
+        if s.get("max") is not None:
+            entry["max"] = s["max"]
+        if s.get("step") is not None:
+            entry["step"] = s["step"]
+        if s.get("passthroughWired"):
+            entry["passthroughWired"] = True
+        ins.append(entry)
+    outs = []
+    for s in d.get("outputs", []):
+        if not isinstance(s, dict):
+            continue
+        outs.append({"id": s["id"], "label": s.get("label", s["id"]), "type": s.get("type", "any")})
+    return {
+        "type": d["type"],
+        "label": d["label"],
+        "category": d.get("category", ""),
+        "desc": d.get("desc", ""),
+        "inputs": ins,
+        "outputs": outs,
+        "traits": d.get("traits", []),
+    }
+
+
+def search_node_defs_tool(*, query: str, max_results: int = 20) -> Dict[str, Any]:
+    hits = search_node_defs_fn(query, max_results=max_results)
+    return {"results": hits, "total": len(hits)}

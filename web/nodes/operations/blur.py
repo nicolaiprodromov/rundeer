@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from rundeer.core import paths as rpaths
+from rundeer.core.paths import atomic_pil
 from web.nodes._shared.helpers import IMAGE_COMPRESS_EXTS, VIDEO_COMPRESS_EXTS, relpath, safe_project_path
 
 
@@ -63,7 +64,7 @@ def _blur_image(root: Path, src: Path, radius: float) -> Dict[str, Any]:
         else:
             save_kwargs = {"optimize": True}
             fmt = "PNG"
-        blurred.save(dest, format=fmt, **save_kwargs)
+        atomic_pil(blurred, dest, format=fmt, **save_kwargs)
 
     return {
         "path": relpath(root, dest),

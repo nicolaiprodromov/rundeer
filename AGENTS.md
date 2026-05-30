@@ -40,6 +40,7 @@ Rundeer allows for complex & emergent procedural workflows by giving the user th
 - Do not restore deleted tests or unrelated user changes unless explicitly asked.
 - DO NOT SAY YOU FINISHED WITHOUT TRIPLE CHECKING THAT YOU HAVE ACCOMPLISHED EVERY REQUIREMENT OF THE TASK.
 - DO NOT CODE FALLBACKS OR PRESERVE ANY OLD FUNCTIONALITY. When the user requests features, because we are in a pre-release phase, there is no need to preserve old functionality, legacy code or to create fallbacks and live migrations. Old graphs in `.rundeer/data/graphs/` and other data, logs, configs or whatever that might break after code changes must be adapted or the user must be warned directly about this. REPEAT: DO NOT CODE FALLBACKS OR LIVE MIGRATIONS, DO NOT PRESERVE ANY OLD FUNCTIONALITY AND NO LEGACY CODE PRESERVATION.
+- IF you come to the conclusion you must test something in the rundeer webapp frontend, you must CLOSE the server when you are done, do not leave dangling processes that the user might forget to close.
 
 ## Workflow
 
@@ -60,7 +61,8 @@ Rundeer allows for complex & emergent procedural workflows by giving the user th
 4. For UI work, use `impeccable.md` as the onboarding map and consult `.grok/skills/impeccable/SKILL.md` when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality. Respect `PRODUCT.md` and `DESIGN.md` for product register, audience, visual tokens, typography, colors, and interaction principles.
 5. DO NOT CODE FALLBACKS OR PRESERVE ANY OLD FUNCTIONALITY. When the user requests features, because we are in a pre-release phase, there is no need to preserve old functionality, legacy code or to create fallbacks and live migrations. Old graphs in `.rundeer/data/graphs/` and other data, logs, configs or whatever that might break after code changes must be adapted or the user must be warned directly about this. REPEAT: DO NOT CODE FALLBACKS OR LIVE MIGRATIONS, DO NOT PRESERVE ANY OLD FUNCTIONALITY AND NO LEGACY CODE PRESERVATION.
 6. VERY IMPORTANT: When a new feature or functionality is requested by the user, you must isolate this code and make it modular enough to be easily integrated in different parts of the code in the future.
-7. If the f
+7. Use small names for variables and functions, the idea is to reduce human readability, while maintaining agent readbility, in order to keep token level as low as possible, while still retaining good semantics for you to be able to code correctly.
+8. Use the repomix as a way to manage session token usage and get the best performance and best code.
 
 ## Useful Validation
 - Python syntax: `python3 -m compileall -q src web rundeer.py __init__.py`.
@@ -69,8 +71,7 @@ Rundeer allows for complex & emergent procedural workflows by giving the user th
 - Web command smoke test: `python3 rundeer.py web --help`.
 - JavaScript syntax when web static code changes: `rg --files -g '*.js' -g '*.mjs' | xargs -r -n 1 node --check`.
 
-
 ### Most Important Reminders:
 1. CODE IN AN ISOLATED AND MODULAR MANNER - most functionality might be reused or bootstrapped via config files, separation of concerns is a must!
 2. DO NOT CODE FALLBACKS OR PRESERVE ANY OLD FUNCTIONALITY - we are in alpha, pre-release phase and we do not wish to preserve any legacy functionality that will inflate the codebase needlesly, if a breaking change is required go all in, the user will usually request atomic tasks that present small chance of breaking the app fully.
-3. 
+3. TOKEN MANAGEMENT. SMALL AND GOOD CODE.

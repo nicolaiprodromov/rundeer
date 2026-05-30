@@ -28,8 +28,8 @@
 
 
 
-.ne-workbench > .ne-palette       { grid-column: 1; }
-.ne-workbench > #paletteResizer   { grid-column: 2; }
+.ne-workbench > .ne-nmenu       { grid-column: 1; }
+.ne-workbench > #nmenuResizer   { grid-column: 2; }
 .ne-workbench > .ne-canvas-wrap   { grid-column: 3; }
 
 .ne-side-resizer {
@@ -46,9 +46,19 @@
 .ne-side-resizer:hover,
 .ne-side-resizer.is-active { background: var(--gold-soft); }
 
-.ne-shell.hide-palette .ne-workbench { grid-template-columns: 0 0 minmax(0, 1fr); }
-.ne-shell.hide-palette .ne-palette,
-.ne-shell.hide-palette #paletteResizer { display: none; }
+.ne-shell.hide-nmenu .ne-workbench { grid-template-columns: 0 0 minmax(0, 1fr); }
+.ne-shell.hide-nmenu .ne-nmenu,
+.ne-shell.hide-nmenu #nmenuResizer { display: none; }
+
+.ne-shell.nmenu-right.hide-nmenu .ne-workbench { grid-template-columns: minmax(0, 1fr) 0 0; }
+
+.ne-shell.nmenu-right .ne-workbench {
+  grid-template-columns: minmax(0, 1fr) 6px var(--palette-w, 210px);
+}
+.ne-shell.nmenu-right .ne-workbench > .ne-nmenu       { grid-column: 3; grid-row: 1; }
+.ne-shell.nmenu-right .ne-workbench > #nmenuResizer   { grid-column: 2; grid-row: 1; }
+.ne-shell.nmenu-right .ne-workbench > .ne-canvas-wrap   { grid-column: 1; grid-row: 1; }
+.ne-shell.nmenu-right .ne-nmenu { border-right: none; border-left: 1px solid var(--line); }
 
 .ne-shell {
   grid-template-rows: auto minmax(0, 1fr);

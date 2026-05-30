@@ -1,0 +1,300 @@
+.settings-shell {
+  display: grid;
+  grid-template-columns: var(--st-split1, 28%) 6px var(--st-split2, 32%) 6px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settings-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.settings-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in oklch, var(--surface) 82%, var(--bg-deep));
+}
+.settings-panel-head .ex-eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--whisper);
+  flex-shrink: 0;
+}
+.settings-panel-head .ex-panel-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.settings-panel-head .ex-panel-actions {
+  flex-shrink: 0;
+}
+
+.settings-resizer {
+  background: var(--line);
+  cursor: col-resize;
+  position: relative;
+  transition: background var(--duration-fast);
+}
+.settings-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 -3px;
+}
+.settings-resizer:hover,
+.settings-resizer.is-active {
+  background: var(--gold-soft);
+}
+
+.settings-runs .runs-inner {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  gap: 1px;
+  background: var(--line);
+}
+.settings-runs .runs-list-section {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-deep);
+}
+.settings-runs .runs-list-section .ne-runs-list {
+  overflow-y: auto;
+}
+
+.settings-runs .run-detail-panel {
+  border: 0;
+}
+
+.settings-graphs {
+  overflow: hidden;
+}
+.settings-graphs .ne-graphs-list {
+  overflow-y: auto;
+}
+
+.settings-config-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.yaml-settings-form {
+  padding: 0;
+}
+
+.yaml-section {
+  border-bottom: 1px solid var(--line);
+}
+.yaml-section summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.yaml-section summary:hover {
+  background: color-mix(in oklch, var(--gold) 6%, var(--surface));
+  color: var(--text-soft);
+}
+.yaml-section summary::marker {
+  color: var(--whisper);
+}
+.yaml-section[open] > summary {
+  color: var(--text-soft);
+}
+
+.yaml-section[data-depth="1"] { border-bottom: 0; }
+.yaml-section[data-depth="1"] > summary { padding-left: 28px; font-size: 10.5px; background: color-mix(in oklch, var(--surface) 60%, var(--bg)); }
+.yaml-section[data-depth="2"] > summary { padding-left: 42px; font-size: 10px; background: color-mix(in oklch, var(--surface) 40%, var(--bg)); }
+.yaml-section[data-depth="3"] > summary { padding-left: 56px; font-size: 10px; background: color-mix(in oklch, var(--surface) 25%, var(--bg)); }
+
+.yaml-fields {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+}
+
+.yaml-field {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: 7px 14px;
+  background: var(--bg);
+  min-height: 34px;
+}
+.yaml-field[data-depth="1"] { padding-left: 28px; }
+.yaml-field[data-depth="2"] { padding-left: 42px; }
+.yaml-field[data-depth="3"] { padding-left: 56px; }
+.yaml-field[data-depth="4"] { padding-left: 70px; }
+
+.yaml-field-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-soft);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yaml-field-hint {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--whisper);
+  letter-spacing: 0.02em;
+  padding: 0 0 2px;
+}
+
+.yaml-field input[type="text"],
+.yaml-field input[type="number"],
+.yaml-field select {
+  width: 100%;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-deep);
+  color: var(--text-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  transition: border-color var(--duration-fast);
+}
+.yaml-field input:focus,
+.yaml-field select:focus {
+  border-color: var(--gold-soft);
+  outline: none;
+}
+.yaml-field input::placeholder {
+  color: var(--whisper);
+}
+
+.yaml-field .yaml-toggle {
+  appearance: none;
+  width: 32px;
+  height: 16px;
+  border: 1px solid var(--line);
+  background: var(--bg-deep);
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.yaml-field .yaml-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--quiet);
+  transition: transform var(--duration-fast), background var(--duration-fast);
+}
+.yaml-field .yaml-toggle:checked {
+  background: color-mix(in oklch, var(--gold) 30%, var(--surface));
+  border-color: var(--gold-soft);
+}
+.yaml-field .yaml-toggle:checked::after {
+  transform: translateX(16px);
+  background: var(--gold);
+}
+
+.yaml-color-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.yaml-color-swatch {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.yaml-color-wrap input {
+  flex: 1;
+  min-width: 0;
+}
+
+.yaml-list-field {
+  grid-column: 1 / -1;
+  padding: 7px 14px;
+  background: var(--bg);
+}
+.yaml-list-field[data-depth="1"] { padding-left: 28px; }
+.yaml-list-field[data-depth="2"] { padding-left: 42px; }
+.yaml-list-field[data-depth="3"] { padding-left: 56px; }
+.yaml-list-field[data-depth="4"] { padding-left: 70px; }
+.yaml-list-field .yaml-field-label {
+  margin-bottom: 6px;
+}
+.yaml-list-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.yaml-list-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-soft);
+}
+
+.shortcut-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.shortcut-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--whisper);
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 900px) {
+  .settings-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    overflow-y: auto;
+  }
+  .settings-resizer {
+    height: 4px;
+    cursor: row-resize;
+  }
+  .settings-resizer::before {
+    inset: -3px 0;
+  }
+}

@@ -246,6 +246,8 @@ class Conversation:
             base_url=self.settings.base_url,
             ws_host=self.settings.ws_host,
             ws_port=self.settings.ws_port,
+            max_turns=int(overrides.get("max_turns") or self.settings.max_turns),
+            max_tokens=int(overrides.get("max_tokens") or self.settings.max_tokens),
             max_tool_iterations=int(overrides.get("max_tool_iterations") or self.settings.max_tool_iterations),
             max_file_bytes=int(overrides.get("max_file_bytes") or self.settings.max_file_bytes),
             max_list_entries=int(overrides.get("max_list_entries") or self.settings.max_list_entries),
@@ -266,7 +268,7 @@ class Conversation:
 
     @property
     def tool_overrides(self) -> Any:
-        return getattr(self._runtime, "tool_overrides", {}) if self._runtime else {}
+        return getattr(self._runtime, "tool_overrides", None) if self._runtime else None
 
     @property
     def effective_settings(self) -> AgentSettings:
@@ -347,6 +349,12 @@ class Conversation:
 
         self._load_runtime()
 
+        max_turns = self.effective_settings.max_turns
+        turn_count = sum(1 for m in self.messages if isinstance(m, dict) and m.get("role") == "user")
+        if max_turns and turn_count >= max_turns:
+            yield evt("error", message=f"conversation exceeded {max_turns} turns")
+            return
+
 
 
         diff = self.update_snapshot(self.snapshot)
@@ -422,11 +430,11 @@ class Conversation:
         settings = self.effective_settings
         model = settings.model
         if not model:
-            yield evt("error", message="RUNDEER_LLM_MODEL is not set in .env")
-            raise RuntimeError("RUNDEER_LLM_MODEL is not set in .env")
+            yield evt("error", message="no model configured in settings")
+            raise RuntimeError("no model configured in settings")
 
         if model.startswith("grok_raw/"):
-            grok_raw = GrokRawLLM(model=model)
+            grok_raw = GrokRawLLM(model=model, max_tokens=settings.max_tokens if settings.max_tokens < 99999999 else None)
             messages_for_llm = [system_msg, *self._messages_for_llm()]
             tools = build_litellm_tools(self.tool_overrides)
             try:
@@ -536,6 +544,8 @@ class Conversation:
         api_key = resolve_llm_api_key(model)
         if api_key:
             call_kwargs["api_key"] = api_key
+        if settings.max_tokens and settings.max_tokens < 99999999:
+            call_kwargs["max_tokens"] = settings.max_tokens
         temp = settings.extra.get("temperature") if settings.extra else None
         if isinstance(temp, (int, float)):
             call_kwargs["temperature"] = float(temp)
@@ -921,7 +931,7 @@ def _brain_compiled_summary(runtime: Any) -> Dict[str, Any]:
         return {"prompt_chars": 0, "tools_enabled": 0}
     return {
         "prompt_chars": len(getattr(runtime, "system_prompt", "") or ""),
-        "tools_enabled": sum(1 for ov in (getattr(runtime, "tool_overrides", {}) or {}).values() if getattr(ov, "enabled", True)),
+        "tools_enabled": len(enabled_tool_names(getattr(runtime, "tool_overrides", None))),
     }
 
 

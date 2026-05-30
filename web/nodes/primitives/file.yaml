@@ -1,20 +1,19 @@
 file:
   label: File
   category: Primitives
-  desc: "Path to an image, video, or any file. Previews the artifact inline."
+  desc: Path to an image, video, or any file. Previews the artifact inline.
   defaultWidth: 320
   defaultHeight: 260
   resizable: true
-  in: []
+  in:
+  - id: path
+    label: Path
+    kind: text
+    default: ''
+    placeholder: path/to/image.png · clip.mp4 · .rundeer/batch.json
   out:
-    - id: out
-      label: Out
-      type: any
-  props:
-    - id: path
-      label: Path
-      kind: text
-      default: ""
-      placeholder: "path/to/image.png · clip.mp4 · .rundeer/batch.json"
+  - id: out
+    label: Out
+    type: any
   traits: [preview]
   src: web/nodes/primitives/file.js

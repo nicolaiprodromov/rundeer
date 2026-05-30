@@ -1,76 +1,75 @@
 prompt-filter:
   label: Prompt Filter
   category: Prompt
-  desc: "Use a model to transform a prompt"
+  desc: Use a model to transform a prompt
   in:
-    - id: prompt
-      label: Prompt In
-      type: text
-    - id: instructions
-      label: Instructions
-      type: text
-    - id: input
-      label: Context Images
-      type: image
-      multi: true
+  - id: prompt
+    label: Prompt In
+    type: text
+  - id: instructions
+    label: Instructions
+    type: text
+  - id: input
+    label: Context Images
+    type: image
+    multi: true
+  - id: model
+    label: Model override
+    kind: text
+    default: ''
+    placeholder: uses model from settings
+    group: model
+  - id: reasoning_effort
+    label: Reasoning Effort
+    kind: select
+    options: [default, none, low, medium, high]
+    default: default
+    group: model
+  - id: temperature
+    label: Temperature
+    kind: number
+    default: 0.7
+    placeholder: 0.0 - 2.0
+    group: sampling
+  - id: top_p
+    label: Top P
+    kind: number
+    default: ''
+    placeholder: 0.0 - 1.0 (unset)
+    group: sampling
+  - id: max_tokens
+    label: Max Tokens
+    kind: number
+    default: 1024
+    group: sampling
+  - id: seed
+    label: Seed
+    kind: number
+    default: ''
+    placeholder: optional
+    group: sampling
+  - id: frequency_penalty
+    label: Frequency Penalty
+    kind: number
+    default: ''
+    placeholder: -2.0 - 2.0 (non-reasoning only)
+    group: sampling
+  - id: presence_penalty
+    label: Presence Penalty
+    kind: number
+    default: ''
+    placeholder: -2.0 - 2.0 (non-reasoning only)
+    group: sampling
+  - id: stop
+    label: Stop
+    kind: text
+    default: ''
+    placeholder: comma-separated (non-reasoning only)
+    group: sampling
   out:
-    - id: out
-      label: Prompt Out
-      type: text
-  props:
-    - id: model
-      category: Model
-      label: Model override
-      kind: text
-      default: ""
-      placeholder: "uses env RUNDEER_LLM_MODEL"
-    - id: reasoning_effort
-      category: Model
-      label: Reasoning Effort
-      kind: select
-      options: [default, none, low, medium, high]
-      default: default
-    - id: temperature
-      category: Sampling
-      label: Temperature
-      kind: number
-      default: 0.7
-      placeholder: "0.0 - 2.0"
-    - id: top_p
-      category: Sampling
-      label: Top P
-      kind: number
-      default: ""
-      placeholder: "0.0 - 1.0 (unset)"
-    - id: max_tokens
-      category: Sampling
-      label: Max Tokens
-      kind: number
-      default: 1024
-    - id: seed
-      category: Sampling
-      label: Seed
-      kind: number
-      default: ""
-      placeholder: "optional"
-    - id: frequency_penalty
-      category: Sampling
-      label: Frequency Penalty
-      kind: number
-      default: ""
-      placeholder: "-2.0 - 2.0 (non-reasoning only)"
-    - id: presence_penalty
-      category: Sampling
-      label: Presence Penalty
-      kind: number
-      default: ""
-      placeholder: "-2.0 - 2.0 (non-reasoning only)"
-    - id: stop
-      category: Sampling
-      label: Stop
-      kind: text
-      default: ""
-      placeholder: "comma-separated (non-reasoning only)"
+  - id: out
+    label: Prompt Out
+    type: text
   traits: [heavy]
   src: web/nodes/prompt/prompt-filter.js
   api: /api/filter-prompt

@@ -1,32 +1,24 @@
 text-input:
   label: String
   category: Primitives
-  desc: "Multi-line string value (markdown · @mentions)"
+  desc: Multi-line string value (markdown · @mentions)
   defaultWidth: 280
   defaultHeight: 240
-  in: []
+  in:
+  - id: value
+    label: Value
+    kind: textarea
+    default: ''
+    placeholder: Markdown — **bold**, _italic_, `code`, > quote, lists, @reference…
+    mdEditor: true
+  - id: highlight_pairs
+    label: Word Colors
+    kind: textarea
+    default: rundeer = rgb(255, 210, 80)
+    placeholder: ''
+    group: settings
   out:
-    - id: out
-      label: String
-      type: text
-  props:
-    - id: value
-      label: Value
-      kind: textarea
-      default: ""
-      placeholder: "Markdown — **bold**, _italic_, `code`, > quote, lists, @reference…"
-      mdEditor: true
-    - id: highlight_pairs
-      category: Settings
-      label: "Word Colors"
-      kind: textarea
-      default: ""
-      placeholder: "sun = rgb(255, 210, 80)\nshadow = 120, 170, 255"
-
-      
-  aliases:
-    outputs:
-      text: out
-      value: out
-      string: out
+  - id: out
+    label: String
+    type: text
   src: web/nodes/primitives/text-input.js

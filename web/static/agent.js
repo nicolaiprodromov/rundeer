@@ -105,6 +105,7 @@
     try {
       ws = new WebSocket(cfg.wsUrl);
     } catch (err) {
+      console.error("[AGENT] ws connect failed:", err);
       setStatus("error");
       scheduleReconnect();
       return;
@@ -137,8 +138,8 @@
   }
 
   function sendWS(payload) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return false;
-    try { ws.send(JSON.stringify(payload)); return true; } catch { return false; }
+    if (!ws || ws.readyState !== WebSocket.OPEN) { console.warn("[AGENT] sendWS: ws not open, dropping", payload.type); return false; }
+    try { ws.send(JSON.stringify(payload)); return true; } catch(e) { console.error("[AGENT] sendWS error:", e); return false; }
   }
 
   
@@ -763,7 +764,7 @@
       images: attachments.map((a) => a.url),
       graph,
     });
-    lastSentSnapshot = JSON.stringify(graph);
+    try { lastSentSnapshot = JSON.stringify(graph); } catch(_) { lastSentSnapshot = null; }
     inputEl.value = "";
     autosizeInput();
     if (window.RundeerPalette && typeof window.RundeerPalette.updateInputLines === "function") window.RundeerPalette.updateInputLines();
@@ -912,7 +913,8 @@
   function pushSnapshot(force) {
     if (!connected) return;
     const snap = cfg.getGraphSnapshot();
-    const key = JSON.stringify(snap);
+    let key;
+    try { key = JSON.stringify(snap); } catch(_) { return; }
     if (!force && key === lastSentSnapshot) return;
     lastSentSnapshot = key;
     sendWS({ type: "graph_snapshot", graph: snap });

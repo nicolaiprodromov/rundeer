@@ -109,18 +109,29 @@ def _expand_compact_props(io_val: Any) -> List[Dict[str, Any]]:
     return props
 
 
-def _normalize_props(props: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _normalize_inputs(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
-    for p in props:
-        if not isinstance(p, dict):
+    for e in entries:
+        if not isinstance(e, dict):
             continue
-        p = dict(p)
-        cat = p.pop("category", None)
-        if cat is not None:
-            p["group"] = _slugify(str(cat))
-        else:
-            p.setdefault("group", None)
-        out.append(p)
+        e = dict(e)
+        if "kind" in e:
+            if "type" not in e:
+                k = e.get("kind", "")
+                if k == "checkbox":
+                    e["type"] = "boolean"
+                elif k in ("number", "range"):
+                    e["type"] = "number"
+                elif k == "color":
+                    e["type"] = "color"
+                else:
+                    e["type"] = "text"
+            cat = e.pop("category", None)
+            if cat is not None:
+                e["group"] = _slugify(str(cat))
+            else:
+                e.setdefault("group", None)
+        out.append(e)
     return out
 
 
@@ -146,18 +157,16 @@ def _parse_one(yaml_path: Path, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         out_raw = body.get("out", [])
 
         if is_canonical or isinstance(in_raw, list):
-            inputs = in_raw if isinstance(in_raw, list) else []
-            props = body.get("props", [])
+            merged = list(in_raw) if isinstance(in_raw, list) else []
         else:
-            inputs = _expand_compact_io(in_raw, "inputs")
-            props = _expand_compact_props(in_raw)
+            merged = list(_expand_compact_io(in_raw, "inputs")) + list(_expand_compact_props(in_raw))
 
         if isinstance(out_raw, list):
             outputs = out_raw
         else:
             outputs = _expand_compact_io(out_raw, "outputs")
 
-        props_list = _normalize_props(props if isinstance(props, list) else [])
+        inputs = _normalize_inputs(merged)
 
         node_def: Dict[str, Any] = {
             "type": node_type,
@@ -166,7 +175,6 @@ def _parse_one(yaml_path: Path, data: Dict[str, Any]) -> List[Dict[str, Any]]:
             "desc": str(body.get("desc", "")),
             "inputs": inputs,
             "outputs": outputs,
-            "props": props_list,
         }
 
         if "src" in body:
@@ -185,9 +193,6 @@ def _parse_one(yaml_path: Path, data: Dict[str, Any]) -> List[Dict[str, Any]]:
             node_def["traits"] = body["traits"]
         if "pairWith" in body:
             node_def["pairWith"] = str(body["pairWith"])
-        if "aliases" in body and isinstance(body["aliases"], dict):
-            node_def["aliases"] = body["aliases"]
-
         results.append(node_def)
     return results
 
@@ -219,27 +224,37 @@ def get_node_defs(config_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     return _CACHED_DEFS
 
 
-def node_defs_alias_map() -> Dict[tuple, Dict[str, str]]:
-    result: Dict[tuple, Dict[str, str]] = {}
+def get_node_def_by_type(node_type: str) -> Optional[Dict[str, Any]]:
     for d in get_node_defs():
-        aliases = d.get("aliases")
-        if not isinstance(aliases, dict):
-            continue
-        ntype = d["type"]
-        for direction in ("inputs", "outputs"):
-            mapping = aliases.get(direction)
-            if isinstance(mapping, dict):
-                result[(ntype, direction)] = {str(k): str(v) for k, v in mapping.items()}
-    return result
+        if d["type"] == node_type:
+            return d
+    return None
+
+
+def search_node_defs_fn(query: str, max_results: int = 20) -> List[Dict[str, Any]]:
+    q = query.lower()
+    hits: List[Dict[str, Any]] = []
+    for d in get_node_defs():
+        fields = f"{d['type']} {d['label']} {d.get('category', '')} {d.get('desc', '')}".lower()
+        if q in fields:
+            hits.append({
+                "type": d["type"],
+                "label": d["label"],
+                "category": d.get("category", ""),
+                "inputs": len([i for i in d.get("inputs", []) if isinstance(i, dict)]),
+                "outputs": len([o for o in d.get("outputs", []) if isinstance(o, dict)]),
+                "props": len([i for i in d.get("inputs", []) if isinstance(i, dict) and i.get("kind")]),
+                "traits": d.get("traits", []),
+            })
+            if len(hits) >= max_results:
+                break
+    return hits
 
 
 def node_defs_socket_map() -> Dict[str, Dict[str, Dict[str, str]]]:
     result: Dict[str, Dict[str, Dict[str, str]]] = {}
     for d in get_node_defs():
-        ins = {s["id"]: s["type"] for s in d.get("inputs", []) if isinstance(s, dict)}
-        for p in d.get("props", []):
-            if isinstance(p, dict) and "socketType" in p:
-                ins[p["id"]] = p["socketType"]
+        ins = {s["id"]: s["type"] for s in d.get("inputs", []) if isinstance(s, dict) and s.get("type")}
         outs = {s["id"]: s["type"] for s in d.get("outputs", []) if isinstance(s, dict)}
         result[d["type"]] = {"inputs": ins, "outputs": outs}
     return result

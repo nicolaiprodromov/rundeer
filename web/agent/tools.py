@@ -257,6 +257,27 @@ VALIDATE_GRAPH = ToolSpec(
     needs_graph=True,
 )
 
+GET_NODE_DEF = ToolSpec(
+    name="get_node_def",
+    description="Inspect the full definition of a registered node type: its inputs, outputs, props, and traits. Use this to discover exact socket IDs before connecting.",
+    parameters=_obj({
+        "node_type": {"type": "string", "description": "The node type slug (e.g. 'cmd-image')."},
+    }, required=["node_type"]),
+    category="read",
+    impl=ti_inspect.get_node_def_tool,
+)
+
+SEARCH_NODE_DEFS = ToolSpec(
+    name="search_node_defs",
+    description="Keyword search across all registered node types. Matches against type, label, category, and description.",
+    parameters=_obj({
+        "query": {"type": "string", "description": "Search keyword."},
+        "max_results": {"type": "integer", "minimum": 1, "maximum": 50},
+    }, required=["query"]),
+    category="read",
+    impl=ti_inspect.search_node_defs_tool,
+)
+
 
 ADD_NODE = ToolSpec(
     name="add_node",
@@ -290,8 +311,7 @@ CONNECT_NODES = ToolSpec(
     name="connect_nodes",
     description=(
         "Connect a source node's output socket to a target node's input socket. "
-        "Use actual socket ids: most value outputs are 'out', cmd-image/cmd-video run input is 'trigger', "
-        "cmd-* prompt input is 'subject', preview input is 'in'. Common label guesses are normalized when unambiguous."
+        "Use exact socket IDs from get_node_def. Normalized matching is attempted but exact IDs are preferred."
     ),
     parameters=_obj({
         "from_node": {"type": "string"},
@@ -552,6 +572,7 @@ ALL_TOOLS: List[ToolSpec] = [
     LIST_DOCS, READ_DOC, LIST_BRAINS, GET_BRAIN_MD, LIST_REFERENCES,
     LIST_ARTIFACTS, ARTIFACT_META, LIST_RUNS, GET_RUN,
     LIST_NODES, GET_NODE, LIST_EDGES, GET_SELECTION, VALIDATE_GRAPH,
+    GET_NODE_DEF, SEARCH_NODE_DEFS,
     ADD_NODE, REMOVE_NODE, CONNECT_NODES, DISCONNECT_NODES, SET_NODE_PROP,
     MOVE_NODE, LAYOUT_AUTO, SELECT_NODES, CLEAR_GRAPH,
     PLAN_GRAPH, RUN_GRAPH,
@@ -587,6 +608,8 @@ def _resolve_overrides(overrides: Any) -> Dict[str, Any]:
 
 def effective_specs(overrides: Any = None) -> List[ToolSpec]:
 
+    if overrides is None:
+        return []
     ovs = _resolve_overrides(overrides)
     out: List[ToolSpec] = []
     for spec in ALL_TOOLS:

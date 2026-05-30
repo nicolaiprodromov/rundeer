@@ -1,33 +1,32 @@
 random:
   label: Random
   category: Operations
-  desc: "Generate a random integer, float, or string"
-  in: []
+  desc: Generate a random integer, float, or string
+  in:
+  - id: mode
+    label: Mode
+    kind: select
+    options: [integer, float, string]
+    default: integer
+    type: text
+  - id: min
+    label: Min
+    kind: number
+    default: 0
+    type: number
+  - id: max
+    label: Max
+    kind: number
+    default: 100
+    type: number
+  - id: charset
+    label: Charset
+    kind: select
+    options: [alphanumeric, alpha, lower_alpha, upper_alpha, numeric, hex, special, ascii]
+    default: alphanumeric
+    type: text
   out:
-    - id: out
-      label: Value
-      type: any
-  props:
-    - id: mode
-      label: Mode
-      kind: select
-      options: [integer, float, string]
-      default: integer
-      socketType: text
-    - id: min
-      label: Min
-      kind: number
-      default: 0
-      socketType: number
-    - id: max
-      label: Max
-      kind: number
-      default: 100
-      socketType: number
-    - id: charset
-      label: Charset
-      kind: select
-      options: [alphanumeric, alpha, lower_alpha, upper_alpha, numeric, hex, special, ascii]
-      default: alphanumeric
-      socketType: text
+  - id: out
+    label: Value
+    type: any
   src: web/nodes/operations/random.js

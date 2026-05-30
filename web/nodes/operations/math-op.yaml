@@ -1,22 +1,21 @@
 math-op:
   label: Math
   category: Operations
-  desc: "Numeric operation"
+  desc: Numeric operation
   in:
-    - id: a
-      label: A
-      type: number
-    - id: b
-      label: B
-      type: number
+  - id: a
+    label: A
+    type: number
+  - id: b
+    label: B
+    type: number
+  - id: op
+    label: Operation
+    kind: select
+    options: [add, subtract, multiply, divide, modulo, power, min, max]
+    default: add
   out:
-    - id: out
-      label: Result
-      type: number
-  props:
-    - id: op
-      label: Operation
-      kind: select
-      options: [add, subtract, multiply, divide, modulo, power, min, max]
-      default: add
+  - id: out
+    label: Result
+    type: number
   src: web/nodes/operations/math-op.js

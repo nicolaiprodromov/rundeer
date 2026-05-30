@@ -9,24 +9,38 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&family=Geist+Mono:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/css/layout.css">
-    <link rel="stylesheet" href="/static/css/canvas.css">
-    <link rel="stylesheet" href="/static/css/nodes.css">
-    <link rel="stylesheet" href="/static/css/sockets.css">
-    <link rel="stylesheet" href="/static/css/node-fields.css">
-    <link rel="stylesheet" href="/static/css/string-editor.css">
-    <link rel="stylesheet" href="/static/css/palette.css">
+    <link rel="stylesheet" href="/static/css/nodes/canvas.css">
+    <link rel="stylesheet" href="/static/css/nodes/core.css">
+    <link rel="stylesheet" href="/static/css/nodes/sockets.css">
+    <link rel="stylesheet" href="/static/css/nodes/fields.css">
+    <link rel="stylesheet" href="/static/css/nodes/string-editor.css">
+    <link rel="stylesheet" href="/static/css/nodes/menu.css">
 
     <link rel="stylesheet" href="/static/css/toolbar-footer.css">
     <link rel="stylesheet" href="/static/css/masthead.css">
     <link rel="stylesheet" href="/static/css/menus-dialogs.css">
     <link rel="stylesheet" href="/static/css/explorer.css">
     <link rel="stylesheet" href="/static/css/work-pages.css">
+    <link rel="stylesheet" href="/static/css/settings.css">
     <link rel="stylesheet" href="/static/css/run-dock.css">
-    <link rel="stylesheet" href="/static/css/preview.css">
+    <link rel="stylesheet" href="/static/css/nodes/preview.css">
     <link rel="stylesheet" href="/static/css/agent.css">
+    <link rel="stylesheet" href="/static/css/splash.css">
+    <link rel="stylesheet" href="/static/css/nodes/terminal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+      }
+    }
+    </script>
   </head>
   <body>
-    <div class="ne-shell hide-palette" data-active-view="nodes">
+    <div id="rundeer-splash"></div>
+    <script type="module" src="/static/splash/splash.mjs"></script>
+    <div class="ne-shell hide-nmenu" data-active-view="nodes">
 
       
       <header class="masthead masthead-compact" role="banner">
@@ -53,12 +67,6 @@
             <button class="view-tab is-active" type="button" role="tab" data-view="nodes" aria-selected="true">
               <span aria-hidden="true">⊞</span> Tree
             </button>
-            <button class="view-tab" type="button" role="tab" data-view="runs" aria-selected="false">
-              <span aria-hidden="true">≡</span> Runs
-            </button>
-            <button class="view-tab" type="button" role="tab" data-view="graphs" aria-selected="false">
-              <span aria-hidden="true">❖</span> Graphs
-            </button>
             <button class="view-tab" type="button" role="tab" data-view="explore" aria-selected="false">
               <span aria-hidden="true">▢</span> Explore
             </button>
@@ -79,16 +87,16 @@
         <div class="ne-workbench">
 
           
-          <aside class="ne-palette" aria-label="Node menu">
-            <div class="ne-palette-head">
-              <p class="ne-palette-title">add node</p>
-              <input type="search" class="ne-palette-search" id="paletteSearch" placeholder="search nodes… (Shift+A)" autocomplete="off">
+          <aside class="ne-nmenu" aria-label="Node menu">
+            <div class="ne-nmenu-head">
+              <p class="ne-nmenu-title">add node</p>
+              <input type="search" class="ne-nmenu-search" id="nmenuSearch" placeholder="search nodes… (Shift+A)" autocomplete="off">
             </div>
-            <div id="paletteCategories"></div>
+            <div id="nmenuCategories"></div>
           </aside>
 
           
-          <div class="ne-side-resizer ne-side-resizer-left" id="paletteResizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize node menu"></div>
+          <div class="ne-side-resizer ne-side-resizer-left" id="nmenuResizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize node menu"></div>
 
           
           <div class="ne-canvas-wrap" id="canvasWrap" aria-label="Node graph canvas">
@@ -144,13 +152,13 @@
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
                 </button>
               </div>
-              <button class="ne-agent-selector" id="agentSelectorBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="paletteAgentsPane" title="Choose agent">
-                <span class="ne-agent-selector-label" id="agentModel">agent</span>
-                <span class="ne-agent-selector-caret" aria-hidden="true">⌄</span>
-              </button>
               <button class="ne-model-selector" id="modelSelectorBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="paletteModelsPane" title="Choose model">
                 <span class="ne-model-selector-label" id="modelSelectorLabel">model</span>
                 <span class="ne-model-selector-caret" aria-hidden="true">⌄</span>
+              </button>
+              <button class="ne-agent-selector" id="agentSelectorBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="paletteAgentsPane" title="Choose agent">
+                <span class="ne-agent-selector-label" id="agentModel">agent</span>
+                <span class="ne-agent-selector-caret" aria-hidden="true">⌄</span>
               </button>
               <div class="ne-palette-header-right">
                 <button class="ne-agent-icon-btn" id="agentBrainBtn" type="button" title="Edit selected agent brain" aria-label="Edit selected agent brain">
@@ -313,88 +321,69 @@
         </div>
       </div>
 
-      
-      
-      
-      <div class="ne-view" id="view-runs" data-view="runs" hidden>
-        <section class="work-page runs-page" aria-label="Past runs">
-          <header class="work-page-head runs-page-head">
-            <div class="work-page-title">
-              <p class="ex-eyebrow">runs</p>
-              <h2>Run history</h2>
-            </div>
-            <span class="ex-panel-meta" id="runsPageMeta">-</span>
-            <div class="ex-panel-actions">
-              <button class="btn btn-ghost btn-tiny" id="runsPageRefresh" type="button" title="Refresh list">↻</button>
-            </div>
-          </header>
-          <div class="runs-workspace">
-            <section class="runs-list-panel" aria-label="Recent runs">
-              <div class="work-subhead">
-                <span>recent</span>
-                <span id="runsListMeta">-</span>
-              </div>
-              <ul class="ne-runs-list" id="runsList"></ul>
-            </section>
-            <section class="run-detail-panel is-empty" id="runLog" role="region" aria-label="Run log">
-              <header class="run-detail-head" id="runLogHead">
-                <span class="status-pill" id="runLogStatus" data-state="idle">Idle</span>
-                <div class="run-detail-title-wrap">
-                  <p class="run-detail-title" id="runLogTitle">no run selected</p>
-                  <span class="run-detail-meta" id="runLogMeta">select a run to inspect its log</span>
-                </div>
-              </header>
-              <pre class="run-detail-body" id="runLogBody"></pre>
-            </section>
-          </div>
-        </section>
-      </div>
-
-      
-      
-      
-      <div class="ne-view" id="view-graphs" data-view="graphs" hidden>
-        <section class="work-page graphs-page" aria-label="Saved graphs">
-          <header class="work-page-head graphs-page-head">
-            <div class="work-page-title">
-              <p class="ex-eyebrow">graphs</p>
-              <h2>Saved graphs</h2>
-            </div>
-            <span class="ex-panel-meta" id="graphsPageMeta">-</span>
-            <div class="ex-panel-actions">
-              <button class="btn btn-primary btn-tiny" id="saveGraphBtn" type="button">Save Current</button>
-              <button class="btn btn-ghost btn-tiny" id="newTabBtn" type="button" title="New graph tab">New</button>
-              <button class="btn btn-ghost btn-tiny" id="loadGraphBtn" type="button">Load JSON</button>
-              <button class="btn btn-ghost btn-tiny" id="clearGraphBtn" type="button">Clear Current</button>
-              <button class="btn btn-ghost btn-tiny" id="graphsPageRefresh" type="button" title="Refresh list">↻</button>
-            </div>
-          </header>
-          <input type="file" id="loadGraphFile" accept="application/json,.json" hidden>
-          <ul class="ne-graphs-list" id="graphsList"></ul>
-        </section>
-      </div>
-
-      
-      
-      
       <div class="ne-view" id="view-settings" data-view="settings" hidden>
-        <section class="work-page shortcut-settings-page" aria-label="Settings">
-          <header class="work-page-head shortcut-settings-head">
-            <div class="work-page-title">
-              <p class="ex-eyebrow">settings</p>
-              <h2>Shortcuts</h2>
+        <div class="settings-shell" id="settingsShell">
+
+          <section class="settings-panel settings-runs" aria-label="Runs">
+            <header class="settings-panel-head">
+              <p class="ex-eyebrow">runs</p>
+              <span class="ex-panel-meta" id="runsPageMeta">-</span>
+              <div class="ex-panel-actions">
+                <button class="btn btn-ghost btn-tiny" id="runsPageRefresh" type="button" title="Refresh list">↻</button>
+              </div>
+            </header>
+            <div class="runs-inner">
+              <section class="runs-list-section">
+                <div class="work-subhead">
+                  <span>recent</span>
+                  <span id="runsListMeta">-</span>
+                </div>
+                <ul class="ne-runs-list" id="runsList"></ul>
+              </section>
+              <section class="run-detail-panel is-empty" id="runLog" role="region" aria-label="Run log">
+                <header class="run-detail-head" id="runLogHead">
+                  <span class="status-pill" id="runLogStatus" data-state="idle">Idle</span>
+                  <div class="run-detail-title-wrap">
+                    <p class="run-detail-title" id="runLogTitle">no run selected</p>
+                    <span class="run-detail-meta" id="runLogMeta">select a run to inspect its log</span>
+                  </div>
+                </header>
+                <pre class="run-detail-body" id="runLogBody"></pre>
+              </section>
             </div>
-            <span class="ex-panel-meta" id="settingsPageMeta">saved in .rundeer/data/web-state.json</span>
-            <div class="ex-panel-actions">
-              <button class="btn btn-ghost btn-tiny" id="resetShortcutsBtn" type="button">Reset All</button>
+          </section>
+
+          <div class="settings-resizer" id="settingsResizer1" role="separator" aria-orientation="vertical"></div>
+
+          <section class="settings-panel settings-graphs" aria-label="Graphs">
+            <header class="settings-panel-head">
+              <p class="ex-eyebrow">graphs</p>
+              <span class="ex-panel-meta" id="graphsPageMeta">-</span>
+              <div class="ex-panel-actions">
+                <button class="btn btn-primary btn-tiny" id="saveGraphBtn" type="button">Save</button>
+                <button class="btn btn-ghost btn-tiny" id="newTabBtn" type="button" title="New graph tab">New</button>
+                <button class="btn btn-ghost btn-tiny" id="loadGraphBtn" type="button">Load</button>
+                <button class="btn btn-ghost btn-tiny" id="clearGraphBtn" type="button">Clear</button>
+                <button class="btn btn-ghost btn-tiny" id="graphsPageRefresh" type="button" title="Refresh list">↻</button>
+              </div>
+            </header>
+            <input type="file" id="loadGraphFile" accept="application/json,.json" hidden>
+            <ul class="ne-graphs-list" id="graphsList"></ul>
+          </section>
+
+          <div class="settings-resizer" id="settingsResizer2" role="separator" aria-orientation="vertical"></div>
+
+          <section class="settings-panel settings-config" aria-label="Configuration">
+            <header class="settings-panel-head">
+              <p class="ex-eyebrow">config</p>
+              <span class="ex-panel-meta" id="settingsPageMeta">settings.yaml</span>
+            </header>
+            <div class="settings-config-body" id="settingsConfigBody">
+              <div class="yaml-settings-form" id="yamlSettingsForm"></div>
             </div>
-          </header>
-          <div class="settings-workspace">
-            <section class="settings-panel" aria-label="Keyboard shortcuts">
-              <div class="shortcut-list" id="shortcutsList"></div>
-            </section>
-          </div>
-        </section>
+          </section>
+
+        </div>
       </div>
 
       
@@ -460,6 +449,8 @@
 
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js"></script>
     <script src="/static/node-editor.js" defer></script>
     <script src="/static/agent.js" defer></script>
   </body>

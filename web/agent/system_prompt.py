@@ -28,7 +28,7 @@ def build_core_prompt() -> str:
         "",
         "# Graph model (node-editor canvas)",
         "",
-        "Nodes have a `type`, an `(x, y)` position, a `props` dict, and optional top-level state like `muted`. Edges connect a source node's output socket to a target node's input socket. Muted nodes and their edges are ignored by browser graph runs until unmuted.",
+        "Nodes have a `type`, an `(x, y)` position, local `props` values, and optional state like `muted`. All inputs (both sockets and widget controls) are defined in a single `inputs` list. Edges connect a source node's output socket to a target node's input socket. Muted nodes and their edges are ignored by browser graph runs until unmuted.",
         "",
         "Available node types:",
         "",
@@ -37,7 +37,7 @@ def build_core_prompt() -> str:
         lines.append(f"  {cat} — {', '.join(types)}")
     lines.append(f"\nSocket types: {', '.join(sorted(KNOWN_SOCKET_TYPES))}")
     lines.append("")
-    lines.append("A minimal image graph uses exact socket ids: `text-input.out → cmd-image.subject`, `run-trigger.run → cmd-image.trigger`, and `cmd-image.out → preview.in`. Do not use socket labels like `output`, `image`, or `run` when a node has a different socket id.")
+    lines.append("Use `get_node_def` to inspect any node type's sockets and props. Use `search_node_defs` to find nodes by keyword. Always look up exact socket IDs before connecting.")
     lines.append("")
     lines.append("Position nodes in left-to-right columns, ~280px apart on X, ~80–160px apart on Y. Place `run-trigger` to the left of commands.")
     lines.append("")

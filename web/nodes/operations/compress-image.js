@@ -93,7 +93,7 @@ function _hasTextUpstream(nodeId, ctx) {
       const def = ctx.NODE_BY_TYPE["text-input"];
       const hid = ctx.genNodeId();
       const hProps = {};
-      for (const p of def.props || []) hProps[p.id] = p.default ?? "";
+      for (const p of (def.inputs || []).filter(e => e.kind)) hProps[p.id] = p.default ?? "";
       hProps.value = _COMPRESS_HELPER_PROMPT;
       const width = def.defaultWidth || 280;
       ctx.graph.nodes[hid] = {

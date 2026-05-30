@@ -4,6 +4,10 @@
 __pycache__/
 .pytest_cache/
 
+node_modules/
+package.json
+package-lock.json
+
 .env
 .env.*
 

@@ -212,7 +212,7 @@
 
 .ne-inline-prop-row {
   display: grid;
-  grid-template-columns: minmax(104px, 0.56fr) minmax(72px, 0.44fr);
+  grid-template-columns: auto 1fr;
   align-items: center;
   column-gap: 9px;
   min-height: 36px;

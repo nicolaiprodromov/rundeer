@@ -1,0 +1,72 @@
+terminal:
+  label: Terminal
+  category: Terminal
+  desc: Interactive terminal with a real PTY session. Supports manual typing and programmatic command injection.
+  defaultWidth: 520
+  defaultHeight: 420
+  resizable: true
+  in:
+  - id: command
+    label: Command
+    type: text
+  - id: trigger
+    label: Run
+    type: run
+  - id: clear
+    label: Clear
+    type: run
+  - id: refresh
+    label: Refresh
+    type: run
+  - id: id
+    label: Session ID
+    type: text
+  - id: allowed_patterns
+    label: Allowed Patterns
+    kind: textarea
+    default: |-
+      ls.*
+      cat .*
+      echo .*
+      pwd
+      whoami
+      which .*
+      env
+      date
+      uname.*
+      head .*
+      tail .*
+      wc .*
+      grep .*
+      find .*
+      python3.*
+      node .*
+      npm .*
+    placeholder: newline-separated regex/glob patterns
+    group: null
+  - id: yolo
+    label: YOLO
+    kind: checkbox
+    default: false
+    group: null
+  - id: shell
+    label: Shell
+    kind: select
+    options: [bash, sh, zsh, fish]
+    default: bash
+    group: null
+  - id: cwd
+    label: Working Dir
+    kind: text
+    default: ''
+    placeholder: project root
+    group: null
+  out:
+  - id: stdout
+    label: Output
+    type: text
+  - id: exit_code
+    label: Exit Code
+    type: number
+  traits: [terminal, heavy]
+  src: web/nodes/terminal/terminal.js

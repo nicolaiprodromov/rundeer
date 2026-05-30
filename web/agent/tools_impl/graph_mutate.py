@@ -10,18 +10,12 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from web.node_defs import node_defs_alias_map, node_defs_socket_map
+from web.node_defs import node_defs_socket_map
 
 SocketMap = Dict[str, str]
 
 
 NODE_SOCKETS: Dict[str, Dict[str, SocketMap]] = node_defs_socket_map()
-
-NODE_SOCKET_ALIASES: Dict[Tuple[str, str], Dict[str, str]] = node_defs_alias_map()
-
-
-GLOBAL_SINGLE_OUTPUT_ALIASES = {"out", "output", "result", "value", "image", "video", "text", "string", "bundle", "file", "path", "vector", "uv"}
-GLOBAL_SINGLE_INPUT_ALIASES = {"in", "input", "value", "item", "image", "images", "video", "text", "string", "bundle", "file", "path", "vector", "position", "size", "uv"}
 
 
 def _patch(op: str, **fields) -> Dict[str, Any]:
@@ -72,22 +66,10 @@ def _resolve_socket(node_type: str, socket: str, direction: str) -> Tuple[Option
         return None, f"{node_type} has no {direction[:-1]} sockets"
     if socket in sockets:
         return socket, None
-
     wanted = _norm_token(socket)
-    normalized_ids = {_norm_token(socket_id): socket_id for socket_id in sockets}
+    normalized_ids = {_norm_token(sid): sid for sid in sockets}
     if wanted in normalized_ids:
         return normalized_ids[wanted], None
-
-    aliases = NODE_SOCKET_ALIASES.get((node_type, direction), {})
-    if wanted in aliases and aliases[wanted] in sockets:
-        return aliases[wanted], None
-
-    if len(sockets) == 1:
-        only_id, only_type = next(iter(sockets.items()))
-        aliases_for_single = GLOBAL_SINGLE_OUTPUT_ALIASES if direction == "outputs" else GLOBAL_SINGLE_INPUT_ALIASES
-        if wanted in aliases_for_single or wanted == _norm_token(only_type):
-            return only_id, None
-
     valid = ", ".join(sorted(sockets))
     return None, f"unknown {direction[:-1]} socket '{socket}' for {node_type}; use one of: {valid}"
 

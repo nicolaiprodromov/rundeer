@@ -32,7 +32,7 @@
     presence_penalty: pf_num("presence_penalty"),
     stop: pf_str("stop"),
   };
-  const modelLabel = modelOverride || "RUNDEER_LLM_MODEL";
+  const modelLabel = modelOverride || "settings model";
   const effortNote = payload.reasoning_effort ? ` (reasoning=${payload.reasoning_effort})` : "";
   helpers.appendRunLog(`  ↳ Filtering prompt via ${modelLabel}${effortNote}${imageNote}…\n`);
   const result = await helpers.graphFetchJSON("/api/filter-prompt", {

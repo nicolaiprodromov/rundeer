@@ -1,36 +1,35 @@
 tool-flag:
   label: Tool Flag
   category: Agent Brain
-  desc: "Enable/disable a tool and optionally override its description, category, or destructive flag. Connect into the Brain's Tools input (directly or via a Bundle)."
+  desc: Enable/disable a tool and optionally override its description, category, or destructive flag. Connect into the Brain's Tools input (directly or via a Bundle).
   defaultWidth: 320
-  in: []
+  in:
+  - id: tool_name
+    label: Tool Name
+    kind: text
+    default: ''
+  - id: enabled
+    label: Enabled
+    kind: checkbox
+    default: true
+  - id: description
+    label: Description override
+    kind: textarea
+    default: ''
+    placeholder: leave blank for built-in
+  - id: category
+    label: Category override
+    kind: select
+    options: ['', read, mutate, execute, vision, self_modify]
+    default: ''
+  - id: destructive
+    label: Destructive override
+    kind: select
+    options: ['', 'true', 'false']
+    default: ''
   out:
-    - id: out
-      label: Tool
-      type: any
-  props:
-    - id: tool_name
-      label: Tool Name
-      kind: text
-      default: ""
-    - id: enabled
-      label: Enabled
-      kind: checkbox
-      default: true
-    - id: description
-      label: Description override
-      kind: textarea
-      default: ""
-      placeholder: "leave blank for built-in"
-    - id: category
-      label: Category override
-      kind: select
-      options: ["", read, mutate, execute, vision, self_modify]
-      default: ""
-    - id: destructive
-      label: Destructive override
-      kind: select
-      options: ["", "true", "false"]
-      default: ""
+  - id: out
+    label: Tool
+    type: any
   traits: [paletteHidden]
   src: web/nodes/agent-brain/tool-flag.js
