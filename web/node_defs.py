@@ -9,7 +9,7 @@ import yaml
 _CONFIG_DIR = Path(__file__).resolve().parent / "nodes"
 
 KNOWN_SOCKET_TYPES = {
-    "text", "image", "video", "number", "boolean", "definition",
+    "text", "image", "video", "integer", "float", "boolean", "definition",
     "filepath", "vector", "vector-map", "color", "image-bundle",
     "video-bundle", "run", "any",
 }
@@ -120,8 +120,12 @@ def _normalize_inputs(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 k = e.get("kind", "")
                 if k == "checkbox":
                     e["type"] = "boolean"
-                elif k in ("number", "range"):
-                    e["type"] = "number"
+                elif k == "int":
+                    e["type"] = "integer"
+                elif k == "float":
+                    e["type"] = "float"
+                elif k == "range":
+                    e["type"] = "float"
                 elif k == "color":
                     e["type"] = "color"
                 else:

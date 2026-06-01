@@ -72,13 +72,15 @@ my-node:
 
 Type inference from `kind` (when `type` is omitted):
 - `checkbox` → `boolean`
-- `number`, `range` → `number`
+- `int` → `integer`
+- `float` → `float`
+- `range` → `float` (override with explicit `type`)
 - `color` → `color`
 - everything else (`text`, `textarea`, `select`, `hidden`) → `text`
 
 ### Socket types
 
-`text` · `image` · `video` · `number` · `boolean` · `definition` · `filepath` · `vector` · `vector-map` · `color` · `image-bundle` · `video-bundle` · `run` · `any`
+`text` · `image` · `video` · `integer` · `float` · `boolean` · `definition` · `filepath` · `vector` · `vector-map` · `color` · `image-bundle` · `video-bundle` · `run` · `any`
 
 Colors are set in `SOCKET_TYPES` at the top of `web/static/node-editor.js`.
 
@@ -94,7 +96,7 @@ Colors are set in `SOCKET_TYPES` at the top of `web/static/node-editor.js`.
 | `label` | Display label |
 | `type` | Socket type (required for pure sockets, optional for widget entries — inferred from `kind`) |
 | `multi` | `true` for dotted multi-connect sockets |
-| `kind` | Widget type: `text` · `number` · `checkbox` · `select` · `range` · `textarea` · `color` · `hidden` |
+| `kind` | Widget type: `text` · `int` · `float` · `checkbox` · `select` · `range` · `textarea` · `color` · `hidden` |
 | `default` | Default value for widget entries |
 | `placeholder` | Hint string |
 | `options` | Array for `select` kind |

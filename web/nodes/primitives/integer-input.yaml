@@ -1,0 +1,14 @@
+integer-input:
+  label: Integer
+  category: Primitives
+  desc: Integer value
+  in:
+  - id: value
+    label: Value
+    kind: int
+    default: 0
+  out:
+  - id: out
+    label: Integer
+    type: integer
+  src: web/nodes/primitives/integer-input.js

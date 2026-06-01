@@ -18,5 +18,5 @@ sample-bundle:
     type: any
   - id: count
     label: Count
-    type: number
+    type: integer
   src: web/nodes/bundle/sample-bundle.js

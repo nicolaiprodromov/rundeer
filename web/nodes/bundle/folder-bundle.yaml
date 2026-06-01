@@ -22,22 +22,22 @@ folder-bundle:
     group: settings
   - id: fps
     label: Frames / sec (0 = native)
-    kind: number
+    kind: float
     default: 0
     group: media
   - id: modulo
     label: Modulo (every Nth, 1 = all)
-    kind: number
+    kind: int
     default: 1
     group: media
   - id: start
     label: 'Start (item/frame #, 0 = first)'
-    kind: number
+    kind: int
     default: 0
     group: media
   - id: end
     label: 'End (item/frame #, 0 = all)'
-    kind: number
+    kind: int
     default: 0
     group: media
   - id: format

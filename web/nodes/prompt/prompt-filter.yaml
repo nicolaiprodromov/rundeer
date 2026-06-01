@@ -30,37 +30,37 @@ prompt-filter:
     group: model
   - id: temperature
     label: Temperature
-    kind: number
+    kind: float
     default: 0.7
     placeholder: 0.0 - 2.0
     group: sampling
   - id: top_p
     label: Top P
-    kind: number
+    kind: float
     default: ''
     placeholder: 0.0 - 1.0 (unset)
     group: sampling
   - id: max_tokens
     label: Max Tokens
-    kind: number
+    kind: int
     default: ''
     placeholder: uses Max_tokens from settings
     group: sampling
   - id: seed
     label: Seed
-    kind: number
+    kind: int
     default: ''
     placeholder: optional
     group: sampling
   - id: frequency_penalty
     label: Frequency Penalty
-    kind: number
+    kind: float
     default: ''
     placeholder: -2.0 - 2.0 (non-reasoning only)
     group: sampling
   - id: presence_penalty
     label: Presence Penalty
-    kind: number
+    kind: float
     default: ''
     placeholder: -2.0 - 2.0 (non-reasoning only)
     group: sampling

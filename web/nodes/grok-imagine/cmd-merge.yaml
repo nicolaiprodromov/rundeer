@@ -21,12 +21,12 @@ cmd-merge:
     group: run
   - id: iterations
     label: Iterations
-    kind: number
+    kind: int
     default: 1
     group: run
   - id: concurrency
     label: Concurrency
-    kind: number
+    kind: int
     default: null
     placeholder: auto
     group: run
@@ -63,7 +63,7 @@ cmd-merge:
     group: references
   - id: ref_quality
     label: JPEG Quality
-    kind: number
+    kind: int
     default: 85
     group: references
   out:

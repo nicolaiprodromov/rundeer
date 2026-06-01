@@ -50,7 +50,7 @@ function _expImgBundle(nodeId, ctx) {
 
     const str = v == null ? "" : String(v);
     const looksPath = /\.[A-Za-z0-9]{1,6}$/.test(str) && !str.includes("\n") && str.length < 512;
-    const isText = upT === "text" || upT === "number" || upT === "boolean" || (!looksPath && upT === "any");
+    const isText = upT === "text" || upT === "integer" || upT === "float" || upT === "boolean" || (!looksPath && upT === "any");
     if (isText) {
       helpers.appendRunLog(`  ↳ Exporting text → ${name}…\n`);
       const r = await helpers.graphFetchJSON("/api/export", {

@@ -8,37 +8,37 @@ mapping:
     type: vector-map
   - id: location_x
     label: X
-    kind: number
+    kind: float
     default: 0.0
     group: location
   - id: location_y
     label: Y
-    kind: number
+    kind: float
     default: 0.0
     group: location
   - id: rotation
     label: Rotation (deg)
-    kind: number
+    kind: float
     default: 0.0
     group: rotation
   - id: scale_x
     label: X
-    kind: number
+    kind: float
     default: 1.0
     group: scale
   - id: scale_y
     label: Y
-    kind: number
+    kind: float
     default: 1.0
     group: scale
   - id: pivot_x
     label: X
-    kind: number
+    kind: float
     default: 0.5
     group: pivot
   - id: pivot_y
     label: Y
-    kind: number
+    kind: float
     default: 0.5
     group: pivot
   out:

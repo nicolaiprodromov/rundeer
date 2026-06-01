@@ -24,12 +24,12 @@ cmd-edit:
     group: run
   - id: iterations
     label: Iterations
-    kind: number
+    kind: int
     default: 1
     group: run
   - id: concurrency
     label: Concurrency
-    kind: number
+    kind: int
     default: null
     placeholder: auto
     group: run
@@ -68,7 +68,7 @@ cmd-edit:
     group: media
   - id: duration
     label: Duration (s)
-    kind: number
+    kind: int
     default: 6
     group: media
   - id: reference_ids
@@ -84,7 +84,7 @@ cmd-edit:
     group: references
   - id: ref_quality
     label: JPEG Quality
-    kind: number
+    kind: int
     default: 85
     group: references
   - id: chain
@@ -99,27 +99,27 @@ cmd-edit:
     group: chain
   - id: chain_threshold
     label: Threshold
-    kind: number
+    kind: int
     default: 12
     group: chain
   - id: chain_override
     label: Override
-    kind: number
+    kind: int
     default: 50
     group: chain
   - id: chain_dilate
     label: Dilate
-    kind: number
+    kind: int
     default: 6
     group: chain
   - id: chain_feather
     label: Feather
-    kind: number
+    kind: int
     default: 8
     group: chain
   - id: chain_min_region
     label: Min Region
-    kind: number
+    kind: int
     default: 64
     group: chain
   out:

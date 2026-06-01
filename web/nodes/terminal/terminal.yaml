@@ -67,6 +67,6 @@ terminal:
     type: text
   - id: exit_code
     label: Exit Code
-    type: number
+    type: integer
   traits: [terminal, heavy, preformatted]
   src: web/nodes/terminal/terminal.js

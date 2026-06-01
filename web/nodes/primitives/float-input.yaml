@@ -1,0 +1,14 @@
+float-input:
+  label: Float
+  category: Primitives
+  desc: Floating-point value
+  in:
+  - id: value
+    label: Value
+    kind: float
+    default: 0.0
+  out:
+  - id: out
+    label: Float
+    type: float
+  src: web/nodes/primitives/float-input.js

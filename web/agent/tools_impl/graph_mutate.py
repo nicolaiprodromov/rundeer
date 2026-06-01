@@ -57,6 +57,8 @@ def _can_connect(from_type: str, to_type: str) -> bool:
         return True
     if {from_type, to_type} in ({"vector", "vector-map"}, {"vector-map", "image"}, {"vector", "image"}):
         return True
+    if from_type in ("integer", "float") and to_type in ("integer", "float"):
+        return True
     return {from_type, to_type} == {"filepath", "text"}
 
 

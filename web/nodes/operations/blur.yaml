@@ -9,6 +9,7 @@ blur-image:
   - id: radius
     label: Radius
     kind: range
+    type: float
     min: 0
     max: 400
     step: 0.1

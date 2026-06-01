@@ -8,15 +8,15 @@ coordinate:
   in:
   - id: width
     label: Width (px)
-    kind: number
+    kind: int
     default: 1024
   - id: height
     label: Height (px)
-    kind: number
+    kind: int
     default: 1024
   - id: dpi
     label: DPI
-    kind: number
+    kind: int
     default: 72
   - id: space
     label: Space

@@ -11,8 +11,8 @@ loop-decompose:
     type: any
   - id: times
     label: Times
-    type: number
-    kind: number
+    type: integer
+    kind: int
     default: 1
     min: 0
     step: 1
@@ -30,9 +30,9 @@ loop-decompose:
     type: any
   - id: index
     label: Index
-    type: number
+    type: integer
   - id: count
     label: Count
-    type: number
+    type: integer
   pairWith: loop-output
   src: web/nodes/loop/loop-decompose.js

@@ -6,15 +6,15 @@ vector-input:
   in:
   - id: x
     label: X
-    kind: number
+    kind: float
     default: 0.0
   - id: y
     label: Y
-    kind: number
+    kind: float
     default: 0.0
   - id: z
     label: Z
-    kind: number
+    kind: float
     default: 0.0
   out:
   - id: out

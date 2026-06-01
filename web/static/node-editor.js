@@ -5,7 +5,8 @@ const SOCKET_TYPES = {
   text:         { color: "oklch(74% 0.180 235)", label: "String" },
   image:        { color: "oklch(84% 0.190 82)", label: "Image" },
   video:        { color: "oklch(72% 0.210 315)", label: "Video" },
-  number:       { color: "oklch(76% 0.180 165)", label: "Number" },
+  integer:      { color: "oklch(74% 0.17 196)", label: "Integer" },
+  float:        { color: "oklch(80% 0.16 150)", label: "Float" },
   boolean:      { color: "oklch(78% 0.190 45)", label: "Boolean" },
   definition:   { color: "oklch(76% 0.170 185)", label: "Definition" },
   filepath:     { color: "oklch(80% 0.180 58)", label: "File Path" },
@@ -34,6 +35,7 @@ function canConnect(typeA, typeB) {
   
   if (baseType(typeA) === baseType(typeB)) return true;
   if ((typeA === "filepath" || typeA === "text") && (typeB === "filepath" || typeB === "text")) return true;
+  if ((typeA === "integer" || typeA === "float") && (typeB === "integer" || typeB === "float")) return true;
   
   
   if ((typeA === "vector" && typeB === "vector-map") || (typeA === "vector-map" && typeB === "vector")) return true;
@@ -140,7 +142,7 @@ function outputProducesBundle(nodeId, sockId, seen = new Set()) {
       const src = graph.nodes[wired.fromNode];
       let v;
       if (src?.lastResult && !Array.isArray(src.lastResult.value)) v = src.lastResult.value;
-      if (v == null && src?.type === "number-input") v = src.props?.value;
+      if (v == null && (src?.type === "integer-input" || src?.type === "float-input")) v = src.props?.value;
       const n_iter = Number(v);
       if (Number.isFinite(n_iter) && n_iter > 1) return true;
     }
@@ -2984,7 +2986,7 @@ function inferPreviewMediaKind(node, resultKind, value) {
   
   if (k === "vector-map" || k === "vector") return "image";
   if (k && k !== "any" && k !== "text") {
-    if (k === "number" || k === "filepath") return "text";
+    if (k === "integer" || k === "float" || k === "filepath") return "text";
   }
   
   const incoming = graph.edges.find((e) => e.toNode === node.id && e.toSocket === "in");
@@ -3136,7 +3138,10 @@ function isPropWired(nodeId, propId) {
 
 function normalizePropValue(propDef, control) {
   if (propDef.kind === "checkbox") return Boolean(control.checked);
-  if (propDef.kind === "number" || propDef.kind === "range") {
+  if (propDef.kind === "int") {
+    return control.value === "" ? null : Math.trunc(Number(control.value));
+  }
+  if (propDef.kind === "float" || propDef.kind === "range") {
     return control.value === "" ? null : Number(control.value);
   }
   if (propDef.kind === "color") return String(control.value || "#000000");
@@ -3146,7 +3151,12 @@ function normalizePropValue(propDef, control) {
 function coerceWiredPropValue(propDef, value) {
   if (propDef.passthroughWired) return value;
   if (propDef.kind === "checkbox") return coerceBooleanInput(value);
-  if (propDef.kind === "number" || propDef.kind === "range") {
+  if (propDef.kind === "int") {
+    if (value === "" || value == null) return null;
+    const n = Math.trunc(Number(value));
+    return Number.isFinite(n) ? n : null;
+  }
+  if (propDef.kind === "float" || propDef.kind === "range") {
     if (value === "" || value == null) return null;
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
@@ -3238,7 +3248,11 @@ function buildPropValueControl(nodeId, propDef, currentValue, opts = {}) {
       o.value = opt; o.textContent = opt;
       control.appendChild(o);
     }
-  } else if (propDef.kind === "number") {
+  } else if (propDef.kind === "int") {
+    control = document.createElement("input");
+    control.type = "number";
+    control.step = 1;
+  } else if (propDef.kind === "float") {
     control = document.createElement("input");
     control.type = "number";
   } else if (propDef.kind === "color") {

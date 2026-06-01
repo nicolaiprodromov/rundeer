@@ -11,14 +11,14 @@ random:
     type: text
   - id: min
     label: Min
-    kind: number
+    kind: float
     default: 0
-    type: number
+    type: float
   - id: max
     label: Max
-    kind: number
+    kind: float
     default: 100
-    type: number
+    type: float
   - id: charset
     label: Charset
     kind: select

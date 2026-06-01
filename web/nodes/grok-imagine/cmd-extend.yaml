@@ -23,12 +23,12 @@ cmd-extend:
     group: run
   - id: iterations
     label: Iterations
-    kind: number
+    kind: int
     default: 1
     group: run
   - id: concurrency
     label: Concurrency
-    kind: number
+    kind: int
     default: null
     placeholder: auto
     group: run
@@ -49,7 +49,7 @@ cmd-extend:
     group: run
   - id: duration
     label: Duration (s)
-    kind: number
+    kind: int
     default: 6
     group: media
   out:
