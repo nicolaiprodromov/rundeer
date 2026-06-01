@@ -27,6 +27,6 @@ coordinate:
   - id: uv
     label: UV
     type: vector-map
-  traits: [preview, terminal]
+  traits: [preview, terminal, preformatted]
   src: web/nodes/coordinates/coordinate.js
   api: /api/uv/coordinate

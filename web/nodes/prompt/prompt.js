@@ -41,5 +41,6 @@
   }, helpers.opts);
   if (result.error) throw new Error(`prompt: ${result.error}`);
   outputs.out = result.filtered_prompt || inputs.prompt || "";
+  outputs.thinking = result.thinking || "";
   helpers.appendRunLog(`  ↳ "${(outputs.out || "").slice(0, 80).replace(/\n/g, " ")}${outputs.out.length > 80 ? "…" : ""}"\n`);
 } };

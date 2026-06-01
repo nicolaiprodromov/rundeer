@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rundeer.core.paths import DATA_DIRS, codebase_root, data_dir, rundeer_dir
+from rundeer.core.paths import DATA_DIRS, PERSIST_DIRS, codebase_root, data_dir, rundeer_dir
 
 
 def template_rundeer_dir() -> Path:
@@ -32,8 +32,15 @@ def ensure_rundeer_dir(cwd: Path | None = None) -> Path:
         same = False
     if template.is_dir() and not same:
         _copy_missing(template, root)
+    for name in PERSIST_DIRS:
+        (root / name).mkdir(parents=True, exist_ok=True)
     target_data = data_dir(cwd)
     target_data.mkdir(parents=True, exist_ok=True)
     for name in DATA_DIRS:
         (target_data / name).mkdir(parents=True, exist_ok=True)
     return root
+
+
+def clear_data(cwd: Path | None = None) -> None:
+    import shutil
+    shutil.rmtree(data_dir(cwd or Path.cwd()), ignore_errors=True)

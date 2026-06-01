@@ -6,7 +6,7 @@
   "input": null,
 
   "output": {
-    "dir": ".rundeer/data/outputs",
+    "dir": ".rundeer/outputs",
     "name": "lut_pastel_dream"
   },
 

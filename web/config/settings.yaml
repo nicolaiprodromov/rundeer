@@ -26,7 +26,7 @@ settings:
         conv_display: false
         fullscreen: false
     Explore:
-      ignore_patterns: '*.env,*.env.example,__pycache__/,.git/,.venv/,venv/,node_modules/,src/,web/,.gitignore,.repomixignore,package.json,package-lock.json,repomix.config.json,requirements.txt,rundeer.py,__init__.py,__main__.py,.github/,.repomix/,.crush/,.grok/,.rundeer/data/'
+      ignore_patterns: '*.env,*.env.example,__pycache__/,.git/,.venv/,venv/,node_modules/,src/,web/,.gitignore,.repomixignore,package.json,package-lock.json,repomix.config.json,requirements.txt,rundeer.py,__init__.py,__main__.py,.github/,.repomix/,.crush/,.grok/,.rundeer/data/,.rundeer/outputs/,.rundeer/graphs/,.rundeer/agent/'
   Nodes:
     Categories:
       Primitives: oklch(53.5% 0.3 250)

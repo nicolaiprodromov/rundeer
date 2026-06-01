@@ -45,6 +45,23 @@ def filter_prompt_image_urls(root: Path, value: Any) -> List[str]:
     return image_urls
 
 
+def _reasoning_text(message: Any) -> str:
+    def _get(key: str) -> Any:
+        if isinstance(message, dict):
+            return message.get(key)
+        return getattr(message, key, None)
+
+    rc = _get("reasoning_content")
+    if isinstance(rc, str) and rc.strip():
+        return rc
+    blocks = _get("thinking_blocks")
+    if isinstance(blocks, list):
+        joined = "".join(str(b.get("thinking") or "") for b in blocks if isinstance(b, dict)).strip()
+        if joined:
+            return joined
+    return ""
+
+
 def filter_prompt_messages(prompt_text: str, instructions: str, image_urls: List[str]) -> List[Dict[str, Any]]:
     user_content: Any = prompt_text
     if image_urls:
@@ -96,16 +113,37 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         v = _opt_num(key)
         return None if v is None else int(v)
 
+    msgs = filter_prompt_messages(prompt_text, instructions, image_urls)
+
+    reasoning_effort = str(payload.get("reasoning_effort") or "").strip().lower()
+    is_reasoning = reasoning_effort in {"none", "low", "medium", "high", "xhigh"}
+
+    mt = _opt_int("max_tokens")
+    if not (mt and mt > 0):
+        data = get_cached_settings(root)
+        st = float((data.get("settings") or {}).get("Agent", {}).get("Max_tokens") or 0)
+        mt = int(st) if st and st > 0 else 1024
+    if mt >= 99999999:
+        mt = None
+
+    if model_name.startswith("grok_raw/"):
+        import asyncio
+        from rundeer.core.models import GrokRawLLM
+        try:
+            resp = asyncio.run(GrokRawLLM(model=model_name, max_tokens=mt, reasoning_effort=reasoning_effort if is_reasoning else None).acompletion(msgs))
+            msg = resp["choices"][0]["message"]
+            return {"filtered_prompt": msg.get("content") or "", "thinking": _reasoning_text(msg)}
+        except Exception as exc:
+            return {"error": str(exc), "filtered_prompt": prompt_text}
+
     import litellm
     call_kwargs: Dict[str, Any] = {
         "model": model_name,
-        "messages": filter_prompt_messages(prompt_text, instructions, image_urls),
+        "messages": msgs,
     }
     if api_key:
         call_kwargs["api_key"] = api_key
 
-    reasoning_effort = str(payload.get("reasoning_effort") or "").strip().lower()
-    is_reasoning = reasoning_effort in {"none", "low", "medium", "high", "xhigh"}
     if is_reasoning:
         call_kwargs["reasoning_effort"] = reasoning_effort
 
@@ -115,11 +153,8 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     top_p = _opt_num("top_p")
     if top_p is not None:
         call_kwargs["top_p"] = top_p
-    max_tokens = _opt_int("max_tokens")
-    if max_tokens is not None and max_tokens > 0:
-        call_kwargs["max_tokens"] = max_tokens
-    else:
-        call_kwargs["max_tokens"] = 1024
+    if mt is not None:
+        call_kwargs["max_tokens"] = mt
     seed = _opt_int("seed")
     if seed is not None:
         call_kwargs["seed"] = seed
@@ -143,7 +178,7 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         response = litellm.completion(**call_kwargs)
-        filtered = response.choices[0].message.content
-        return {"filtered_prompt": filtered}
+        message = response.choices[0].message
+        return {"filtered_prompt": message.content, "thinking": _reasoning_text(message)}
     except Exception as exc:
         return {"error": str(exc), "filtered_prompt": prompt_text}

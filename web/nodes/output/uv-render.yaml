@@ -26,6 +26,6 @@ uv-render:
   - id: out
     label: Image
     type: image
-  traits: [preview, terminal]
+  traits: [preview, terminal, preformatted]
   src: web/nodes/output/uv-render.js
   api: /api/uv/render

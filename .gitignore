@@ -18,11 +18,12 @@ package-lock.json
 .rundeer/data/*.json
 .rundeer/data/cache/
 .rundeer/data/logs/
-.rundeer/data/outputs/
 .rundeer/data/runs/
-.rundeer/data/agent/
-.rundeer/data/graphs/
 .rundeer/data/benchmark/
+
+.rundeer/outputs/
+.rundeer/agent/
+.rundeer/graphs/
 
 .repomix/
 repomix-output.*

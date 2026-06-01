@@ -69,8 +69,12 @@ def serve(
     open_browser: bool = False,
     enable_agent: bool = True,
     agent_port: Optional[int] = None,
+    cleanup: bool = False,
 ) -> int:
     root = (project_root or Path.cwd()).resolve()
+    if cleanup:
+        from rundeer.core.bootstrap import clear_data
+        clear_data(root)
     ensure_rundeer_dir(root)
     load_settings_yaml(root)
     httpd = RundeerWebServer((host, port), RundeerWebHandler, project_root=root)

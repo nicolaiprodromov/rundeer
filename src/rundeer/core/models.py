@@ -84,6 +84,23 @@ PROXY_MODELS = {
 }
 GROK_RAW_DEFAULT_MODEL = "sxs-claude-opus-4-8"
 
+REASONING_BUDGETS: Dict[str, int] = {
+    "low": 1024,
+    "medium": 2048,
+    "high": 4096,
+    "xhigh": 8192,
+}
+
+
+def _thinking_param(effort: Optional[str], max_tokens: Optional[int]) -> Optional[Dict[str, Any]]:
+    eff = str(effort or "").strip().lower()
+    if eff not in REASONING_BUDGETS:
+        return None
+    budget = REASONING_BUDGETS[eff]
+    if max_tokens and max_tokens <= budget:
+        budget = max(1024, max_tokens - 1)
+    return {"type": "enabled", "budget_tokens": budget}
+
 
 def resolve_llm_api_key(model: str) -> Optional[str]:
     prefix = model.split("/", 1)[0] if "/" in model else ""
@@ -209,10 +226,11 @@ def _parse_sse_line(raw_line: str) -> Optional[Dict[str, Any]]:
 
 class GrokRawLLM:
 
-    def __init__(self, model: Optional[str] = None, max_tokens: Optional[int] = None):
+    def __init__(self, model: Optional[str] = None, max_tokens: Optional[int] = None, reasoning_effort: Optional[str] = None):
         raw_model = model or os.environ.get("GROK_RAW_MODEL") or GROK_RAW_DEFAULT_MODEL
         self.model = raw_model.removeprefix("grok_raw/") if raw_model.startswith("grok_raw/") else raw_model
         self.max_tokens = max_tokens or 16384
+        self.reasoning_effort = reasoning_effort
 
     async def acompletion(self, messages: List[Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
         token = _load_grok_token()
@@ -448,6 +466,9 @@ class GrokRawLLM:
             body["system"] = system
         if tools:
             body["tools"] = tools
+        thinking = _thinking_param(self.reasoning_effort, self.max_tokens)
+        if thinking:
+            body["thinking"] = thinking
         return body
 
     def _proxy_headers(self, token: str) -> Dict[str, str]:

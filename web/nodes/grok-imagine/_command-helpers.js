@@ -58,7 +58,7 @@
     const inputList = Array.isArray(inputs.input)
       ? inputs.input.filter((v) => v).map((v) => String(v)).join(",")
       : (inputs.input || "");
-    const outputDir = str("output_dir", ".rundeer/data/outputs");
+    const outputDir = str("output_dir", ".rundeer/outputs");
     const outputName = str("output_name", "output");
     const model = str("model", "");
     const aspectRatio = str("aspect_ratio", "");

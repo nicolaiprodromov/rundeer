@@ -46,6 +46,6 @@ export:
   - id: out
     label: File
     type: filepath
-  traits: [terminal, heavy]
+  traits: [terminal, heavy, preformatted]
   src: web/nodes/operations/export.js
   api: /api/export

@@ -398,6 +398,7 @@ const COMMAND_TYPES = new Set();
 const HEAVY_TYPES = new Set();
 const BUNDLE_TYPES = new Set();
 const TERMINAL_TYPES = new Set();
+const PREFORMATTED_TYPES = new Set();
 
 const PREVIEW_ZOOM_MIN = 1;
 const PREVIEW_ZOOM_MAX = 4;
@@ -421,12 +422,22 @@ function primaryNodeResult(node, outputs) {
   return { kind, value: value === undefined ? "" : value };
 }
 
+function secondaryOutputs(node, outputs) {
+  const def = NODE_BY_TYPE[node?.type];
+  const socks = (def?.outputs || []).slice(1);
+  if (!socks.length || !outputs) return null;
+  const out = {};
+  for (const s of socks) out[s.id] = outputs[s.id] === undefined ? "" : outputs[s.id];
+  return out;
+}
+
 function stashNodeResult(nodeId, outputs) {
   const node = graph.nodes[nodeId];
   const result = primaryNodeResult(node, outputs);
   if (!node || !result) return false;
   const before = JSON.stringify(node.lastResult || null);
   node.lastResult = result;
+  node.lastOutputs = secondaryOutputs(node, outputs);
   const changed = JSON.stringify(node.lastResult) !== before;
   if (changed) {
     const el = document.querySelector(`[data-node-id="${nodeId}"]`);
@@ -2854,7 +2865,7 @@ function _srcIsPreformatted(nodeId) {
   const edge = graph.edges.find((e) => e.toNode === nodeId);
   if (!edge) return false;
   const src = graph.nodes[edge.fromNode];
-  return src && TERMINAL_TYPES.has(src.type);
+  return src && PREFORMATTED_TYPES.has(src.type);
 }
 
 function _buildPrePreview(node, value) {
@@ -6357,7 +6368,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
       const out = (def.outputs || [])[0];
       if (!node.lastResult) throw new Error("no cached result");
       const v = node.lastResult ? node.lastResult.value : "";
-      const result = {};
+      const result = { ...(node.lastOutputs || {}) };
       if (out) result[out.id] = v;
       cache[cacheKey] = result;
       return result;
@@ -6466,7 +6477,7 @@ async function executeCommandNode(node, inputs, opts = {}) {
 }
 
 async function findArtifactsForRun(runRecord, props, opts = {}) {
-  const outputDir = (props?.output_dir || ".rundeer/data/outputs").replace(/^\.\//, "");
+  const outputDir = (props?.output_dir || ".rundeer/outputs").replace(/^\.\//, "");
   const outputName = String(props?.output_name || "");
   const startedAt = (runRecord.startedAt || 0) - 5;
   
@@ -6501,7 +6512,7 @@ async function findArtifactsForRun(runRecord, props, opts = {}) {
 
 function findArtifactPath(output, props) {
   
-  const dir = props?.output_dir || ".rundeer/data/outputs";
+  const dir = props?.output_dir || ".rundeer/outputs";
   const lines = output.split(/\r?\n/);
   
   const patterns = [
@@ -7705,7 +7716,7 @@ async function saveCurrentGraph(opts = {}) {
     const defaultName = tab?.name && tab.name !== "Untitled" ? tab.name : `graph-${new Date().toISOString().slice(0, 10)}`;
     const result = await openAppDialog({
       title: "Save graph",
-      message: "This writes the graph to .rundeer/data/graphs.",
+      message: "This writes the graph to .rundeer/graphs.",
       inputLabel: "Graph name",
       defaultValue: defaultName,
       confirmText: "Save",
@@ -7841,7 +7852,7 @@ async function deleteSavedGraph(id) {
   if (!saved) return;
   const decision = await openAppDialog({
     title: "Delete graph",
-    message: `Delete "${saved.name}" from .rundeer/data/graphs?`,
+    message: `Delete "${saved.name}" from .rundeer/graphs?`,
     confirmText: "Delete",
     cancelText: "Cancel",
     showInput: false,
@@ -7916,7 +7927,7 @@ function renderGraphsPage() {
       e.stopPropagation();
       const result = await openAppDialog({
         title: "Rename graph",
-        message: "Update the graph name in .rundeer/data/graphs.",
+        message: "Update the graph name in .rundeer/graphs.",
         inputLabel: "Graph name",
         defaultValue: g.name,
         confirmText: "Rename",
@@ -8171,6 +8182,7 @@ function serializeGraph() {
       muted: Boolean(n.muted),
       collapsedPanels: n.collapsedPanels || {},
       lastResult: n.lastResult || null,
+      lastOutputs: n.lastOutputs || null,
       lastRunMs: typeof n.lastRunMs === "number" ? n.lastRunMs : null,
       lastRunStatus: n.lastRunStatus || null,
       lastRunCount: Math.max(0, Number(n.lastRunCount) || 0),
@@ -9499,6 +9511,7 @@ async function loadYamlNodeDefs() {
         if (t === "liveUpdate") LIVE_UPDATE_TYPES.add(type);
         if (t === "producesBundle") BUNDLE_TYPES.add(type);
         if (t === "terminal") TERMINAL_TYPES.add(type);
+        if (t === "preformatted") PREFORMATTED_TYPES.add(type);
       }
     }
   } catch (err) {

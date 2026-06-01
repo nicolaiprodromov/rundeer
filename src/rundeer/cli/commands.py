@@ -639,6 +639,7 @@ Options:
     --open               Open the console in the default browser.
     --agent-port=<port>  WebSocket port for the chat agent. [default: 0]
     --no-agent           Disable the in-browser agent chat.
+    --cleanup            Wipe ephemeral .rundeer/data/ before starting.
 """
 
 
@@ -682,6 +683,7 @@ def cmd_web(argv: List[str]) -> int:
         open_browser=bool(args.get("--open")),
         enable_agent=not bool(args.get("--no-agent")),
         agent_port=agent_port,
+        cleanup=bool(args.get("--cleanup")),
     )
 
 

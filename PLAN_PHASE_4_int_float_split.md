@@ -340,9 +340,9 @@ Sequenced to land the type system before the consumers, minimizing transient bro
 
 ## Breaking Changes / Data Impact
 
-> **DIRECT WARNING TO THE USER:** This phase deletes the `Number` node (`number-input`) and the `number` socket type outright. **Per project hard rules there is NO migration and NO fallback. Every saved graph in `.rundeer/data/graphs/` that contains a `Number` node WILL break.** On load those nodes become unknown types: they will not instantiate/resolve, and every edge connected to them is dropped by `pruneInvalidEdges()` (`node-editor.js:713-721`). You must manually replace each old `Number` with an `Integer` or `Float` node and re-wire it.
+> **DIRECT WARNING TO THE USER:** This phase deletes the `Number` node (`number-input`) and the `number` socket type outright. **Per project hard rules there is NO migration and NO fallback. Every saved graph in `.rundeer/graphs/` that contains a `Number` node WILL break.** On load those nodes become unknown types: they will not instantiate/resolve, and every edge connected to them is dropped by `pruneInvalidEdges()` (`node-editor.js:713-721`). You must manually replace each old `Number` with an `Integer` or `Float` node and re-wire it.
 
-Verified current blast radius (grep `"type": "number-input"` in `.rundeer/data/graphs/`): **9 `Number` instances across 5 graphs** —
+Verified current blast radius (grep `"type": "number-input"` in `.rundeer/graphs/`): **9 `Number` instances across 5 graphs** —
 - `arturito.json` (4)
 - `crop-test.json` (2)
 - `all.json` (1)

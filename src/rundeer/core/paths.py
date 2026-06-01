@@ -7,8 +7,9 @@ from pathlib import Path
 
 RUNDEER_DIRNAME = ".rundeer"
 DATA_DIRNAME = "data"
-DATA_DIRS = ("agent", "benchmark", "cache", "graphs", "logs", "outputs", "runs")
-DEFAULT_OUTPUT_DIR = Path(RUNDEER_DIRNAME) / DATA_DIRNAME / "outputs"
+DATA_DIRS = ("benchmark", "cache", "logs", "runs")
+PERSIST_DIRS = ("graphs", "outputs", "agent")
+DEFAULT_OUTPUT_DIR = Path(RUNDEER_DIRNAME) / "outputs"
 DEFAULT_OUTPUT_DIR_STR = DEFAULT_OUTPUT_DIR.as_posix()
 
 
@@ -64,7 +65,7 @@ def rate_limit_state_path(root: Path | str) -> Path:
 
 
 def default_output_dir(root: Path | str) -> Path:
-    return data_path(root, "outputs")
+    return rundeer_dir(root) / "outputs"
 
 
 def cache_dir(root: Path | str, *parts: str) -> Path:
@@ -76,7 +77,7 @@ def benchmark_dir(root: Path | str, *parts: str) -> Path:
 
 
 def graphs_dir(root: Path | str) -> Path:
-    return data_path(root, "graphs")
+    return rundeer_dir(root) / "graphs"
 
 
 def runs_dir(root: Path | str) -> Path:
@@ -88,7 +89,7 @@ def logs_dir(root: Path | str, *parts: str) -> Path:
 
 
 def agent_dir(root: Path | str) -> Path:
-    return data_path(root, "agent")
+    return rundeer_dir(root) / "agent"
 
 
 def settings_yaml_path(root: Path | str) -> Path:

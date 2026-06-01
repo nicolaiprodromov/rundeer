@@ -8,7 +8,7 @@ from typing import Iterable
 SENSITIVE_NAMES = {".env"}
 SENSITIVE_PREFIXES = (
     ".git/",
-    ".rundeer/data/agent/",
+    ".rundeer/agent/",
     ".rundeer/.rate_limit_state",
 )
 

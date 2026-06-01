@@ -68,5 +68,5 @@ terminal:
   - id: exit_code
     label: Exit Code
     type: number
-  traits: [terminal, heavy]
+  traits: [terminal, heavy, preformatted]
   src: web/nodes/terminal/terminal.js

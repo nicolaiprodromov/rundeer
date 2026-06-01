@@ -3,6 +3,9 @@ prompt-filter:
   category: Prompt
   desc: Use a model to transform a prompt
   in:
+  - id: trigger
+    label: Run
+    type: run
   - id: prompt
     label: Prompt In
     type: text
@@ -22,7 +25,7 @@ prompt-filter:
   - id: reasoning_effort
     label: Reasoning Effort
     kind: select
-    options: [default, none, low, medium, high]
+    options: [default, none, low, medium, high, xhigh]
     default: default
     group: model
   - id: temperature
@@ -40,7 +43,8 @@ prompt-filter:
   - id: max_tokens
     label: Max Tokens
     kind: number
-    default: 1024
+    default: ''
+    placeholder: uses Max_tokens from settings
     group: sampling
   - id: seed
     label: Seed
@@ -70,6 +74,9 @@ prompt-filter:
   - id: out
     label: Prompt Out
     type: text
-  traits: [heavy]
+  - id: thinking
+    label: Thinking
+    type: text
+  traits: [terminal, heavy]
   src: web/nodes/prompt/prompt-filter.js
   api: /api/filter-prompt

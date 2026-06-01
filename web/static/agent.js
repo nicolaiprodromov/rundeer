@@ -1063,7 +1063,7 @@
     if (typeof window.openAppDialog === "function") {
       const result = await window.openAppDialog({
         title: title || "Agent name",
-        message: "Saved under .rundeer/data/agent.",
+        message: "Saved under .rundeer/agent.",
         inputLabel: "Agent name",
         defaultValue: defaultName || "New agent",
         confirmText: "Save",

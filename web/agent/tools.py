@@ -169,7 +169,7 @@ LIST_REFERENCES = ToolSpec(
 
 LIST_ARTIFACTS = ToolSpec(
     name="list_artifacts",
-    description="List recently produced images/videos under .rundeer/data/outputs and benchmark outputs.",
+    description="List recently produced images/videos under .rundeer/outputs and benchmark outputs.",
     parameters=_obj({
         "extra_dirs": {"type": "array", "items": {"type": "string"}},
         "max_results": {"type": "integer"},

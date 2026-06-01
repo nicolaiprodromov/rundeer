@@ -36,7 +36,7 @@ cmd-edit:
   - id: output_dir
     label: Output Dir
     kind: text
-    default: .rundeer/data/outputs
+    default: .rundeer/outputs
     group: run
   - id: output_name
     label: Output Name
