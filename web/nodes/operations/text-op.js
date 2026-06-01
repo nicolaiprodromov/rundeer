@@ -17,8 +17,8 @@
       outputs.out = a.slice(start, end);
       break;
     }
-    case "to_int":   outputs.out = parseInt(a, 10) || 0; break;
-    case "to_float": outputs.out = parseFloat(a) || 0; break;
+    case "to_int":   outputs.out = parseInt(a, 10); break;
+    case "to_float": outputs.out = parseFloat(a); break;
     case "length":   outputs.out = a.length; break;
     default:         outputs.out = a;
   }

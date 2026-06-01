@@ -26,3 +26,23 @@
 ## PHASE 5
  
 1. we need new string operations: `to_int` and `to_float` in the String Op node
+
+## PHASE 6
+
+1. color ramp node like in blender - look up on the internet how the color ramp node works and whats its for and we need to make an identical node in rundeer, we need to make it in the operations category and name it `Ramp` and it should render on demand not only when running the graph, so the user can tweak things
+
+## PHASE 7
+
+1. noise node like in blender - we need to look online to see exactly what parameters and how the noise is coded so we can get a super high quality noise node. - noise updates on demand so the user can tweak it visually. we put this new node in the Textures category
+
+## PHASE 8
+
+1. the compression node must have different compression methods (lossless is one that comes to mind what else can you think of? i also want a method that pixelates in a way, like if i turn the quality down to 0 it will show only 4 big pixels) and also it should work with uvs and images and videos. think of the compression methods list them and i will tell you what i want and we proceed from there
+
+## PHASE 9
+
+1. we need a new `Separate XYZ` node that can separate the components of a vector, but it should work with any visual data type, images, uvs, vectors whatever. while we do this can also make the `Separate RGB` node (with dropdown socket for HSV, oklch, HEX and if we need any other color type that you can think of) that separates into components based on the type chosen (for hsv is hue saturaion value, for hex is the hex code, for oklch is the components of oklch which i dont know).
+
+## PHASE 10
+
+1. 

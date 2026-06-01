@@ -21,5 +21,5 @@ text-op:
   out:
   - id: out
     label: Result
-    type: text
+    type: any
   src: web/nodes/operations/text-op.js
