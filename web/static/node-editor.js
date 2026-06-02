@@ -629,6 +629,36 @@ function addNode(type, canvasX, canvasY, opts = {}) {
 
 
 
+async function dropFilesToCanvas(files, pos) {
+  const cols = Math.max(1, Math.ceil(Math.sqrt(files.length)));
+  const stepX = 360, stepY = 300;
+  const ids = [];
+  await Promise.all(files.map(async (file, i) => {
+    const x = pos.x + (i % cols) * stepX - 160;
+    const y = pos.y + Math.floor(i / cols) * stepY - 130;
+    try {
+      const res = await fetch(`/api/canvas-drop?name=${encodeURIComponent(file.name || "file")}`, {
+        method: "POST", body: file,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { path } = await res.json();
+      const id = addNode("file", x, y, { props: { path }, skipSelect: true, skipAutosave: true });
+      if (id) ids.push(id);
+    } catch (err) {
+      console.warn("[canvas-drop] failed", file.name, err);
+    }
+  }));
+  if (ids.length) {
+    ix.selection.clear();
+    for (const id of ids) ix.selection.add(id);
+    updateSelectionVisuals();
+    scheduleAutosave();
+    schedulePreviewRefresh();
+  }
+}
+
+
+
 
 function removeNode(id) {
   
@@ -9571,8 +9601,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   wrap.addEventListener("drop", (e) => {
     e.preventDefault();
     const type = e.dataTransfer.getData("rundeer/node-type");
-    if (!type) return;
     const pos = screenToCanvas(e.clientX, e.clientY);
+    if (!type) {
+      const files = [...(e.dataTransfer.files || [])];
+      if (files.length) dropFilesToCanvas(files, pos);
+      return;
+    }
     addNode(type, pos.x - 110, pos.y - 30);
   });
 

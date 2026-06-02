@@ -37,6 +37,7 @@ from web.nodes.operations.resize_media import resize_media_node
 from web.nodes.output.canvas import canvas_media_node
 from web.nodes.prompt.filter_prompt import filter_prompt
 from web.nodes.bundle.folder_bundle import list_folder
+from web.drop_ingest import save_drop_stream
 import fnmatch
 from web.config.settings_manager import get_cached_settings, load_settings_yaml, merge_settings_yaml
 
@@ -293,6 +294,11 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         self.server.record_request("POST", parsed.path)
         try:
+            if parsed.path == "/api/canvas-drop":
+                name = (parse_qs(parsed.query).get("name") or [""])[0]
+                length = int(self.headers.get("Content-Length", "0") or "0")
+                self._send_json(save_drop_stream(self.server.project_root, unquote(name), self.rfile, length))
+                return
             payload = self._read_json()
             if parsed.path == "/api/plan":
                 self._send_json(run_plan(self.server.project_root, payload))
