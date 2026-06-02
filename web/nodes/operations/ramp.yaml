@@ -1,0 +1,23 @@
+ramp:
+  label: Ramp
+  category: Operations
+  desc: Map a 0-1 factor to a color through draggable color stops. Mirrors Blender's Color Ramp.
+  defaultWidth: 260
+  resizable: true
+  in:
+  - id: fac
+    label: Fac
+    kind: range
+    min: 0
+    max: 1
+    step: 0.01
+    default: 0.5
+    passthroughWired: true
+    type: any
+  out:
+  - id: out
+    label: Out
+    type: any
+  traits: [liveUpdate]
+  src: web/nodes/operations/ramp.js
+  api: /api/uv/ramp

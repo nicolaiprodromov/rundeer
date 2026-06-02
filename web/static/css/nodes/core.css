@@ -959,3 +959,84 @@ body.is-resizing .ne-node-resize {
   text-decoration: line-through;
   text-decoration-color: color-mix(in oklch, var(--quiet) 50%, transparent);
 }
+
+.ne-ramp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 8px 12px 11px;
+}
+.ne-ramp-bar {
+  width: 100%;
+  height: 24px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  cursor: copy;
+  display: block;
+  image-rendering: pixelated;
+}
+.ne-ramp-track {
+  position: relative;
+  height: 14px;
+  margin: 0 1px;
+}
+.ne-ramp-stop {
+  position: absolute;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  cursor: ew-resize;
+}
+.ne-ramp-stop.is-selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1.5px var(--gold);
+  z-index: 2;
+}
+.ne-ramp-controls {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 26px minmax(0, 1.2fr);
+  align-items: center;
+  gap: 6px;
+}
+.ne-ramp-color {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.ne-ramp-pos,
+.ne-ramp-interp {
+  height: 24px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 0 6px;
+}
+.ne-ramp-del {
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-soft);
+  cursor: pointer;
+  line-height: 1;
+}
+.ne-ramp-del:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+.ne-ramp-del:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

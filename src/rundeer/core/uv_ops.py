@@ -92,7 +92,7 @@ def save_image(arr: np.ndarray, project_root: Path, tag: str) -> Path:
         alpha = np.ones(arr.shape[:2] + (1,), dtype=arr.dtype)
         arr = np.concatenate([arr, alpha], axis=-1)
     arr = np.clip(arr, 0.0, 1.0)
-    key = _hash_key(tag, arr.shape, arr.tobytes()[:512])
+    key = _hash_key(tag, arr.shape, arr.tobytes())
     cache = _cache_dir(project_root)
     png = cache / f"{tag}_{key}.png"
     if not png.exists():
@@ -537,3 +537,37 @@ def mix(
     blended = _blend(A, B, mode) if mode != "mix" else B
     out = (1.0 - F) * A + F * blended
     return out.astype(np.float32)
+
+
+RAMP_INTERP = {"linear", "constant", "ease"}
+
+
+def color_ramp(fac: Any, positions: Sequence[float], colors: Sequence[Sequence[float]], interp: str = "linear") -> np.ndarray:
+    interp = (interp or "linear").lower()
+    if interp not in RAMP_INTERP:
+        raise ValueError(f"unknown ramp interp: {interp}")
+    P = np.asarray(positions, dtype=np.float32)
+    C = np.asarray(colors, dtype=np.float32)
+    if C.ndim == 1:
+        C = C.reshape(1, -1)
+    order = np.argsort(P)
+    P = P[order]
+    C = C[order]
+    f = _as_array(fac)
+    if f.ndim == 3:
+        f = f[..., 0]
+    fl = np.clip(f, 0.0, 1.0)
+    if interp == "constant":
+        k = np.clip(np.searchsorted(P, fl, side="right") - 1, 0, len(P) - 1)
+        out = C[k]
+    else:
+        i1 = np.clip(np.searchsorted(P, fl, side="right"), 1, len(P) - 1)
+        i0 = i1 - 1
+        denom = np.maximum(P[i1] - P[i0], 1e-8)
+        u = np.clip((fl - P[i0]) / denom, 0.0, 1.0)
+        if interp == "ease":
+            u = u * u * (3.0 - 2.0 * u)
+        c0 = C[i0]
+        c1 = C[i1]
+        out = c0 + (c1 - c0) * u[..., None]
+    return np.asarray(out, dtype=np.float32)
