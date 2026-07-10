@@ -9,7 +9,7 @@
   --ne-grid-major-y: 0px;
   --ne-grid-opacity: 1;
   background:
-    radial-gradient(ellipse 800px 500px at 30% 40%, oklch(16% 0.010 80 / 0.5) 0%, transparent 70%),
+    radial-gradient(ellipse 800px 500px at 30% 40%, oklch(16% 0 0 / 0.5) 0%, transparent 70%),
     var(--bg-deep);
   cursor: default;
 }
@@ -21,10 +21,10 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(to right, oklch(48% 0.012 88 / 0.5) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(48% 0.012 88 / 0.5) 1px, transparent 1px),
-    linear-gradient(to right, oklch(34% 0.008 80 / 0.7) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(34% 0.008 80 / 0.7) 1px, transparent 1px);
+    linear-gradient(to right, oklch(48% 0 0 / 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(48% 0 0 / 0.5) 1px, transparent 1px),
+    linear-gradient(to right, oklch(34% 0 0 / 0.7) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(34% 0 0 / 0.7) 1px, transparent 1px);
   background-size:
     var(--ne-grid-major-size) var(--ne-grid-major-size),
     var(--ne-grid-major-size) var(--ne-grid-major-size),
@@ -63,7 +63,7 @@
 
 .ne-wire-temp {
   vector-effect: non-scaling-stroke;
-  stroke: var(--gold);
+  stroke: var(--accent);
   stroke-width: 1.5;
   stroke-dasharray: 4 3;
   fill: none;
@@ -77,8 +77,8 @@
 
 .ne-box-select {
   position: absolute;
-  border: 1px solid color-mix(in oklch, var(--ne-selection-color, var(--gold-soft)) 80%, transparent);
-  background: color-mix(in oklch, var(--ne-selection-color, var(--gold)) 8%, transparent);
+  border: 1px solid color-mix(in oklch, var(--ne-selection-color, var(--accent-2)) 80%, transparent);
+  background: color-mix(in oklch, var(--ne-selection-color, var(--accent)) 8%, transparent);
   pointer-events: none;
 }
 
@@ -120,13 +120,13 @@
 
 .ne-cut-path {
   fill: none;
-  stroke: oklch(68% 0.20 25);
+  stroke: var(--bad);
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 1 6;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 4px oklch(68% 0.20 25 / 0.55));
+  filter: drop-shadow(0 0 4px color-mix(in oklch, var(--bad) 55%, transparent));
   animation: cut-march 0.45s linear infinite;
   pointer-events: none;
 }
@@ -136,15 +136,15 @@
 
 .ne-canvas-wrap {
   --ne-grid-opacity: 0.26;
-  background: oklch(7.5% 0.004 80);
+  background: oklch(7.5% 0 0);
 }
 
 .ne-canvas-wrap::before {
   background-image:
-    radial-gradient(circle at 0 0, oklch(61% 0.022 88 / 0.56) 0 1px, transparent 1.4px),
-    radial-gradient(circle at 0 0, oklch(48% 0.014 80 / 0.52) 0 1px, transparent 1.3px),
-    linear-gradient(to right, oklch(44% 0.012 80 / 0.24) var(--ne-grid-thickness, 1px), transparent var(--ne-grid-thickness, 1px)),
-    linear-gradient(to bottom, oklch(44% 0.012 80 / 0.24) var(--ne-grid-thickness, 1px), transparent var(--ne-grid-thickness, 1px));
+    radial-gradient(circle at 0 0, oklch(61% 0 0 / 0.56) 0 1px, transparent 1.4px),
+    radial-gradient(circle at 0 0, oklch(48% 0 0 / 0.52) 0 1px, transparent 1.3px),
+    linear-gradient(to right, oklch(44% 0 0 / 0.24) var(--ne-grid-thickness, 1px), transparent var(--ne-grid-thickness, 1px)),
+    linear-gradient(to bottom, oklch(44% 0 0 / 0.24) var(--ne-grid-thickness, 1px), transparent var(--ne-grid-thickness, 1px));
   background-size:
     var(--ne-grid-major-size) var(--ne-grid-major-size),
     var(--ne-grid-size) var(--ne-grid-size),

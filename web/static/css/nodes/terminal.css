@@ -38,7 +38,7 @@
 }
 
 .ne-term-status[data-state="connecting"] {
-  color: var(--gold);
+  color: var(--accent);
 }
 
 .ne-term-status[data-state="disconnected"] {
@@ -46,7 +46,7 @@
 }
 
 .ne-term-status[data-state="error"] {
-  color: oklch(72% 0.15 25);
+  color: var(--bad);
 }
 
 .ne-term-container {
@@ -86,7 +86,6 @@
   height: 22px;
   padding: 0 10px;
   border: 1px solid color-mix(in oklch, var(--line-strong) 60%, transparent);
-  border-radius: var(--radius);
   background: color-mix(in oklch, var(--surface-3) 60%, var(--bg-deep));
   color: var(--text-soft);
   font-family: var(--font-mono);
@@ -99,8 +98,8 @@
 }
 
 .ne-term-btn:hover {
-  background: var(--gold);
-  border-color: var(--gold);
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--bg-deep);
 }
 

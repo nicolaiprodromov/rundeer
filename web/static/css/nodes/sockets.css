@@ -13,7 +13,6 @@
   position: absolute;
   width: 14px;
   height: 14px;
-  border-radius: 50%;
   border: 2px solid var(--bg-deep);
   cursor: crosshair;
   z-index: 2;
@@ -49,7 +48,6 @@
   content: "";
   position: absolute;
   inset: 2px;
-  border-radius: 50%;
   background: currentColor;
   opacity: 0.6;
 }
@@ -123,7 +121,6 @@
 }
 
 .ne-socket[data-bundle="1"] {
-  border-radius: 3px;
   box-shadow:
     0 0 0 2px var(--bg-deep),
     0 0 0 3px currentColor,
@@ -133,7 +130,6 @@
   content: "";
   position: absolute;
   inset: 2px;
-  border-radius: 1px;
   background: var(--bg-deep);
   opacity: 0.35;
   pointer-events: none;
@@ -166,14 +162,13 @@
   width: 18px;
   height: 18px;
   border-width: 2px;
-  border-color: oklch(7.5% 0.004 80);
+  border-color: oklch(7.5% 0 0);
 }
 
 .ne-socket::before {
   content: "";
   position: absolute;
   inset: -10px;
-  border-radius: 999px;
 }
 
 .ne-socket-row.is-input .ne-socket,
@@ -202,7 +197,7 @@ body.is-wiring .ne-socket:not(.ne-node-compact-socket).is-compatible {
 
 .ne-socket.is-connected::after {
   inset: 4px;
-  background: oklch(98% 0.003 80);
+  background: oklch(98% 0 0);
   opacity: 0.72;
 }
 
@@ -220,8 +215,7 @@ body.is-wiring .ne-socket:not(.ne-node-compact-socket).is-compatible {
   width: 14px;
   height: 32px;
   transform: translateY(-50%);
-  border-radius: 999px;
-  border: 2px solid oklch(7.5% 0.004 80);
+  border: 2px solid oklch(7.5% 0 0);
   transition: box-shadow var(--duration-fast) var(--ease-out);
   box-shadow:
     0 0 0 1px color-mix(in oklch, currentColor 46%, transparent),
@@ -246,8 +240,7 @@ body.is-wiring .ne-socket:not(.ne-node-compact-socket).is-compatible {
   width: 5px;
   height: 19px;
   transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: oklch(98% 0.003 80 / 0.84);
+  background: oklch(98% 0 0 / 0.84);
   opacity: 1;
 }
 
@@ -271,8 +264,7 @@ body.is-wiring .ne-node-compact-socket.is-compatible {
   width: 9px;
   height: 28px;
   transform: translateY(-50%);
-  border: 2px solid oklch(7.5% 0.004 80);
-  border-radius: 999px;
+  border: 2px solid oklch(7.5% 0 0);
   box-shadow:
     0 0 0 1px color-mix(in oklch, currentColor 45%, transparent),
     0 0 10px color-mix(in oklch, currentColor 30%, transparent);
@@ -293,6 +285,5 @@ body.is-wiring .ne-node-compact-socket.is-compatible {
   width: 3px;
   height: 16px;
   transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: oklch(98% 0.003 80 / 0.82);
+  background: oklch(98% 0 0 / 0.82);
 }

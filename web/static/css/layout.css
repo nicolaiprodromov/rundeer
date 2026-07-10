@@ -44,7 +44,7 @@
   inset: 0 -3px;
 }
 .ne-side-resizer:hover,
-.ne-side-resizer.is-active { background: var(--gold-soft); }
+.ne-side-resizer.is-active { background: var(--accent-2); }
 
 .ne-shell.hide-nmenu .ne-workbench { grid-template-columns: 0 0 minmax(0, 1fr); }
 .ne-shell.hide-nmenu .ne-nmenu,

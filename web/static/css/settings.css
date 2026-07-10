@@ -52,7 +52,7 @@
 }
 .settings-resizer:hover,
 .settings-resizer.is-active {
-  background: var(--gold-soft);
+  background: var(--accent-2);
 }
 
 .settings-runs .runs-inner {
@@ -115,7 +115,7 @@
   transition: background var(--duration-fast), color var(--duration-fast);
 }
 .yaml-section summary:hover {
-  background: color-mix(in oklch, var(--gold) 6%, var(--surface));
+  background: color-mix(in oklch, var(--accent) 6%, var(--surface));
   color: var(--text-soft);
 }
 .yaml-section summary::marker {
@@ -185,7 +185,7 @@
 }
 .yaml-field input:focus,
 .yaml-field select:focus {
-  border-color: var(--gold-soft);
+  border-color: var(--accent-2);
   outline: none;
 }
 .yaml-field input::placeholder {
@@ -198,7 +198,6 @@
   height: 16px;
   border: 1px solid var(--line);
   background: var(--bg-deep);
-  border-radius: 8px;
   position: relative;
   cursor: pointer;
   transition: background var(--duration-fast), border-color var(--duration-fast);
@@ -210,17 +209,16 @@
   left: 2px;
   width: 10px;
   height: 10px;
-  border-radius: 50%;
   background: var(--quiet);
   transition: transform var(--duration-fast), background var(--duration-fast);
 }
 .yaml-field .yaml-toggle:checked {
-  background: color-mix(in oklch, var(--gold) 30%, var(--surface));
-  border-color: var(--gold-soft);
+  background: color-mix(in oklch, var(--accent) 30%, var(--surface));
+  border-color: var(--accent-2);
 }
 .yaml-field .yaml-toggle:checked::after {
   transform: translateX(16px);
-  background: var(--gold);
+  background: var(--accent);
 }
 
 .yaml-color-wrap {
@@ -232,7 +230,6 @@
   width: 18px;
   height: 18px;
   border: 1px solid var(--line);
-  border-radius: 2px;
   flex-shrink: 0;
 }
 .yaml-color-wrap input {

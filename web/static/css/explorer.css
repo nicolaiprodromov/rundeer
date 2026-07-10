@@ -56,7 +56,7 @@
   position: absolute;
   inset: 0 -3px;
 }
-.ex-resizer:hover, .ex-resizer.is-active { background: var(--gold-soft); }
+.ex-resizer:hover, .ex-resizer.is-active { background: var(--accent-2); }
 
 .ex-preview-body {
   display: flex;
@@ -116,7 +116,7 @@
   border-left: 0;
 }
 #exFileTree .tree-row:hover {
-  background: color-mix(in oklch, var(--gold) 7%, var(--surface-2));
+  background: color-mix(in oklch, var(--accent) 7%, var(--surface-2));
 }
 #exFileTree .tree-dir {
   font-weight: 600;
@@ -126,7 +126,7 @@
 }
 
 .tree-row.tree-file.is-selected {
-  background: color-mix(in oklch, var(--gold) 12%, var(--surface));
+  background: color-mix(in oklch, var(--accent) 12%, var(--surface));
   color: var(--text);
-  border-left: 2px solid var(--gold-soft);
+  border-left: 2px solid var(--accent-2);
 }

@@ -17,9 +17,8 @@
   min-height: 52px;
   box-sizing: border-box;
   padding: 0 14px;
-  border-radius: var(--radius);
-  background: var(--gold);
-  border: 1px solid color-mix(in oklch, var(--gold) 72%, var(--line-strong));
+  background: var(--accent);
+  border: 1px solid color-mix(in oklch, var(--accent) 72%, var(--line-strong));
   color: var(--bg-deep);
   cursor: pointer;
   font-family: var(--font-mono);
@@ -31,14 +30,14 @@
   transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
 .ne-shell .ne-node[data-node-type="run-trigger"] .ne-run-play:hover {
-  background: color-mix(in oklch, var(--gold) 86%, var(--text));
-  border-color: var(--gold);
+  background: color-mix(in oklch, var(--accent) 86%, var(--text));
+  border-color: var(--accent);
   box-shadow: none;
   transform: none;
 }
 .ne-shell .ne-node[data-node-type="run-trigger"] .ne-run-play:active { transform: translateY(1px); }
 .ne-shell .ne-node[data-node-type="run-trigger"] .ne-run-play:focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--gold) 68%, var(--text));
+  outline: 2px solid color-mix(in oklch, var(--accent) 68%, var(--text));
   outline-offset: 2px;
 }
 .ne-shell .ne-node[data-node-type="run-trigger"] .ne-run-play svg { width: 18px; height: 18px; display: block; }
@@ -63,7 +62,6 @@
   min-height: 48px;
   box-sizing: border-box;
   padding: 0 14px;
-  border-radius: var(--radius);
   background: color-mix(in oklch, var(--surface-3) 72%, var(--bg-deep));
   border: 1px solid var(--line-strong);
   color: var(--quiet);
@@ -76,20 +74,20 @@
   transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
 .ne-shell .ne-node[data-node-type="pause"] .ne-pause-resume.is-active {
-  background: var(--violet);
-  border-color: color-mix(in oklch, var(--violet) 78%, var(--text));
+  background: var(--accent);
+  border-color: color-mix(in oklch, var(--accent) 78%, var(--text));
   color: var(--bg-deep);
   cursor: pointer;
 }
 .ne-shell .ne-node[data-node-type="pause"] .ne-pause-resume.is-active:hover {
-  background: color-mix(in oklch, var(--violet) 86%, var(--text));
+  background: color-mix(in oklch, var(--accent) 86%, var(--text));
 }
 .ne-shell .ne-node[data-node-type="pause"] .ne-pause-resume:disabled {
   opacity: 0.62;
 }
 .ne-shell .ne-node[data-node-type="pause"] .ne-pause-resume.is-active:active { transform: translateY(1px); }
 .ne-shell .ne-node[data-node-type="pause"] .ne-pause-resume:focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--violet) 68%, var(--text));
+  outline: 2px solid color-mix(in oklch, var(--accent) 68%, var(--text));
   outline-offset: 2px;
 }
 
@@ -107,7 +105,6 @@
     linear-gradient(180deg, color-mix(in oklch, var(--surface-3) 28%, transparent), transparent 42px),
     var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
   user-select: none;
   cursor: default;
   transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
@@ -121,25 +118,25 @@
 }
 
 .ne-node.is-selected {
-  border-color: var(--gold);
+  border-color: var(--accent);
   box-shadow:
-    0 0 0 1px color-mix(in oklch, var(--gold) 40%, transparent),
-    0 4px 24px color-mix(in oklch, var(--gold) 14%, transparent);
+    0 0 0 1px color-mix(in oklch, var(--accent) 40%, transparent),
+    0 4px 24px color-mix(in oklch, var(--accent) 14%, transparent);
 }
 
 .ne-node.is-executing {
-  border-color: var(--violet);
-  box-shadow: 0 0 12px color-mix(in oklch, var(--violet) 25%, transparent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px color-mix(in oklch, var(--accent) 25%, transparent);
   animation: pulse 1.4s ease-in-out infinite;
 }
 
 .ne-node.is-done {
-  border-color: var(--gold);
+  border-color: var(--accent);
 }
 
 .ne-node.is-failed {
-  border-color: oklch(72% 0.15 25);
-  box-shadow: 0 0 10px oklch(72% 0.15 25 / 0.2);
+  border-color: var(--bad);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--bad) 20%, transparent);
 }
 
 .ne-node.is-cancelled {
@@ -155,7 +152,7 @@
 
 .ne-node.is-muted.is-selected {
   opacity: 0.74;
-  border-color: color-mix(in oklch, var(--gold) 42%, var(--line-strong));
+  border-color: color-mix(in oklch, var(--accent) 42%, var(--line-strong));
 }
 
 .ne-node.is-muted .ne-node-label {
@@ -176,7 +173,6 @@
   padding: 10px 11px 10px 13px;
   border-bottom: 1px solid var(--line);
   cursor: grab;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: color-mix(in oklch, var(--surface-3) 60%, transparent);
 }
 .ne-node-header:active { cursor: grabbing; }
@@ -184,7 +180,6 @@
 .ne-node-type-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
   flex-shrink: 0;
   opacity: 0.85;
 }
@@ -211,13 +206,12 @@
   justify-content: center;
   font-size: 14px;
   color: var(--whisper);
-  border-radius: var(--radius);
   cursor: pointer;
   flex-shrink: 0;
   transition: color var(--duration-fast), background var(--duration-fast);
   line-height: 1;
 }
-.ne-node-close:hover { color: oklch(72% 0.15 25); background: oklch(72% 0.15 25 / 0.12); }
+.ne-node-close:hover { color: var(--bad); background: color-mix(in oklch, var(--bad) 12%, transparent); }
 
 .ne-node-refresh,
 .ne-node-collapse,
@@ -231,7 +225,6 @@
   justify-content: center;
   font-size: 13px;
   color: var(--whisper);
-  border-radius: var(--radius);
   cursor: pointer;
   flex-shrink: 0;
   transition: color var(--duration-fast), background var(--duration-fast);
@@ -243,12 +236,12 @@
 .ne-node-collapse:hover,
 .ne-node-fold-lock:hover,
 .ne-node-mute:hover,
-.ne-node-hide:hover { color: var(--text); background: oklch(70% 0.05 250 / 0.12); }
+.ne-node-hide:hover { color: var(--text); background: oklch(96% 0 0 / 0.12); }
 
 .ne-node-fold-lock.is-active,
 .ne-node-mute.is-active,
 .ne-node-hide.is-active {
-  color: color-mix(in oklch, var(--gold) 72%, var(--text));
+  color: color-mix(in oklch, var(--accent) 72%, var(--text));
 }
 
 .ne-node-body {
@@ -259,7 +252,7 @@
 
 
 .ne-node.is-lazy-target {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -273,7 +266,6 @@
       color-mix(in oklch, var(--node-accent) 3%, var(--surface-2)) 38px,
       var(--surface-2) 100%);
   border: 1px solid color-mix(in oklch, var(--node-accent) 35%, var(--line));
-  border-radius: 7px;
   box-shadow:
     0 1px 0 color-mix(in oklch, var(--text) 5%, transparent) inset,
     0 14px 28px oklch(0% 0 0 / 0.32),
@@ -282,11 +274,11 @@
 }
 
 .ne-node.is-selected {
-  border-color: var(--gold);
+  border-color: var(--accent);
   box-shadow:
-    0 1px 0 color-mix(in oklch, var(--gold) 18%, transparent) inset,
-    0 0 0 1px color-mix(in oklch, var(--gold) 35%, transparent),
-    0 14px 32px color-mix(in oklch, var(--gold) 12%, oklch(0% 0 0 / 0.35));
+    0 1px 0 color-mix(in oklch, var(--accent) 18%, transparent) inset,
+    0 0 0 1px color-mix(in oklch, var(--accent) 35%, transparent),
+    0 14px 32px color-mix(in oklch, var(--accent) 12%, oklch(0% 0 0 / 0.35));
 }
 
 .ne-node-header {
@@ -294,7 +286,6 @@
   padding: 9px 10px 9px 12px;
   background: var(--node-accent, var(--surface-3));
   border-bottom: 1px solid oklch(0% 0 0 / 0.12);
-  border-radius: 6px 6px 0 0;
 }
 .ne-node-header::after {
   display: none;
@@ -327,7 +318,6 @@
   width: 16px;
   height: 16px;
   font-size: 11px;
-  border-radius: 3px;
 }
 
 .ne-node {
@@ -393,15 +383,14 @@ body.is-modal .ne-node {
   top: 50%;
   height: 6px;
   transform: translateY(-50%);
-  border-radius: 999px;
   background: color-mix(in oklch, var(--node-accent) 36%, var(--surface-3));
   border: 1px solid color-mix(in oklch, var(--node-accent) 52%, var(--line));
   box-shadow: 0 2px 8px oklch(0% 0 0 / 0.22);
 }
 
 .ne-reroute-node.is-selected .ne-reroute-body::before {
-  border-color: color-mix(in oklch, var(--gold) 72%, var(--node-accent));
-  box-shadow: 0 0 0 1px color-mix(in oklch, var(--gold) 35%, transparent), 0 2px 10px oklch(0% 0 0 / 0.28);
+  border-color: color-mix(in oklch, var(--accent) 72%, var(--node-accent));
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent) 35%, transparent), 0 2px 10px oklch(0% 0 0 / 0.28);
 }
 
 .ne-reroute-mute {
@@ -447,7 +436,6 @@ body.is-modal .ne-node {
   z-index: 6;
   cursor: nwse-resize;
   opacity: 0;
-  border-radius: 3px;
   background:
     linear-gradient(135deg, transparent 0 42%, color-mix(in oklch, var(--node-accent) 70%, var(--quiet)) 42% 50%, transparent 50%),
     linear-gradient(135deg, transparent 0 62%, color-mix(in oklch, var(--node-accent) 70%, var(--quiet)) 62% 70%, transparent 70%);
@@ -461,8 +449,8 @@ body.is-resizing .ne-node-resize {
 .ne-node-resize:hover {
   opacity: 1;
   background:
-    linear-gradient(135deg, transparent 0 42%, var(--gold) 42% 50%, transparent 50%),
-    linear-gradient(135deg, transparent 0 62%, var(--gold) 62% 70%, transparent 70%);
+    linear-gradient(135deg, transparent 0 42%, var(--accent) 42% 50%, transparent 50%),
+    linear-gradient(135deg, transparent 0 62%, var(--accent) 62% 70%, transparent 70%);
 }
 
 .ne-node.is-preview { z-index: 3; }
@@ -480,7 +468,7 @@ body.is-resizing .ne-node-resize {
   filter: blur(1.2px) saturate(1.08);
   box-shadow:
     0 8px 22px oklch(0% 0 0 / 0.28),
-    0 0 16px color-mix(in oklch, var(--violet) 32%, transparent);
+    0 0 16px color-mix(in oklch, var(--accent) 32%, transparent);
 }
 .ne-node.is-fold-exposed {
   z-index: 4;
@@ -489,7 +477,7 @@ body.is-resizing .ne-node-resize {
   filter: none;
   box-shadow:
     0 10px 26px oklch(0% 0 0 / 0.24),
-    0 0 0 1px color-mix(in oklch, var(--gold) 18%, transparent);
+    0 0 0 1px color-mix(in oklch, var(--accent) 18%, transparent);
 }
 .ne-node.is-preview.is-selected { z-index: 12; }
 
@@ -523,14 +511,13 @@ body.is-resizing .ne-node-resize {
 .ne-node {
   background: color-mix(in oklch, var(--surface-2) 78%, var(--surface-3));
   border-color: color-mix(in oklch, var(--line-strong) 54%, transparent);
-  border-radius: var(--radius);
   box-shadow: 0 12px 30px oklch(0% 0 0 / 0.26);
 }
 
 .ne-node.is-selected {
-  border-color: var(--gold);
+  border-color: var(--accent);
   box-shadow:
-    0 0 0 1px color-mix(in oklch, var(--gold) 42%, transparent),
+    0 0 0 1px color-mix(in oklch, var(--accent) 42%, transparent),
     0 8px 24px oklch(0% 0 0 / 0.34);
 }
 
@@ -538,7 +525,6 @@ body.is-resizing .ne-node-resize {
   padding: 7px 9px 7px 11px;
   background: var(--node-accent, var(--surface-3));
   border-bottom-color: oklch(0% 0 0 / 0.12);
-  border-radius: var(--radius) var(--radius) 0 0;
   box-shadow:
     inset 0 1px 0 oklch(100% 0 0 / 0.08);
 }
@@ -551,7 +537,7 @@ body.is-resizing .ne-node-resize {
   font-weight: 780;
   letter-spacing: 0;
   text-transform: none;
-  color: oklch(10% 0.006 80);
+  color: oklch(10% 0 0);
   text-shadow: none;
   cursor: text;
 }
@@ -561,10 +547,9 @@ body.is-resizing .ne-node-resize {
   min-width: 0;
   height: 23px;
   padding: 0 6px;
-  border: 1px solid oklch(10% 0.006 80 / 0.38);
-  border-radius: var(--radius);
-  background: oklch(98% 0.006 88 / 0.92);
-  color: oklch(10% 0.006 80);
+  border: 1px solid oklch(10% 0 0 / 0.38);
+  background: oklch(98% 0 0 / 0.92);
+  color: oklch(10% 0 0);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 760;
@@ -593,10 +578,9 @@ body.is-resizing .ne-node-resize {
 .ne-node-hide {
   width: 22px;
   height: 22px;
-  border: 1px solid oklch(96% 0.004 88 / 0.18);
-  border-radius: var(--radius);
-  background: oklch(9% 0.006 80 / 0.78);
-  color: oklch(96% 0.004 88);
+  border: 1px solid oklch(96% 0 0 / 0.18);
+  background: oklch(9% 0 0 / 0.78);
+  color: oklch(96% 0 0);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
@@ -611,16 +595,16 @@ body.is-resizing .ne-node-resize {
 .ne-node-fold-lock:hover,
 .ne-node-mute:hover,
 .ne-node-hide:hover {
-  border-color: color-mix(in oklch, var(--gold) 72%, oklch(96% 0.004 88 / 0.18));
-  background: var(--gold);
+  border-color: color-mix(in oklch, var(--accent) 72%, oklch(96% 0 0 / 0.18));
+  background: var(--accent);
   color: var(--bg-deep);
 }
 
 .ne-node-fold-lock.is-active,
 .ne-node-mute.is-active,
 .ne-node-hide.is-active {
-  border-color: oklch(96% 0.004 88 / 0.24);
-  background: oklch(96% 0.004 88 / 0.9);
+  border-color: oklch(96% 0 0 / 0.24);
+  background: oklch(96% 0 0 / 0.9);
   color: var(--bg-deep);
 }
 
@@ -701,7 +685,7 @@ body.is-resizing .ne-node-resize {
 .ne-node-panel.is-grid .ne-node-panel-summary,
 .ne-node-panel.is-chain .ne-node-panel-summary,
 .ne-node-panel.is-runtime .ne-node-panel-summary {
-  color: color-mix(in oklch, var(--gold) 58%, var(--muted));
+  color: color-mix(in oklch, var(--accent) 58%, var(--muted));
 }
 
 .ne-node-panel.is-preview-panel .ne-node-panel-body {
@@ -712,14 +696,14 @@ body.is-resizing .ne-node-resize {
   position: relative;
   min-height: 18px;
   background: linear-gradient(90deg,
-    color-mix(in oklch, var(--node-accent, var(--gold)) 5%, transparent),
+    color-mix(in oklch, var(--node-accent, var(--accent)) 5%, transparent),
     color-mix(in oklch, var(--surface) 58%, transparent) 18%,
     color-mix(in oklch, var(--surface) 58%, transparent) 82%,
-    color-mix(in oklch, var(--node-accent, var(--gold)) 5%, transparent));
+    color-mix(in oklch, var(--node-accent, var(--accent)) 5%, transparent));
 }
 
 .ne-node.is-minimized .ne-node-footer {
-  border-top-color: color-mix(in oklch, var(--node-accent, var(--gold)) 12%, transparent);
+  border-top-color: color-mix(in oklch, var(--node-accent, var(--accent)) 12%, transparent);
 }
 
 
@@ -750,13 +734,13 @@ body.is-resizing .ne-node-resize {
 
 .ne-node-footer-runtime {
   flex: 0 0 auto;
-  color: color-mix(in oklch, var(--gold) 58%, var(--text-soft));
+  color: color-mix(in oklch, var(--accent) 58%, var(--text-soft));
 }
 .ne-node-footer-runtime[data-state="running"] {
-  color: var(--violet);
+  color: var(--accent);
 }
 .ne-node-footer-runtime[data-state="failed"] {
-  color: oklch(72% 0.15 25);
+  color: var(--bad);
 }
 .ne-node-footer-runtime[data-state="cancelled"] {
   color: var(--quiet);
@@ -809,7 +793,7 @@ body.is-resizing .ne-node-resize {
   width: 13px;
   height: 13px;
   margin: 0;
-  accent-color: var(--gold);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 .ne-toolbox-master-label {
@@ -868,7 +852,7 @@ body.is-resizing .ne-node-resize {
   width: 13px;
   height: 13px;
   margin: 0;
-  accent-color: var(--gold);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -899,7 +883,7 @@ body.is-resizing .ne-node-resize {
   text-align: right;
 }
 .ne-toolbox-cat.has-disabled .ne-toolbox-cat-count {
-  color: color-mix(in oklch, var(--gold) 58%, var(--muted));
+  color: color-mix(in oklch, var(--accent) 58%, var(--muted));
 }
 .ne-toolbox-cat.all-disabled .ne-toolbox-cat-count {
   color: var(--whisper);
@@ -932,7 +916,6 @@ body.is-resizing .ne-node-resize {
   font-size: 10.5px;
   letter-spacing: 0.02em;
   color: var(--text-soft);
-  border-radius: 2px;
   transition: background 60ms ease-out, color 60ms ease-out;
 }
 .ne-toolbox-tool:hover {
@@ -943,7 +926,7 @@ body.is-resizing .ne-node-resize {
   width: 12px;
   height: 12px;
   margin: 0;
-  accent-color: var(--gold);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 .ne-toolbox-tool-name {
@@ -969,7 +952,6 @@ body.is-resizing .ne-node-resize {
 .ne-ramp-bar {
   width: 100%;
   height: 24px;
-  border-radius: var(--radius);
   border: 1px solid var(--line-strong);
   cursor: copy;
   display: block;
@@ -986,14 +968,13 @@ body.is-resizing .ne-node-resize {
   width: 12px;
   height: 12px;
   margin-left: -6px;
-  border-radius: 50%;
   border: 1.5px solid var(--surface);
   box-shadow: 0 0 0 1px var(--line-strong);
   cursor: ew-resize;
 }
 .ne-ramp-stop.is-selected {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 1.5px var(--gold);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent);
   z-index: 2;
 }
 .ne-ramp-controls {
@@ -1011,7 +992,6 @@ body.is-resizing .ne-node-resize {
   height: 24px;
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
   background: var(--surface-2);
   color: var(--text);
   font-family: var(--font-mono);
@@ -1021,7 +1001,6 @@ body.is-resizing .ne-node-resize {
 .ne-ramp-del {
   height: 24px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
   background: var(--surface-2);
   color: var(--text-soft);
   cursor: pointer;
@@ -1053,7 +1032,6 @@ body.is-resizing .ne-node-resize {
   min-width: 0;
   padding: 0;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
   cursor: pointer;
   overflow: hidden;
   background-image:
@@ -1064,7 +1042,7 @@ body.is-resizing .ne-node-resize {
   background-size: 10px 10px;
   background-position: 0 0, 0 5px, 5px -5px, -5px 0;
 }
-.ne-color:hover { border-color: var(--gold-soft); }
+.ne-color:hover { border-color: var(--accent-2); }
 .ne-color:disabled { opacity: 0.5; cursor: not-allowed; }
 .ne-color .ne-color-fill {
   position: absolute;
@@ -1082,14 +1060,12 @@ body.is-resizing .ne-node-resize {
   padding: 10px;
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-lg);
   box-shadow: 0 14px 40px color-mix(in oklch, black 55%, transparent);
 }
 .ne-color-pop-preview {
   position: relative;
   height: 30px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
   overflow: hidden;
   background-image:
     linear-gradient(45deg, #777 25%, transparent 25%),
@@ -1105,14 +1081,12 @@ body.is-resizing .ne-node-resize {
   height: 30px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
   background: var(--surface-2);
   cursor: pointer;
 }
 .ne-color-pop-alpha {
   position: relative;
   height: 18px;
-  border-radius: var(--radius);
   overflow: hidden;
   background-image:
     linear-gradient(45deg, #777 25%, transparent 25%),
@@ -1138,7 +1112,7 @@ body.is-resizing .ne-node-resize {
   height: 100%;
   margin: 0;
   background: transparent;
-  accent-color: var(--gold);
+  accent-color: var(--accent);
   cursor: ew-resize;
 }
 .ne-color-pop-hex {
@@ -1147,14 +1121,13 @@ body.is-resizing .ne-node-resize {
   padding: 0 8px;
   background: var(--bg-deep);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 11px;
   text-align: center;
   outline: none;
 }
-.ne-color-pop-hex:focus { border-color: var(--gold-soft); }
+.ne-color-pop-hex:focus { border-color: var(--accent-2); }
 
 .ne-rgb-body {
   display: flex;
@@ -1173,7 +1146,6 @@ body.is-resizing .ne-node-resize {
   height: 26px;
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
   background: var(--surface-2);
   color: var(--text);
   font-family: var(--font-mono);
@@ -1204,7 +1176,6 @@ body.is-resizing .ne-node-resize {
   height: 24px;
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
   background: var(--surface-2);
   color: var(--text);
   font-family: var(--font-mono);
@@ -1214,4 +1185,4 @@ body.is-resizing .ne-node-resize {
 }
 .ne-rgb-hex { text-align: center; }
 .ne-rgb-num:focus,
-.ne-rgb-hex:focus { border-color: var(--gold-soft); }
+.ne-rgb-hex:focus { border-color: var(--accent-2); }

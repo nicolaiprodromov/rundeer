@@ -128,9 +128,9 @@
 }
 .ne-bundle-tab:hover { color: var(--text); }
 .ne-bundle-tab.is-active {
-  color: var(--gold);
-  border-color: var(--gold-soft);
-  background: color-mix(in oklch, var(--gold) 10%, var(--bg-deep));
+  color: var(--accent);
+  border-color: var(--accent-2);
+  background: color-mix(in oklch, var(--accent) 10%, var(--bg-deep));
 }
 .ne-bundle-count {
   margin-left: auto;
@@ -166,7 +166,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  background: oklch(8% 0.004 80);
+  background: oklch(8% 0 0);
   border: 1px solid var(--line);
   scrollbar-width: thin;
 }
@@ -192,7 +192,7 @@
   box-sizing: border-box;
 }
 .ne-bundle-vtile:hover {
-  border-color: var(--gold-soft);
+  border-color: var(--accent-2);
 }
 .ne-bundle-vthumb {
   width: 100%;
@@ -208,8 +208,7 @@
   line-height: 1;
   padding: 2px 4px;
   background: color-mix(in oklch, black 65%, transparent);
-  color: var(--gold);
-  border-radius: 2px;
+  color: var(--accent);
   pointer-events: none;
 }
 .ne-bundle-vtext {
@@ -233,7 +232,7 @@
 }
 .ne-bundle-tilesize input[type="range"] {
   width: 84px;
-  accent-color: var(--gold);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 .ne-bundle-slider {
@@ -258,7 +257,7 @@
   justify-content: center;
   overflow: hidden;
   border: 1px solid color-mix(in oklch, var(--line) 84%, transparent);
-  background: oklch(8% 0.004 80);
+  background: oklch(8% 0 0);
 }
 .ne-preview-zoom-stage {
   cursor: zoom-in;
@@ -299,7 +298,6 @@
   min-width: 24px;
   padding: 0 7px;
   border: 1px solid color-mix(in oklch, var(--line) 86%, transparent);
-  border-radius: var(--radius);
   background: color-mix(in oklch, var(--bg-deep) 86%, var(--surface));
   color: var(--text-soft);
   font-family: var(--font-mono);
@@ -311,9 +309,9 @@
 .ne-bundle-zoom:hover,
 .ne-bundle-pip:hover,
 .ne-bundle-pip.is-active {
-  border-color: var(--gold-soft);
-  color: var(--gold);
-  background: color-mix(in oklch, var(--gold) 10%, var(--bg-deep));
+  border-color: var(--accent-2);
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 10%, var(--bg-deep));
 }
 .ne-bundle-zoom-label {
   min-width: 42px;
@@ -339,12 +337,10 @@
   overflow: hidden;
   color: transparent;
   font-size: 0;
-  border-radius: 999px;
 }
 .ne-bundle-pips.is-progress {
   position: relative;
   height: 5px;
-  border-radius: 999px;
   background: color-mix(in oklch, var(--line) 62%, transparent);
   overflow: hidden;
 }
@@ -353,5 +349,5 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: var(--bundle-progress, 0%);
-  background: var(--gold);
+  background: var(--accent);
 }

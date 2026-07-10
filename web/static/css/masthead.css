@@ -30,8 +30,8 @@
   height: 24px;
   max-width: min(34vw, 360px);
   padding: 0 10px;
-  border: 1px solid color-mix(in oklch, var(--violet) 42%, var(--line));
-  background: color-mix(in oklch, var(--violet) 10%, var(--surface));
+  border: 1px solid color-mix(in oklch, var(--accent) 42%, var(--line));
+  background: color-mix(in oklch, var(--accent) 10%, var(--surface));
   color: var(--text-soft);
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -45,9 +45,8 @@
 .run-header-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
-  background: var(--violet);
-  box-shadow: 0 0 12px color-mix(in oklch, var(--violet) 45%, transparent);
+  background: var(--accent);
+  box-shadow: 0 0 12px color-mix(in oklch, var(--accent) 45%, transparent);
   animation: pulse 1.4s ease-in-out infinite;
   flex: 0 0 auto;
 }
@@ -127,15 +126,15 @@
 }
 .view-tab:hover { color: var(--text); background: var(--surface); }
 .view-tab.is-active {
-  color: var(--gold);
-  background: color-mix(in oklch, var(--gold) 10%, var(--surface-2));
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 10%, var(--surface-2));
 }
 .view-tab-help {
   margin-left: 4px;
   border-left: 1px solid var(--line);
   color: var(--text-soft);
 }
-.view-tab-help:hover { color: var(--gold); }
+.view-tab-help:hover { color: var(--accent); }
 
 .masthead-full {
   grid-template-columns: auto minmax(0, 1fr) auto;

@@ -25,8 +25,8 @@
 }
 .ne-mention-option:hover,
 .ne-mention-option.is-active {
-  background: color-mix(in oklch, var(--gold) 10%, var(--surface));
-  border-color: color-mix(in oklch, var(--gold) 35%, transparent);
+  background: color-mix(in oklch, var(--accent) 10%, var(--surface));
+  border-color: color-mix(in oklch, var(--accent) 35%, transparent);
   color: var(--text);
 }
 .ne-mention-dot {
@@ -34,7 +34,6 @@
   align-self: center;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
   background: var(--quiet);
 }
 .ne-mention-dot.is-image    { background: oklch(83% 0.130 88); }
@@ -105,9 +104,9 @@
   background: color-mix(in oklch, var(--surface) 60%, transparent);
 }
 .ne-string-toolbar .ne-string-tool.is-on {
-  color: var(--gold);
-  border-color: color-mix(in oklch, var(--gold) 45%, var(--line));
-  background: color-mix(in oklch, var(--gold) 10%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in oklch, var(--accent) 45%, var(--line));
+  background: color-mix(in oklch, var(--accent) 10%, transparent);
 }
 .ne-string-toolbar .ne-string-tool:disabled {
   opacity: 0.7;
@@ -124,14 +123,13 @@
   padding: 0 8px;
   background: color-mix(in oklch, var(--bg-deep) 92%, var(--surface));
   border: 1px solid color-mix(in oklch, var(--line) 74%, transparent);
-  border-radius: 4px;
   box-shadow: inset 0 1px 0 color-mix(in oklch, var(--text) 3%, transparent);
   transition: border-color var(--duration-fast), background var(--duration-fast), box-shadow var(--duration-fast);
 }
 .ne-string-search-wrap:focus-within {
-  border-color: var(--gold-soft);
+  border-color: var(--accent-2);
   background: var(--bg-deep);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--gold) 12%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 12%, transparent);
 }
 .ne-string-search-icon {
   width: 13px;
@@ -178,7 +176,6 @@
   padding: 0;
   background: color-mix(in oklch, var(--surface-2) 82%, var(--bg-deep));
   border: 1px solid color-mix(in oklch, var(--line-strong) 58%, transparent);
-  border-radius: 4px;
   color: var(--text-soft);
   cursor: pointer;
   box-shadow: inset 0 1px 0 color-mix(in oklch, var(--text) 4%, transparent);
@@ -191,20 +188,20 @@
 }
 .ne-string-copy-icon:hover,
 .ne-string-copy-icon:focus-visible {
-  color: var(--gold);
-  border-color: var(--gold-soft);
-  background: color-mix(in oklch, var(--gold) 10%, var(--bg-deep));
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--gold) 10%, transparent), inset 0 1px 0 color-mix(in oklch, var(--text) 4%, transparent);
+  color: var(--accent);
+  border-color: var(--accent-2);
+  background: color-mix(in oklch, var(--accent) 10%, var(--bg-deep));
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 10%, transparent), inset 0 1px 0 color-mix(in oklch, var(--text) 4%, transparent);
   outline: none;
 }
 .ne-string-copy-icon.is-copied {
-  color: var(--gold);
-  border-color: color-mix(in oklch, var(--gold) 62%, var(--line));
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--gold) 12%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in oklch, var(--accent) 62%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 12%, transparent);
 }
 .ne-string-copy-icon.is-failed {
-  color: oklch(68% 0.15 25);
-  border-color: color-mix(in oklch, oklch(68% 0.15 25) 60%, var(--line));
+  color: var(--bad);
+  border-color: color-mix(in oklch, var(--bad) 60%, var(--line));
 }
 .ne-string-copy-icon:disabled { cursor: default; }
 .ne-string-toolbar .ne-string-spacer {
@@ -226,7 +223,6 @@
   padding: 8px 9px;
   background: color-mix(in oklch, var(--bg-deep) 94%, var(--surface));
   border: 1px solid color-mix(in oklch, var(--line) 75%, transparent);
-  border-radius: 4px;
   color: var(--text);
   font-family: var(--font-body);
   font-size: calc(12px * var(--ne-text-zoom, 1));
@@ -234,12 +230,12 @@
   letter-spacing: 0.005em;
   outline: none;
   transition: border-color var(--duration-fast), box-shadow var(--duration-fast), background var(--duration-fast);
-  caret-color: var(--gold);
+  caret-color: var(--accent);
 }
 .ne-string-textarea:focus {
-  border-color: var(--gold-soft);
+  border-color: var(--accent-2);
   background: var(--bg-deep);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--gold) 16%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 16%, transparent);
 }
 .ne-string-textarea::placeholder { color: var(--whisper); }
 
@@ -249,7 +245,6 @@
   padding: 8px 10px;
   background: color-mix(in oklch, var(--bg-deep) 88%, var(--surface));
   border: 1px solid color-mix(in oklch, var(--line) 65%, transparent);
-  border-radius: 4px;
   color: var(--text-soft);
   font-family: var(--font-body);
   font-size: calc(12px * var(--ne-text-zoom, 1));
@@ -262,7 +257,7 @@
   transition: border-color var(--duration-fast), background var(--duration-fast);
 }
 .ne-string-preview:hover {
-  border-color: color-mix(in oklch, var(--gold) 30%, var(--line));
+  border-color: color-mix(in oklch, var(--accent) 30%, var(--line));
   background: var(--bg-deep);
 }
 .ne-string-preview.is-empty {
@@ -283,7 +278,7 @@
   color: var(--text);
 }
 .ne-string-preview h1 { font-size: calc(15px * var(--ne-text-zoom, 1)); }
-.ne-string-preview h2 { font-size: calc(13.5px * var(--ne-text-zoom, 1)); color: var(--gold); }
+.ne-string-preview h2 { font-size: calc(13.5px * var(--ne-text-zoom, 1)); color: var(--accent); }
 .ne-string-preview h3 { font-size: calc(12.5px * var(--ne-text-zoom, 1)); }
 .ne-string-preview ul,
 .ne-string-preview ol { margin: 4px 0 6px 18px; padding: 0; }
@@ -294,7 +289,6 @@
   background: color-mix(in oklch, var(--surface) 70%, transparent);
   border: 1px solid var(--line);
   padding: 0 4px;
-  border-radius: 3px;
   color: var(--text);
 }
 .ne-string-preview pre {
@@ -302,7 +296,6 @@
   padding: 8px 10px;
   background: var(--bg-deep);
   border: 1px solid var(--line);
-  border-radius: 4px;
   font-family: var(--font-mono);
   font-size: calc(10.5px * var(--ne-text-zoom, 1));
   line-height: 1.5;
@@ -314,21 +307,20 @@
   margin: 4px 0;
   padding: 2px 0 2px 10px;
   color: var(--quiet);
-  border-inline-start: 2px solid color-mix(in oklch, var(--gold) 40%, var(--line));
+  border-inline-start: 2px solid color-mix(in oklch, var(--accent) 40%, var(--line));
   font-style: italic;
 }
 .ne-string-preview strong { color: var(--text); font-weight: 600; }
 .ne-string-preview em     { color: var(--text-soft); font-style: italic; }
-.ne-string-preview a      { color: var(--gold-soft); border-bottom: 1px dashed color-mix(in oklch, var(--gold) 35%, transparent); }
+.ne-string-preview a      { color: var(--accent-2); border-bottom: 1px dashed color-mix(in oklch, var(--accent) 35%, transparent); }
 .ne-string-preview hr {
   border: 0;
   border-top: 1px solid var(--line);
   margin: 8px 0;
 }
 .ne-search-hit {
-  background: color-mix(in oklch, var(--gold) 42%, transparent);
+  background: color-mix(in oklch, var(--accent) 42%, transparent);
   color: var(--text);
-  border-radius: 2px;
   padding: 0 1px;
 }
 .ne-markdown-viewer {
@@ -361,7 +353,6 @@
   border: 1px solid color-mix(in oklch, currentColor 35%, var(--line));
   background: color-mix(in oklch, currentColor 10%, transparent);
   color: var(--text);
-  border-radius: 3px;
   vertical-align: baseline;
   white-space: nowrap;
 }
@@ -369,7 +360,6 @@
   content: "";
   width: 6px;
   height: 6px;
-  border-radius: 50%;
   background: currentColor;
   opacity: 0.85;
   flex-shrink: 0;
@@ -429,14 +419,13 @@
   overflow: hidden;
   background: color-mix(in oklch, var(--bg-deep) 94%, var(--surface));
   border: 1px solid color-mix(in oklch, var(--line-strong) 60%, transparent);
-  border-radius: var(--radius);
   box-shadow: inset 0 1px 0 color-mix(in oklch, var(--text) 3%, transparent);
   transition: border-color var(--duration-fast), box-shadow var(--duration-fast), background var(--duration-fast);
 }
 .ne-string-surface:focus-within {
-  border-color: var(--gold-soft);
+  border-color: var(--accent-2);
   background: var(--bg-deep);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--gold) 15%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 15%, transparent);
 }
 .ne-string-lines {
   min-width: 0;
@@ -477,7 +466,6 @@
   overflow-x: hidden;
   overflow-y: auto;
   border: 0;
-  border-radius: 0;
   background: transparent;
   box-shadow: none;
 }
