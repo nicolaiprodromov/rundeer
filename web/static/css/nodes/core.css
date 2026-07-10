@@ -1005,11 +1005,6 @@ body.is-resizing .ne-node-resize {
 .ne-ramp-color {
   width: 26px;
   height: 24px;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-2);
-  cursor: pointer;
 }
 .ne-ramp-pos,
 .ne-ramp-interp {
@@ -1040,3 +1035,183 @@ body.is-resizing .ne-node-resize {
   opacity: 0.4;
   cursor: default;
 }
+
+.ne-checker {
+  background-image:
+    linear-gradient(45deg, var(--ne-checker-c, #777) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--ne-checker-c, #777) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--ne-checker-c, #777) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--ne-checker-c, #777) 75%);
+  background-size: 10px 10px;
+  background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+}
+
+.ne-color {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  overflow: hidden;
+  background-image:
+    linear-gradient(45deg, #777 25%, transparent 25%),
+    linear-gradient(-45deg, #777 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #777 75%),
+    linear-gradient(-45deg, transparent 75%, #777 75%);
+  background-size: 10px 10px;
+  background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+}
+.ne-color:hover { border-color: var(--gold-soft); }
+.ne-color:disabled { opacity: 0.5; cursor: not-allowed; }
+.ne-color .ne-color-fill {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.ne-color.is-compact { height: 24px; }
+
+.ne-color-pop {
+  z-index: 4000;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  width: 184px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 14px 40px color-mix(in oklch, black 55%, transparent);
+}
+.ne-color-pop-preview {
+  position: relative;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background-image:
+    linear-gradient(45deg, #777 25%, transparent 25%),
+    linear-gradient(-45deg, #777 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #777 75%),
+    linear-gradient(-45deg, transparent 75%, #777 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+}
+.ne-color-pop-preview span { position: absolute; inset: 0; display: block; }
+.ne-color-pop-native {
+  width: 100%;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.ne-color-pop-alpha {
+  position: relative;
+  height: 18px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background-image:
+    linear-gradient(45deg, #777 25%, transparent 25%),
+    linear-gradient(-45deg, #777 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #777 75%),
+    linear-gradient(-45deg, transparent 75%, #777 75%);
+  background-size: 10px 10px;
+  background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+}
+.ne-color-pop-alpha::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    rgba(var(--ne-alpha-rgb, 255,255,255), 0),
+    rgba(var(--ne-alpha-rgb, 255,255,255), 1));
+  pointer-events: none;
+}
+.ne-color-pop-alpha input[type="range"] {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  accent-color: var(--gold);
+  cursor: ew-resize;
+}
+.ne-color-pop-hex {
+  width: 100%;
+  height: 26px;
+  padding: 0 8px;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: center;
+  outline: none;
+}
+.ne-color-pop-hex:focus { border-color: var(--gold-soft); }
+
+.ne-rgb-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 11px;
+}
+.ne-rgb-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 7px;
+}
+.ne-rgb-swatch { height: 26px; }
+.ne-rgb-mode {
+  height: 26px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 0 6px;
+  cursor: pointer;
+}
+.ne-rgb-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ne-rgb-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+.ne-rgb-row.is-hex { grid-template-columns: 30px minmax(0, 1fr); }
+.ne-rgb-cap {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.ne-rgb-num,
+.ne-rgb-hex {
+  height: 24px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 0 6px;
+  outline: none;
+}
+.ne-rgb-hex { text-align: center; }
+.ne-rgb-num:focus,
+.ne-rgb-hex:focus { border-color: var(--gold-soft); }

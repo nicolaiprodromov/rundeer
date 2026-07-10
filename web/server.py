@@ -346,6 +346,12 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/uv/mix":
                 from web.nodes.operations.mix import mix as _uv_mix
                 self._send_json(_uv_mix(self.server.project_root, payload))
+            elif parsed.path == "/api/uv/alpha":
+                from web.nodes.operations.alpha import alpha as _uv_alpha
+                self._send_json(_uv_alpha(self.server.project_root, payload))
+            elif parsed.path == "/api/uv/math":
+                from web.nodes.operations.math_op import math as _uv_math
+                self._send_json(_uv_math(self.server.project_root, payload))
             elif parsed.path == "/api/uv/ramp":
                 from web.nodes.operations.ramp import ramp as _uv_ramp
                 self._send_json(_uv_ramp(self.server.project_root, payload))

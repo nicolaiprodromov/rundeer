@@ -270,21 +270,47 @@ def resize_media(root: Path, src: Path, size: Tuple[int, int], mode: str = "cont
     raise ValueError(f"unsupported media extension: {ext or '(none)'}")
 
 
-def canvas_images(root: Path, image_paths: List[Path], positions: List[Tuple[int, int]], size: Tuple[int, int]) -> Path:
+def _xform_layer(layer: Image.Image, scale: Tuple[float, float], rotation: float) -> Image.Image:
+    sx, sy = float(scale[0]), float(scale[1])
+    if sx != 1.0 or sy != 1.0:
+        nw = max(1, int(round(abs(layer.width * sx))))
+        nh = max(1, int(round(abs(layer.height * sy))))
+        layer = layer.resize((nw, nh), Image.LANCZOS)
+    if float(rotation) % 360.0 != 0.0:
+        layer = layer.rotate(float(rotation), expand=True, resample=Image.BICUBIC)
+    return layer
+
+
+def canvas_images(
+    root: Path,
+    image_paths: List[Path],
+    positions: List[Tuple[int, int]],
+    size: Tuple[int, int],
+    scales: Optional[List[Tuple[float, float]]] = None,
+    rotations: Optional[List[float]] = None,
+) -> Path:
 
     width, height = max(1, int(size[0])), max(1, int(size[1]))
+    scales = scales or []
+    rotations = rotations or []
     key_parts: List[object] = ["canvas", width, height]
-    for path, pos in zip(image_paths, positions):
-        key_parts.extend([_source_key(path), int(pos[0]), int(pos[1])])
+    for idx, path in enumerate(image_paths):
+        pos = positions[idx] if idx < len(positions) else (0, 0)
+        scl = scales[idx] if idx < len(scales) else (1.0, 1.0)
+        rot = rotations[idx] if idx < len(rotations) else 0.0
+        key_parts.extend([_source_key(path), int(pos[0]), int(pos[1]), round(float(scl[0]), 4), round(float(scl[1]), 4), round(float(rot), 4)])
     dest = _cache_path(root, "media", "canvas", ".png", *key_parts)
     canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     for idx, path in enumerate(image_paths):
         if path.suffix.lower() not in IMAGE_TRANSFORM_EXTS:
             raise ValueError(f"unsupported canvas image extension: {path.suffix.lower() or '(none)'}")
         x, y = positions[idx] if idx < len(positions) else (0, 0)
+        scl = scales[idx] if idx < len(scales) else (1.0, 1.0)
+        rot = rotations[idx] if idx < len(rotations) else 0.0
         with Image.open(path) as im:
             im.load()
             layer = im.convert("RGBA")
+        layer = _xform_layer(layer, scl, rot)
         left = int(round(x))
         top = height - int(round(y)) - layer.height
         src_left = max(0, -left)

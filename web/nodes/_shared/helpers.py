@@ -42,19 +42,19 @@ def safe_project_path(root: Path, rel: str) -> Path:
     return path
 
 
-def _coerce_vector2(value: Any, default: Tuple[float, float]) -> Tuple[int, int]:
+def _coerce_vector2f(value: Any, default: Tuple[float, float]) -> Tuple[float, float]:
     if value is None or value == "":
-        return int(round(default[0])), int(round(default[1]))
+        return float(default[0]), float(default[1])
     if isinstance(value, dict):
         if "x" in value or "y" in value:
-            return _coerce_vector2([value.get("x", default[0]), value.get("y", default[1])], default)
+            return _coerce_vector2f([value.get("x", default[0]), value.get("y", default[1])], default)
         if "color" in value:
-            return _coerce_vector2(value.get("color"), default)
+            return _coerce_vector2f(value.get("color"), default)
         if "value" in value:
-            return _coerce_vector2(value.get("value"), default)
+            return _coerce_vector2f(value.get("value"), default)
     if isinstance(value, (int, float)):
         n = float(value)
-        return int(round(n)), int(round(n))
+        return n, n
     if isinstance(value, (list, tuple)):
         nums: List[float] = []
         for item in value:
@@ -63,14 +63,19 @@ def _coerce_vector2(value: Any, default: Tuple[float, float]) -> Tuple[int, int]
             except (TypeError, ValueError):
                 continue
         if len(nums) >= 2:
-            return int(round(nums[0])), int(round(nums[1]))
+            return nums[0], nums[1]
         if len(nums) == 1:
-            return int(round(nums[0])), int(round(nums[0]))
-        return int(round(default[0])), int(round(default[1]))
+            return nums[0], nums[0]
+        return float(default[0]), float(default[1])
     text = str(value).strip().strip("[]()")
     text = text.replace("\u00d7", "x").replace("X", "x").replace("x", ",")
     parts = [part for part in re.split(r"[\s,]+", text) if part]
-    return _coerce_vector2(parts, default)
+    return _coerce_vector2f(parts, default)
+
+
+def _coerce_vector2(value: Any, default: Tuple[float, float]) -> Tuple[int, int]:
+    x, y = _coerce_vector2f(value, default)
+    return int(round(x)), int(round(y))
 
 
 def _coerce_vector2_list(value: Any, count: int) -> List[Tuple[int, int]]:
@@ -83,6 +88,50 @@ def _coerce_vector2_list(value: Any, count: int) -> List[Tuple[int, int]]:
             return [_coerce_vector2(value, (0, 0))]
         return [_coerce_vector2(item, (0, 0)) for item in value]
     return [_coerce_vector2(value, (0, 0))]
+
+
+def _coerce_vector2f_list(value: Any, count: int, default: Tuple[float, float] = (1.0, 1.0)) -> List[Tuple[float, float]]:
+    fill = (float(default[0]), float(default[1]))
+    if value is None or value == "":
+        return [fill for _ in range(count)]
+    if isinstance(value, list):
+        if not value:
+            return [fill for _ in range(count)]
+        if all(not isinstance(item, (list, tuple, dict)) for item in value):
+            return [_coerce_vector2f(value, default)]
+        return [_coerce_vector2f(item, default) for item in value]
+    return [_coerce_vector2f(value, default)]
+
+
+def _coerce_scalar(value: Any, default: float = 0.0) -> float:
+    if value is None or value == "" or isinstance(value, bool):
+        return float(default)
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, dict):
+        for k in ("value", "scalar", "x"):
+            if k in value:
+                return _coerce_scalar(value.get(k), default)
+        return float(default)
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            try:
+                return float(item)
+            except (TypeError, ValueError):
+                continue
+        return float(default)
+    try:
+        return float(str(value).strip().strip("[]()"))
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _coerce_scalar_list(value: Any, count: int, default: float = 0.0) -> List[float]:
+    if value is None or value == "":
+        return [float(default) for _ in range(count)]
+    if isinstance(value, list):
+        return [_coerce_scalar(item, default) for item in value]
+    return [_coerce_scalar(value, default)]
 
 
 def _payload_paths(value: Any) -> List[str]:

@@ -1,14 +1,20 @@
 math-op:
   label: Math
   category: Operations
-  desc: Numeric operation
+  desc: Numeric operation on scalars or per-pixel on images/maps. A/B accept a raw number or a wired image/map.
   in:
   - id: a
     label: A
-    type: float
+    kind: float
+    default: 0
+    passthroughWired: true
+    type: any
   - id: b
     label: B
-    type: float
+    kind: float
+    default: 0
+    passthroughWired: true
+    type: any
   - id: op
     label: Operation
     kind: select
@@ -25,3 +31,4 @@ math-op:
     label: Result
     type: any
   src: web/nodes/operations/math-op.js
+  api: /api/uv/math

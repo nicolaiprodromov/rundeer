@@ -183,7 +183,158 @@ function _rgbaToHex(rgba) {
   const r = clip(rgba[0]).toString(16).padStart(2, "0");
   const g = clip(rgba[1]).toString(16).padStart(2, "0");
   const b = clip(rgba[2]).toString(16).padStart(2, "0");
-  return `#${r}${g}${b}`;
+  const a = (rgba && rgba.length > 3 && rgba[3] != null) ? clip(rgba[3]) : 255;
+  return a >= 255 ? `#${r}${g}${b}` : `#${r}${g}${b}${a.toString(16).padStart(2, "0")}`;
+}
+
+function _rgbToHsv(r, g, b) {
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d !== 0) {
+    if (mx === r) h = ((g - b) / d) % 6;
+    else if (mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  return [h, mx === 0 ? 0 : d / mx, mx];
+}
+
+function _hsvToRgb(h, s, v) {
+  h = ((Number(h) || 0) % 360 + 360) % 360;
+  const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  return [r + m, g + m, b + m];
+}
+
+let _activeColorPopup = null;
+
+function _colorField(opts = {}) {
+  let rgba = _hexToRgba(opts.value) || [0, 0, 0, 1];
+  const root = document.createElement("button");
+  root.type = "button";
+  root.className = "ne-color" + (opts.compact ? " is-compact" : "");
+  const fill = document.createElement("span");
+  fill.className = "ne-color-fill";
+  root.appendChild(fill);
+  const paint = () => {
+    const [r, g, b, a] = rgba;
+    fill.style.background = `rgba(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)},${a})`;
+  };
+  Object.defineProperty(root, "value", {
+    get() { return _rgbaToHex(rgba); },
+    set(v) { const p = _hexToRgba(v); if (p) { rgba = p; paint(); } },
+    configurable: true,
+  });
+  const apply = (next, emit) => {
+    rgba = next.slice(0, 4);
+    if (rgba.length < 4) rgba = [rgba[0] || 0, rgba[1] || 0, rgba[2] || 0, 1];
+    paint();
+    if (emit) {
+      root.dispatchEvent(new Event("input", { bubbles: true }));
+      if (opts.onChange) opts.onChange(_rgbaToHex(rgba));
+    }
+  };
+  root.addEventListener("mousedown", (e) => e.stopPropagation());
+  root.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (root.disabled) return;
+    _openColorPopup(root, rgba, (next) => apply(next, true));
+  });
+  paint();
+  return root;
+}
+
+function _openColorPopup(anchor, rgba, onPick) {
+  if (_activeColorPopup) _activeColorPopup.close();
+  let cur = (rgba && rgba.length >= 3) ? rgba.slice(0, 4) : [0, 0, 0, 1];
+  if (cur.length < 4) cur = [cur[0] || 0, cur[1] || 0, cur[2] || 0, 1];
+
+  const pop = document.createElement("div");
+  pop.className = "ne-color-pop";
+
+  const prev = document.createElement("div");
+  prev.className = "ne-color-pop-preview";
+  const prevFill = document.createElement("span");
+  prev.appendChild(prevFill);
+
+  const native = document.createElement("input");
+  native.type = "color";
+  native.className = "ne-color-pop-native";
+
+  const aWrap = document.createElement("div");
+  aWrap.className = "ne-color-pop-alpha";
+  const aRange = document.createElement("input");
+  aRange.type = "range";
+  aRange.min = 0; aRange.max = 255; aRange.step = 1;
+  aWrap.appendChild(aRange);
+
+  const hex = document.createElement("input");
+  hex.type = "text";
+  hex.className = "ne-color-pop-hex";
+  hex.spellcheck = false;
+
+  const repaint = () => {
+    const [r, g, b, a] = cur;
+    prevFill.style.background = `rgba(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)},${a})`;
+    aWrap.style.setProperty("--ne-alpha-rgb", `${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)}`);
+  };
+  const syncInputs = () => {
+    native.value = _rgbaToHex([cur[0], cur[1], cur[2], 1]);
+    aRange.value = String(Math.round(cur[3] * 255));
+    hex.value = _rgbaToHex(cur);
+    repaint();
+  };
+  const emit = () => { onPick(cur.slice()); repaint(); };
+
+  native.addEventListener("input", () => {
+    const p = _hexToRgba(native.value) || [0, 0, 0, 1];
+    cur = [p[0], p[1], p[2], cur[3]];
+    hex.value = _rgbaToHex(cur);
+    emit();
+  });
+  aRange.addEventListener("input", () => {
+    cur = [cur[0], cur[1], cur[2], Math.max(0, Math.min(1, Number(aRange.value) / 255))];
+    hex.value = _rgbaToHex(cur);
+    emit();
+  });
+  hex.addEventListener("change", () => {
+    const p = _hexToRgba(hex.value);
+    if (p) { cur = p.slice(0, 4); if (cur.length < 4) cur.push(1); syncInputs(); emit(); }
+    else { hex.value = _rgbaToHex(cur); }
+  });
+
+  pop.append(prev, native, aWrap, hex);
+  pop.addEventListener("mousedown", (e) => e.stopPropagation());
+  document.body.appendChild(pop);
+  syncInputs();
+
+  const r = anchor.getBoundingClientRect();
+  const pw = pop.offsetWidth, ph = pop.offsetHeight;
+  pop.style.position = "fixed";
+  pop.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - pw - 8))}px`;
+  pop.style.top = `${Math.max(8, Math.min(r.bottom + 6, window.innerHeight - ph - 8))}px`;
+
+  const onDoc = (e) => { if (!pop.contains(e.target) && e.target !== anchor) close(); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  const close = () => {
+    document.removeEventListener("mousedown", onDoc, true);
+    document.removeEventListener("keydown", onKey, true);
+    pop.remove();
+    if (_activeColorPopup && _activeColorPopup.el === pop) _activeColorPopup = null;
+  };
+  setTimeout(() => {
+    document.addEventListener("mousedown", onDoc, true);
+    document.addEventListener("keydown", onKey, true);
+  }, 0);
+  _activeColorPopup = { close, el: pop };
 }
 
 function _coerceVectorInput(v) {
@@ -655,6 +806,19 @@ async function dropFilesToCanvas(files, pos) {
     scheduleAutosave();
     schedulePreviewRefresh();
   }
+}
+
+function clipImages(e) {
+  const out = [];
+  for (const it of [...(e.clipboardData?.items || [])]) {
+    if (it.kind !== "file" || !it.type.startsWith("image/")) continue;
+    const f = it.getAsFile();
+    if (!f) continue;
+    if (f.name && /\.[a-z0-9]+$/i.test(f.name)) { out.push(f); continue; }
+    const ext = (f.type.split("/")[1] || "png").split("+")[0];
+    out.push(new File([f], `pasted-${Date.now()}-${out.length}.${ext}`, { type: f.type }));
+  }
+  return out;
 }
 
 
@@ -3286,8 +3450,15 @@ function buildPropValueControl(nodeId, propDef, currentValue, opts = {}) {
     control = document.createElement("input");
     control.type = "number";
   } else if (propDef.kind === "color") {
-    control = document.createElement("input");
-    control.type = "color";
+    control = _colorField({ value: currentValue ?? propDef.default ?? "#000000", compact: opts.compact });
+    control.dataset.propNode = nodeId;
+    control.dataset.propId = propDef.id;
+    if (opts.disabled) {
+      control.disabled = true;
+      control.title = "value is coming from a connected socket - disconnect to edit";
+    }
+    control.addEventListener("input", () => setNodePropValue(nodeId, propDef, control.value, control));
+    return { control, valueDisplay: null };
   } else if (propDef.kind === "range") {
     control = document.createElement("input");
     control.type = "range";
@@ -9608,6 +9779,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     addNode(type, pos.x - 110, pos.y - 30);
+  });
+
+  window.addEventListener("paste", (e) => {
+    const tag = document.activeElement?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || document.activeElement?.isContentEditable) return;
+    const imgs = clipImages(e);
+    if (!imgs.length) return;
+    e.preventDefault();
+    dropFilesToCanvas(imgs, ix.lastMouseCanvas || { x: 0, y: 0 });
   });
 
   document.addEventListener("keydown", onKeydown);

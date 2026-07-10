@@ -96,7 +96,7 @@ Colors are set in `SOCKET_TYPES` at the top of `web/static/node-editor.js`.
 | `label` | Display label |
 | `type` | Socket type (required for pure sockets, optional for widget entries — inferred from `kind`) |
 | `multi` | `true` for dotted multi-connect sockets |
-| `kind` | Widget type: `text` · `int` · `float` · `checkbox` · `select` · `range` · `textarea` · `color` · `hidden` |
+| `kind` | Widget type: `text` · `int` · `float` · `checkbox` · `select` · `range` · `textarea` · `color` · `hidden`. `color` opens an alpha-capable picker and stores RGBA hex (`#rrggbb` opaque or `#rrggbbaa` with alpha) |
 | `default` | Default value for widget entries |
 | `placeholder` | Hint string |
 | `options` | Array for `select` kind |

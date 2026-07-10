@@ -1,0 +1,29 @@
+alpha:
+  label: Alpha
+  category: Operations
+  desc: Set or multiply an image's alpha from a grayscale image/map or a constant (0..1, Blender-style).
+  in:
+  - id: image
+    label: Image
+    type: any
+  - id: alpha
+    label: Alpha
+    kind: range
+    min: 0
+    max: 1
+    step: 0.01
+    default: 1
+    passthroughWired: true
+    type: any
+  - id: mode
+    label: Mode
+    kind: select
+    options: [replace, multiply]
+    default: replace
+  out:
+  - id: out
+    label: Out
+    type: any
+  traits: [liveUpdate]
+  src: web/nodes/operations/alpha.js
+  api: /api/uv/alpha

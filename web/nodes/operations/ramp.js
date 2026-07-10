@@ -141,9 +141,8 @@ function _rampSample(stops, interp, t) {
     const ctrls = document.createElement("div");
     ctrls.className = "ne-ramp-controls";
 
-    const colorIn = document.createElement("input");
-    colorIn.type = "color";
-    colorIn.className = "ne-ramp-color";
+    const colorIn = _colorField({ compact: true });
+    colorIn.classList.add("ne-ramp-color");
     colorIn.addEventListener("input", () => {
       if (sel == null) return;
       node.props.stops[sel].color = colorIn.value;
@@ -199,7 +198,7 @@ function _rampSample(stops, interp, t) {
     function syncControls() {
       const st = node.props.stops[sel];
       if (!st) return;
-      colorIn.value = /^#[0-9a-f]{6}$/i.test(st.color) ? st.color : _rgbaToHex(_hexToRgba(st.color) || [0, 0, 0, 1]);
+      colorIn.value = _rgbaToHex(_hexToRgba(st.color) || [0, 0, 0, 1]);
       posIn.value = String(Math.round((Number(st.pos) || 0) * 1000) / 1000);
       del.disabled = node.props.stops.length <= 2;
     }

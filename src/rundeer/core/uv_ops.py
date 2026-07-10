@@ -539,6 +539,44 @@ def mix(
     return out.astype(np.float32)
 
 
+def _to_alpha(src: Any, target_shape: Tuple[int, int]) -> np.ndarray:
+    arr = _as_array(src)
+    if arr.ndim == 0:
+        return np.full(target_shape + (1,), float(arr), dtype=np.float32)
+    if arr.ndim == 1:
+        v = float(arr[-1]) if arr.shape[0] >= 4 else float(arr.reshape(-1)[0])
+        return np.full(target_shape + (1,), v, dtype=np.float32)
+    if arr.ndim == 2:
+        arr = arr[..., None]
+    c = arr.shape[-1]
+    if c >= 3:
+        g = (0.2126 * arr[..., 0] + 0.7152 * arr[..., 1] + 0.0722 * arr[..., 2])[..., None]
+    else:
+        g = arr[..., :1]
+    return _promote_to(target_shape, g, 1)
+
+
+def set_alpha(image: Any, alpha: Any, mode: str = "replace") -> Any:
+    mode = (mode or "replace").lower()
+    img = _as_array(image)
+    if not (isinstance(img, np.ndarray) and img.ndim >= 2 and _is_spatial(img if img.ndim == 3 else img[..., None])):
+        base = np.atleast_1d(img).astype(np.float32)
+        if base.size < 4:
+            base = np.pad(base, (0, 4 - base.size), constant_values=1.0)
+        a = _as_array(alpha)
+        av = float(a.reshape(-1)[-1]) if a.ndim and a.shape[-1] >= 4 else float(np.atleast_1d(a).reshape(-1)[0])
+        base[3] = base[3] * av if mode == "multiply" else av
+        return [float(x) for x in base[:4]]
+    if img.ndim == 2:
+        img = img[..., None]
+    h, w = img.shape[0], img.shape[1]
+    rgba = _promote_to((h, w), img, 4)
+    a = _to_alpha(alpha, (h, w))
+    new_a = rgba[..., 3:4] * a if mode == "multiply" else a
+    out = np.concatenate([rgba[..., :3], np.clip(new_a, 0.0, 1.0)], axis=-1)
+    return out.astype(np.float32)
+
+
 RAMP_INTERP = {"linear", "constant", "ease"}
 
 
@@ -571,3 +609,57 @@ def color_ramp(fac: Any, positions: Sequence[float], colors: Sequence[Sequence[f
         c1 = C[i1]
         out = c0 + (c1 - c0) * u[..., None]
     return np.asarray(out, dtype=np.float32)
+
+
+MATH_OPS = {
+    "add", "subtract", "multiply", "divide", "modulo", "power",
+    "min", "max", "abs", "sqrt",
+    "equal", "not-equal", "greater", "greater-equal", "less", "less-equal",
+}
+
+
+def math_op(a: Any, b: Any, op: str, eps: float = 1e-4) -> np.ndarray:
+    op = (op or "add").lower()
+    if op not in MATH_OPS:
+        raise ValueError(f"unknown math op: {op}")
+    a_arr = _as_array(a)
+    if a_arr.ndim == 0:
+        a_arr = a_arr.reshape(1, 1, 1)
+    elif a_arr.ndim == 1:
+        a_arr = a_arr.reshape(1, 1, -1)
+    elif a_arr.ndim == 2:
+        a_arr = a_arr[..., None]
+    if op == "abs":
+        return np.abs(a_arr).astype(np.float32)
+    if op == "sqrt":
+        return np.sqrt(np.maximum(a_arr, 0.0)).astype(np.float32)
+    A, B = _broadcast(a_arr, b, fill_b=0.0)
+    if op == "add":
+        return (A + B).astype(np.float32)
+    if op == "subtract":
+        return (A - B).astype(np.float32)
+    if op == "multiply":
+        return (A * B).astype(np.float32)
+    if op == "divide":
+        return np.divide(A, np.where(B == 0, 1.0, B)).astype(np.float32)
+    if op == "modulo":
+        return np.mod(A, np.where(B == 0, 1.0, B)).astype(np.float32)
+    if op == "power":
+        return np.power(np.maximum(A, 0.0), B).astype(np.float32)
+    if op == "min":
+        return np.minimum(A, B).astype(np.float32)
+    if op == "max":
+        return np.maximum(A, B).astype(np.float32)
+    if op == "equal":
+        return (np.abs(A - B) <= eps).astype(np.float32)
+    if op == "not-equal":
+        return (np.abs(A - B) > eps).astype(np.float32)
+    if op == "greater":
+        return (A > B).astype(np.float32)
+    if op == "greater-equal":
+        return (A >= B).astype(np.float32)
+    if op == "less":
+        return (A < B).astype(np.float32)
+    if op == "less-equal":
+        return (A <= B).astype(np.float32)
+    raise AssertionError("unreachable")

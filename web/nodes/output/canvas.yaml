@@ -1,7 +1,7 @@
 canvas:
   label: Canvas
   category: Output
-  desc: Composite multiple images on a sized canvas. Each image can be paired with a bottom-left position vector.
+  desc: Composite multiple images on a sized canvas. Each image can be paired with a bottom-left position vector, a scale vector, and a rotation in degrees.
   defaultWidth: 360
   defaultHeight: 300
   resizable: true
@@ -13,6 +13,14 @@ canvas:
   - id: positions
     label: Position
     type: vector
+    multi: true
+  - id: scales
+    label: Scale
+    type: vector
+    multi: true
+  - id: rotations
+    label: Rotation
+    type: float
     multi: true
   - id: size
     label: Size

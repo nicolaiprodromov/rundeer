@@ -1,0 +1,11 @@
+rgb:
+  label: RGB
+  category: Primitives
+  desc: Output a single color with alpha. Edit in RGB, HSV, or Hex mode.
+  out:
+  - id: out
+    label: Color
+    type: color
+  traits: [liveUpdate]
+  defaultWidth: 210
+  src: web/nodes/primitives/rgb.js
