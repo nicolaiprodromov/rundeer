@@ -4736,6 +4736,7 @@ const SHORTCUT_DEFINITIONS = [
 
   { id: "openRuns", group: "Panels", label: "Runs", description: "Open runs page", default: "R" },
   { id: "toggleAgentPanel", group: "Panels", label: "Palette", description: "Toggle floating palette", default: "N" },
+  { id: "toggleRunLog", group: "Panels", label: "Run log", description: "Toggle floating run log", default: "P" },
   { id: "cutSelection", group: "Edit", label: "Cut selection", description: "Copy and remove selected nodes", default: "Mod+X" },
   { id: "deleteSelection", group: "Edit", label: "Delete selection", description: "Remove selected nodes", default: "Delete" },
   { id: "selectAll", group: "Edit", label: "Select all", description: "Toggle all nodes", default: "A" },
@@ -5100,6 +5101,12 @@ function onKeydown(e) {
     return;
   }
 
+  if (shortcutMatches(e, "toggleRunLog")) {
+    e.preventDefault();
+    togglePanel("log");
+    return;
+  }
+
   if (shortcutMatches(e, "cutSelection")) {
     e.preventDefault();
     cutSelectionToClipboard();
@@ -5267,14 +5274,15 @@ function togglePanel(which) {
   if (!shell) return;
   if (which === "palette") {
     shell.classList.toggle("hide-nmenu");
-    applyPaletteLayout({ commitHandleSide: true });
+    applyPaletteLayout();
+    applyFlogLayout();
     setHint(shell.classList.contains("hide-nmenu") ? "node menu hidden (T)" : "node menu shown (T)");
   } else if (which === "n") {
-    const state = paletteLayoutState();
-    state.bodyCollapsed = !state.bodyCollapsed;
-    applyPaletteLayout();
-    scheduleWebStoreSave();
-    setHint(state.bodyCollapsed ? "palette collapsed (N)" : "palette expanded (N)");
+    const collapsed = setPaletteCollapsed(!normalizedPaletteState().bodyCollapsed);
+    setHint(collapsed ? "palette collapsed (N)" : "palette expanded (N)");
+  } else if (which === "log") {
+    const open = toggleFlog();
+    setHint(open ? "run log shown (P)" : "run log hidden (P)");
   } else if (which === "runs") {
     setActiveView("runs");
     setHint("runs view (R)");
@@ -6795,133 +6803,193 @@ let _runLogState = {
   persistPromise: null,
 };
 
-const RUN_DOCK_PAD = 12;
-function clampRunDockValue(value, min, max) {
-  if (max < min) return min;
-  return Math.min(max, Math.max(min, value));
+function flogState() {
+  const layout = webLayoutState();
+  if (!layout.flog || typeof layout.flog !== "object") layout.flog = {};
+  return layout.flog;
 }
 
-function normalizeRunDockEdge(edge) {
-  if (["top", "right", "bottom", "left"].includes(edge)) return edge;
-  if (typeof edge === "string") {
-    if (edge.startsWith("top")) return "top";
-    if (edge.startsWith("bottom")) return "bottom";
-    if (edge.endsWith("left") || edge === "left") return "left";
-    if (edge.endsWith("right") || edge === "right") return "right";
-  }
-  return "bottom";
-}
-
-function defaultRunDockAlong(edge) {
-  return edge === "bottom" ? 0.72 : 0.5;
-}
-
-function readRunDockState() {
-  const saved = webStore.state.runDock;
-  if (saved && typeof saved === "object") {
-    const edge = normalizeRunDockEdge(saved.edge);
-    const along = Number.isFinite(saved.along) ? saved.along : defaultRunDockAlong(edge);
-    return { edge, along };
-  }
-  return { edge: "bottom", along: defaultRunDockAlong("bottom") };
-}
-
-function saveRunDockState(state) {
-  webStore.state.runDock = {
-    edge: normalizeRunDockEdge(state.edge),
-    along: clampRunDockValue(state.along, 0, 1),
+function flogViewportRect() {
+  const wrap = document.getElementById("canvasWrap");
+  if (!wrap) return { width: window.innerWidth, height: window.innerHeight };
+  return {
+    width: Math.max(0, wrap.offsetWidth || wrap.clientWidth),
+    height: Math.max(0, wrap.offsetHeight || wrap.clientHeight),
   };
+}
+
+function clampFlogNumber(value, min, max, fallback) {
+  const n = Number(value);
+  const lower = Math.min(min, max);
+  const upper = Math.max(min, max);
+  if (!Number.isFinite(n)) return Math.max(lower, Math.min(upper, fallback));
+  return Math.max(lower, Math.min(upper, n));
+}
+
+function normalizedFlogState() {
+  const state = flogState();
+  const vp = flogViewportRect();
+  const ep = 8;
+  const availW = Math.max(240, vp.width - ep * 2);
+  const availH = Math.max(140, vp.height - ep * 2);
+  const w = Math.round(clampFlogNumber(state.w, Math.min(260, availW), availW, Math.min(430, availW)));
+  const h = Math.round(clampFlogNumber(state.h, Math.min(140, availH), availH, Math.min(280, availH)));
+  return {
+    w,
+    h,
+    x: Number.isFinite(Number(state.x)) ? Number(state.x) : Math.max(ep, vp.width - w - ep),
+    y: Number.isFinite(Number(state.y)) ? Number(state.y) : Math.max(ep, vp.height - h - ep),
+    open: Boolean(state.open),
+  };
+}
+
+function applyFlogLayout() {
+  const root = document.getElementById("flog");
+  if (!root) return;
+  const vp = flogViewportRect();
+  const snap = normalizedFlogState();
+  const ep = 8;
+  const maxL = Math.max(ep, vp.width - snap.w - ep);
+  const maxT = Math.max(ep, vp.height - snap.h - ep);
+  root.style.setProperty("--flog-x", `${Math.round(Math.max(ep, Math.min(snap.x, maxL)))}px`);
+  root.style.setProperty("--flog-y", `${Math.round(Math.max(ep, Math.min(snap.y, maxT)))}px`);
+  root.style.setProperty("--flog-w", `${snap.w}px`);
+  root.style.setProperty("--flog-h", `${snap.h}px`);
+  root.hidden = !snap.open;
+}
+
+function syncFlog() {
+  const dstStatus = document.getElementById("flogStatus");
+  const srcStatus = document.getElementById("runLogStatus");
+  if (dstStatus && srcStatus) {
+    dstStatus.dataset.state = srcStatus.dataset.state || "idle";
+    dstStatus.textContent = srcStatus.textContent;
+  }
+  const dstTitle = document.getElementById("flogTitle");
+  const srcTitle = document.getElementById("runLogTitle");
+  if (dstTitle && srcTitle) dstTitle.textContent = srcTitle.textContent;
+  const dstMeta = document.getElementById("flogMeta");
+  const srcMeta = document.getElementById("runLogMeta");
+  if (dstMeta && srcMeta) dstMeta.textContent = srcMeta.textContent;
+  const dstBody = document.getElementById("flogBody");
+  const srcBody = document.getElementById("runLogBody");
+  if (dstBody && srcBody && dstBody.textContent !== srcBody.textContent) {
+    const stick = dstBody.scrollHeight - dstBody.scrollTop - dstBody.clientHeight < 24;
+    dstBody.textContent = srcBody.textContent;
+    if (stick) dstBody.scrollTop = dstBody.scrollHeight;
+  }
+}
+
+function setFlogOpen(open) {
+  const state = flogState();
+  state.open = Boolean(open);
+  applyFlogLayout();
+  if (state.open) {
+    syncFlog();
+    const body = document.getElementById("flogBody");
+    if (body) body.scrollTop = body.scrollHeight;
+  }
   scheduleWebStoreSave();
+  return state.open;
 }
 
-function closestRunDockEdge(localX, localY, viewportRect) {
-  const candidates = [
-    { edge: "top", distance: localY },
-    { edge: "right", distance: viewportRect.width - localX },
-    { edge: "bottom", distance: viewportRect.height - localY },
-    { edge: "left", distance: localX },
-  ];
-  candidates.sort((first, second) => first.distance - second.distance);
-  return candidates[0].edge;
+function toggleFlog() {
+  return setFlogOpen(!normalizedFlogState().open);
 }
 
-function runDockSizeForEdge(dock, edge, viewportRect) {
-  dock.dataset.edge = edge;
-  const fallbackWidth = edge === "left" || edge === "right" ? 360 : 420;
-  const fallbackHeight = edge === "left" || edge === "right" ? 420 : 280;
-  return {
-    width: dock.offsetWidth || Math.min(fallbackWidth, Math.max(0, viewportRect.width - RUN_DOCK_PAD * 2)),
-    height: dock.offsetHeight || Math.min(fallbackHeight, Math.max(0, viewportRect.height - RUN_DOCK_PAD * 2)),
-  };
-}
+function setupFlog() {
+  const root = document.getElementById("flog");
+  if (!root) return;
+  root.addEventListener("mousedown", (e) => e.stopPropagation());
+  root.addEventListener("wheel", (e) => e.stopPropagation());
+  applyFlogLayout();
 
-function placeRunDockAtPoint(dock, edge, localX, localY, viewportRect) {
-  const normalizedEdge = normalizeRunDockEdge(edge);
-  const size = runDockSizeForEdge(dock, normalizedEdge, viewportRect);
-  const maxLeft = Math.max(RUN_DOCK_PAD, viewportRect.width - size.width - RUN_DOCK_PAD);
-  const maxTop = Math.max(RUN_DOCK_PAD, viewportRect.height - size.height - RUN_DOCK_PAD);
-
-  dock.style.left = "";
-  dock.style.right = "";
-  dock.style.top = "";
-  dock.style.bottom = "";
-
-  if (normalizedEdge === "top" || normalizedEdge === "bottom") {
-    const left = clampRunDockValue(localX - size.width / 2, RUN_DOCK_PAD, maxLeft);
-    dock.style.left = `${left}px`;
-    if (normalizedEdge === "top") dock.style.top = `${RUN_DOCK_PAD}px`;
-    else dock.style.bottom = `${RUN_DOCK_PAD}px`;
-    return {
-      edge: normalizedEdge,
-      along: clampRunDockValue((left + size.width / 2) / Math.max(viewportRect.width, 1), 0, 1),
-    };
+  const src = document.getElementById("runLog");
+  if (src) {
+    new MutationObserver(() => {
+      if (!root.hidden) syncFlog();
+    }).observe(src, { subtree: true, childList: true, characterData: true, attributes: true });
+    syncFlog();
   }
 
-  const top = clampRunDockValue(localY - size.height / 2, RUN_DOCK_PAD, maxTop);
-  dock.style.top = `${top}px`;
-  if (normalizedEdge === "left") dock.style.left = `${RUN_DOCK_PAD}px`;
-  else dock.style.right = `${RUN_DOCK_PAD}px`;
-  return {
-    edge: normalizedEdge,
-    along: clampRunDockValue((top + size.height / 2) / Math.max(viewportRect.height, 1), 0, 1),
-  };
-}
+  document.getElementById("flogClose")?.addEventListener("click", () => setFlogOpen(false));
 
-function applyRunDockState(state) {
-  const dock = document.getElementById("runLog");
-  if (!dock) return state;
-  const viewportRect = { width: window.innerWidth, height: window.innerHeight };
-  if (viewportRect.width <= 0 || viewportRect.height <= 0) return state;
-  const edge = normalizeRunDockEdge(state.edge);
-  const along = clampRunDockValue(Number.isFinite(state.along) ? state.along : defaultRunDockAlong(edge), 0, 1);
-  const localX = edge === "top" || edge === "bottom" ? viewportRect.width * along : RUN_DOCK_PAD;
-  const localY = edge === "left" || edge === "right" ? viewportRect.height * along : RUN_DOCK_PAD;
-  return placeRunDockAtPoint(dock, edge, localX, localY, viewportRect);
-}
-
-function currentRunDockState(dock) {
-  if (!dock) return readRunDockState();
-  const viewportRect = { width: window.innerWidth, height: window.innerHeight };
-  const edge = normalizeRunDockEdge(dock.dataset.edge);
-  if (viewportRect.width <= 0 || viewportRect.height <= 0) return { edge, along: defaultRunDockAlong(edge) };
-  const rect = dock.getBoundingClientRect();
-  if (edge === "top" || edge === "bottom") {
-    return {
-      edge,
-      along: clampRunDockValue((rect.left + rect.width / 2) / Math.max(viewportRect.width, 1), 0, 1),
+  let drag = null;
+  document.getElementById("flogHead")?.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest("button")) return;
+    e.preventDefault();
+    const snap = normalizedFlogState();
+    const vp = flogViewportRect();
+    const ep = 8;
+    const maxL = Math.max(ep, vp.width - snap.w - ep);
+    const maxT = Math.max(ep, vp.height - snap.h - ep);
+    drag = {
+      x: e.clientX,
+      y: e.clientY,
+      px: Math.round(Math.max(ep, Math.min(snap.x, maxL))),
+      py: Math.round(Math.max(ep, Math.min(snap.y, maxT))),
     };
-  }
-  return {
-    edge,
-    along: clampRunDockValue((rect.top + rect.height / 2) / Math.max(viewportRect.height, 1), 0, 1),
-  };
+    root.classList.add("is-dragging");
+    document.body.style.cursor = "grabbing";
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!drag) return;
+    const state = flogState();
+    state.x = drag.px + (e.clientX - drag.x);
+    state.y = drag.py + (e.clientY - drag.y);
+    applyFlogLayout();
+  });
+  window.addEventListener("mouseup", () => {
+    if (!drag) return;
+    drag = null;
+    root.classList.remove("is-dragging");
+    document.body.style.cursor = "";
+    applyFlogLayout();
+    scheduleWebStoreSave();
+  });
+
+  let edgeDrag = null;
+  root.querySelectorAll(".ne-flog-edge[data-edge]").forEach((el) => {
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      const edge = e.currentTarget.dataset.edge;
+      const snap = normalizedFlogState();
+      edgeDrag = { edge, mx: e.clientX, my: e.clientY, x: snap.x, y: snap.y, w: snap.w, h: snap.h };
+      root.classList.add("is-resizing");
+      document.body.style.cursor = edge === "n" || edge === "s" ? "ns-resize" : "ew-resize";
+    });
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!edgeDrag) return;
+    const state = flogState();
+    const dx = e.clientX - edgeDrag.mx;
+    const dy = e.clientY - edgeDrag.my;
+    switch (edgeDrag.edge) {
+      case "n": state.y = edgeDrag.y + dy; state.h = edgeDrag.h - dy; break;
+      case "s": state.h = edgeDrag.h + dy; break;
+      case "w": state.x = edgeDrag.x + dx; state.w = edgeDrag.w - dx; break;
+      case "e": state.w = edgeDrag.w + dx; break;
+    }
+    applyFlogLayout();
+  });
+  window.addEventListener("mouseup", () => {
+    if (!edgeDrag) return;
+    edgeDrag = null;
+    root.classList.remove("is-resizing");
+    document.body.style.cursor = "";
+    applyFlogLayout();
+    scheduleWebStoreSave();
+  });
+
+  window.addEventListener("resize", applyFlogLayout);
 }
 
-function repositionRunDockFromCurrentState() {
-  const dock = document.getElementById("runLog");
-  if (!dock) return;
-  applyRunDockState(currentRunDockState(dock));
-}
+window.RundeerFlog = {
+  toggle: toggleFlog,
+  setOpen: setFlogOpen,
+  sync: syncFlog,
+};
 
 function showRunLog() {
   const log = document.getElementById("runLog");
@@ -7035,70 +7103,6 @@ function updateRunLogStatus(status, id) {
     _runLogState.lastShownRunId = id;
   }
 }
-
-function toggleRunLogMinimized() {
-  const log = document.getElementById("runLog");
-  const state = currentRunDockState(log);
-  const isMin = log.dataset.minimized === "true";
-  log.dataset.minimized = isMin ? "false" : "true";
-  const btn = document.getElementById("runLogMinimize");
-  if (btn) btn.textContent = isMin ? "–" : "▢";
-  requestAnimationFrame(() => applyRunDockState(state));
-}
-
-
-
-function setupRunDockDrag() {
-  const dock = document.getElementById("runLog");
-  const head = document.getElementById("runLogHead");
-  if (!dock || !head) return;
-
-  dock.addEventListener("mousedown", (e) => {
-    e.stopPropagation();
-  });
-
-  let savedState = readRunDockState();
-  dock.dataset.edge = savedState.edge;
-  requestAnimationFrame(() => {
-    savedState = applyRunDockState(savedState);
-  });
-
-  let drag = null;
-
-  head.addEventListener("mousedown", (e) => {
-    if (e.target.closest(".run-dock-btn")) return;
-    if (e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    drag = { startX: e.clientX, startY: e.clientY, moved: false, state: currentRunDockState(dock) };
-    dock.classList.add("is-dragging");
-  });
-
-  window.addEventListener("mousemove", (e) => {
-    if (!drag) return;
-    const dx = e.clientX - drag.startX;
-    const dy = e.clientY - drag.startY;
-    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
-    drag.moved = true;
-    const viewportRect = { width: window.innerWidth, height: window.innerHeight, left: 0, top: 0 };
-    if (viewportRect.width <= 0 || viewportRect.height <= 0) return;
-    const localX = clampRunDockValue(e.clientX, 0, viewportRect.width);
-    const localY = clampRunDockValue(e.clientY, 0, viewportRect.height);
-    const edge = closestRunDockEdge(localX, localY, viewportRect);
-    drag.state = placeRunDockAtPoint(dock, edge, localX, localY, viewportRect);
-  });
-
-  window.addEventListener("mouseup", () => {
-    if (!drag) return;
-    if (drag.moved && drag.state) saveRunDockState(drag.state);
-    dock.classList.remove("is-dragging");
-    drag = null;
-  });
-
-  window.addEventListener("resize", repositionRunDockFromCurrentState);
-}
-
-
 
 function runStatusText(status) {
   const raw = String(status || "?");
@@ -7330,43 +7334,31 @@ function normalizedPaletteState() {
     conversationCollapsed: Boolean(state.conversationCollapsed),
     fullscreen: Boolean(state.fullscreen),
     bodyCollapsed: state.bodyCollapsed === undefined ? true : Boolean(state.bodyCollapsed),
-    handleSide: state.handleSide,
+    colBot: Boolean(state.colBot),
   };
 }
 
-function paletteHandleSide(state, viewport) {
-  return state.x + state.w / 2 < viewport.width / 2 ? "right" : "left";
-}
-
-function applyPaletteLayout(options = {}) {
+function applyPaletteLayout() {
   const root = document.getElementById("agentPalette");
   if (!root) return;
   const viewport = paletteNodeViewportRect();
   const snap = normalizedPaletteState();
   const edgePadding = 8;
+  const effectiveH = snap.bodyCollapsed ? 32 : snap.h;
   const maxLeft = Math.max(edgePadding, viewport.width - snap.w - edgePadding);
-  const maxTop = Math.max(edgePadding, viewport.height - snap.h - edgePadding);
+  const maxTop = Math.max(edgePadding, viewport.height - effectiveH - edgePadding);
   const displayX = Math.round(Math.max(edgePadding, Math.min(snap.x, maxLeft)));
   const displayY = Math.round(Math.max(edgePadding, Math.min(snap.y, maxTop)));
   const conversationGap = 8;
-  const effectiveH = snap.bodyCollapsed ? 32 : snap.h;
-  const paletteCenterY = displayY + snap.h / 2;
+  const paletteCenterY = displayY + effectiveH / 2;
   const conversationBelow = paletteCenterY < viewport.height / 2;
   const conversationHeight = Math.max(0, Math.floor(conversationBelow
     ? viewport.height - (displayY + snap.h) - conversationGap
     : displayY - conversationGap));
-  const desiredHandleSide = paletteHandleSide(snap, viewport);
-  let handleSide = snap.handleSide;
-  if (options.commitHandleSide || !["left", "right"].includes(handleSide) || (!root.classList.contains("is-dragging") && !root.classList.contains("is-resizing"))) {
-    handleSide = desiredHandleSide;
-    paletteLayoutState().handleSide = desiredHandleSide;
-  }
   root.style.setProperty("--agent-palette-w", `${snap.w}px`);
   root.style.setProperty("--agent-palette-h", `${effectiveH}px`);
-  const collapseToBottom = !conversationBelow;
-  const paletteDisplayY = snap.bodyCollapsed && collapseToBottom ? displayY + snap.h - 32 : displayY;
   root.style.setProperty("--agent-palette-x", `${displayX}px`);
-  root.style.setProperty("--agent-palette-y", `${paletteDisplayY}px`);
+  root.style.setProperty("--agent-palette-y", `${displayY}px`);
   root.style.setProperty("--agent-conversation-h", `${conversationHeight}px`);
   root.style.setProperty("--agent-conversation-gap", `${conversationGap}px`);
   root.classList.toggle("is-body-collapsed", snap.bodyCollapsed);
@@ -7375,8 +7367,6 @@ function applyPaletteLayout(options = {}) {
   root.classList.toggle("is-conversation-above", !conversationBelow);
   root.classList.toggle("is-conversation-cramped", conversationHeight < 44);
   root.classList.toggle("is-fullscreen", snap.fullscreen);
-  root.classList.toggle("is-handle-right", handleSide === "right");
-  root.classList.toggle("is-handle-left", handleSide !== "right");
   const collapse = document.getElementById("agentConversationToggle");
   if (collapse) {
     collapse.setAttribute("aria-pressed", String(snap.conversationCollapsed));
@@ -7397,8 +7387,38 @@ function applyPaletteLayout(options = {}) {
   }
 }
 
+function setPaletteCollapsed(collapsed) {
+  const state = paletteLayoutState();
+  const snap = normalizedPaletteState();
+  const next = Boolean(collapsed);
+  if (next === snap.bodyCollapsed) return next;
+  const vp = paletteNodeViewportRect();
+  const ep = 8;
+  if (next) {
+    const maxTop = Math.max(ep, vp.height - snap.h - ep);
+    const dy = Math.round(Math.max(ep, Math.min(snap.y, maxTop)));
+    const bot = dy + snap.h / 2 >= vp.height / 2;
+    state.colBot = bot;
+    if (bot) state.y = dy + snap.h - 32;
+    state.bodyCollapsed = true;
+    setPalettePane("chat");
+  } else {
+    if (snap.colBot) {
+      const maxTop = Math.max(ep, vp.height - 32 - ep);
+      const dy = Math.round(Math.max(ep, Math.min(snap.y, maxTop)));
+      state.y = dy - (snap.h - 32);
+    }
+    state.colBot = false;
+    state.bodyCollapsed = false;
+  }
+  applyPaletteLayout();
+  scheduleWebStoreSave();
+  return next;
+}
+
 function setPalettePane(name = "chat") {
   const wanted = ["chat", "history", "agents", "tabs", "models"].includes(name) ? name : "chat";
+  if (wanted !== "chat" && normalizedPaletteState().bodyCollapsed) setPaletteCollapsed(false);
   document.querySelectorAll(".ne-palette-pane[data-palette-pane]").forEach((pane) => {
     const active = pane.dataset.palettePane === wanted;
     pane.hidden = !active;
@@ -7424,23 +7444,6 @@ function togglePalettePane(name) {
   else setPalettePane(name);
 }
 
-function updateAgentInputLines() {
-  const input = document.getElementById("agentInput");
-  const lines = document.getElementById("agentInputLines");
-  const surface = lines?.closest?.(".ne-string-surface");
-  if (!input || !lines) return;
-  const count = Math.max(1, String(input.value || "").split(/\n/).length);
-  const frag = document.createDocumentFragment();
-  for (let i = 1; i <= count; i += 1) {
-    const span = document.createElement("span");
-    span.textContent = String(i);
-    frag.appendChild(span);
-  }
-  lines.replaceChildren(frag);
-  if (surface) surface.style.setProperty("--line-number-digits", String(String(count).length));
-  lines.scrollTop = input.scrollTop || 0;
-}
-
 function setupAgentPalette() {
   const root = document.getElementById("agentPalette");
   if (!root) return;
@@ -7449,17 +7452,18 @@ function setupAgentPalette() {
   applyPaletteLayout();
   setPalettePane("chat");
 
-  const input = document.getElementById("agentInput");
-  if (input) {
-    input.addEventListener("input", updateAgentInputLines);
-    input.addEventListener("scroll", updateAgentInputLines, { passive: true });
-    updateAgentInputLines();
-  }
-
   document.getElementById("currentTabButton")?.addEventListener("click", (e) => {
     e.preventDefault();
     togglePalettePane("tabs");
   });
+  const spawnTab = (e) => {
+    e.preventDefault();
+    newTab({ name: "Untitled" });
+    setHint("new graph tab");
+    setTimeout(clearHint, 1500);
+  };
+  document.getElementById("newGraphTabBtn")?.addEventListener("click", spawnTab);
+  document.getElementById("paletteNewGraphBtn")?.addEventListener("click", spawnTab);
   document.getElementById("agentSelectorBtn")?.addEventListener("click", (e) => {
     e.preventDefault();
     togglePalettePane("agents");
@@ -7485,45 +7489,44 @@ function setupAgentPalette() {
     scheduleWebStoreSave();
   });
   document.getElementById("paletteBodyToggle")?.addEventListener("click", () => {
+    setPaletteCollapsed(!normalizedPaletteState().bodyCollapsed);
+  });
+
+  let start = null;
+  const onGripDown = (e) => {
+    if (paletteLayoutState().fullscreen) return;
+    if (e.button !== 0) return;
+    if (e.target.closest("button, input, textarea, select, a")) return;
+    e.preventDefault();
+    const snap = normalizedPaletteState();
+    const vp = paletteNodeViewportRect();
+    const ep = 8;
+    const eh = snap.bodyCollapsed ? 32 : snap.h;
+    const maxL = Math.max(ep, vp.width - snap.w - ep);
+    const maxT = Math.max(ep, vp.height - eh - ep);
+    const cx = Math.round(Math.max(ep, Math.min(snap.x, maxL)));
+    const cy = Math.round(Math.max(ep, Math.min(snap.y, maxT)));
+    start = { x: e.clientX, y: e.clientY, px: cx, py: cy };
+    root.classList.add("is-dragging");
+    document.body.style.cursor = "grabbing";
+  };
+  document.getElementById("agentPaletteHeader")?.addEventListener("mousedown", onGripDown);
+  document.getElementById("agentPaletteFooter")?.addEventListener("mousedown", onGripDown);
+  window.addEventListener("mousemove", (e) => {
+    if (!start) return;
     const state = paletteLayoutState();
-    state.bodyCollapsed = !state.bodyCollapsed;
+    state.x = start.px + (e.clientX - start.x);
+    state.y = start.py + (e.clientY - start.y);
+    applyPaletteLayout();
+  });
+  window.addEventListener("mouseup", () => {
+    if (!start) return;
+    start = null;
+    root.classList.remove("is-dragging");
+    document.body.style.cursor = "";
     applyPaletteLayout();
     scheduleWebStoreSave();
   });
-
-  const drag = document.getElementById("agentPaletteDrag");
-  if (drag) {
-    let start = null;
-    drag.addEventListener("mousedown", (e) => {
-      if (paletteLayoutState().fullscreen) return;
-      e.preventDefault();
-      const snap = normalizedPaletteState();
-      const vp = paletteNodeViewportRect();
-      const ep = 8;
-      const maxL = Math.max(ep, vp.width - snap.w - ep);
-      const maxT = Math.max(ep, vp.height - snap.h - ep);
-      const cx = Math.round(Math.max(ep, Math.min(snap.x, maxL)));
-      const cy = Math.round(Math.max(ep, Math.min(snap.y, maxT)));
-      start = { x: e.clientX, y: e.clientY, px: cx, py: cy };
-      root.classList.add("is-dragging");
-      document.body.style.cursor = "grabbing";
-    });
-    window.addEventListener("mousemove", (e) => {
-      if (!start) return;
-      const state = paletteLayoutState();
-      state.x = start.px + (e.clientX - start.x);
-      state.y = start.py + (e.clientY - start.y);
-      applyPaletteLayout();
-    });
-    window.addEventListener("mouseup", () => {
-      if (!start) return;
-      start = null;
-      root.classList.remove("is-dragging");
-      document.body.style.cursor = "";
-      applyPaletteLayout({ commitHandleSide: true });
-      scheduleWebStoreSave();
-    });
-  }
 
   const edges = root.querySelectorAll(".ne-palette-edge[data-edge]");
   if (edges.length) {
@@ -7550,20 +7553,19 @@ function setupAgentPalette() {
         case "e": state.w = edgeStart.w + dx; break;
       }
       applyPaletteLayout();
-      updateAgentInputLines();
     });
     window.addEventListener("mouseup", () => {
       if (!edgeStart) return;
       edgeStart = null;
       root.classList.remove("is-resizing");
       document.body.style.cursor = "";
-      applyPaletteLayout({ commitHandleSide: true });
+      applyPaletteLayout();
       scheduleWebStoreSave();
     });
   }
 
   window.addEventListener("resize", () => {
-    applyPaletteLayout({ commitHandleSide: true });
+    applyPaletteLayout();
     scheduleWebStoreSave();
   });
 }
@@ -7572,7 +7574,6 @@ window.RundeerPalette = {
   showPane: setPalettePane,
   togglePane: togglePalettePane,
   isPaneOpen: isPalettePaneOpen,
-  updateInputLines: updateAgentInputLines,
 };
 
 function scheduleWebStoreSave() {
@@ -8910,7 +8911,7 @@ function setActiveView(name, opts = {}) {
     } catch (_) {}
   }
   if (name === "nodes") {
-    requestAnimationFrame(() => { applyViewport(); renderConnections(); });
+    requestAnimationFrame(() => { applyViewport(); renderConnections(); applyFlogLayout(); });
   }
 }
 
@@ -9146,7 +9147,8 @@ function setupSidePanelResizers() {
     const applyWidth = (w) => {
       const value = `${Math.round(w)}px`;
       shell.style.setProperty(varName, value);
-      applyPaletteLayout({ commitHandleSide: true });
+      applyPaletteLayout();
+      applyFlogLayout();
     };
     resizer.addEventListener("mousedown", (e) => {
       e.preventDefault();
@@ -9745,6 +9747,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyViewport();
   setupSidePanelResizers();
   setupAgentPalette();
+  setupFlog();
 
   const wrap = document.getElementById("canvasWrap");
 

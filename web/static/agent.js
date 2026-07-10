@@ -89,6 +89,9 @@
     streamEl.addEventListener("dragover", (e) => { e.preventDefault(); streamEl.classList.add("is-dropping"); });
     streamEl.addEventListener("dragleave", () => streamEl.classList.remove("is-dropping"));
     streamEl.addEventListener("drop", onDrop);
+    composerEl.addEventListener("dragover", (e) => { e.preventDefault(); composerEl.classList.add("is-dropping"); });
+    composerEl.addEventListener("dragleave", () => composerEl.classList.remove("is-dropping"));
+    composerEl.addEventListener("drop", (e) => { composerEl.classList.remove("is-dropping"); onDrop(e); });
     streamEl.addEventListener("scroll", () => {
       stickToBottom = isNearBottom();
     }, { passive: true });
@@ -351,7 +354,7 @@
     if (!streamEl || streamEl.querySelector(".ne-agent-empty")) return;
     const empty = document.createElement("div");
     empty.className = "ne-agent-empty";
-    empty.innerHTML = "Ask the agent to build, connect, debug, or run a graph.<br><span class=\"ne-agent-empty-hint\">Type @ to mention files. Drag images here to attach.</span>";
+    empty.innerHTML = "Ask the agent to build, connect, debug, or run a graph.<br><span class=\"ne-agent-empty-hint\">Type @ to mention files. Drop images on the input to attach.</span>";
     streamEl.appendChild(empty);
   }
   function hideEmptyPlaceholder() {
@@ -767,7 +770,6 @@
     try { lastSentSnapshot = JSON.stringify(graph); } catch(_) { lastSentSnapshot = null; }
     inputEl.value = "";
     autosizeInput();
-    if (window.RundeerPalette && typeof window.RundeerPalette.updateInputLines === "function") window.RundeerPalette.updateInputLines();
     attachments = [];
     renderAttachments();
     if (!turnActive) {
@@ -795,7 +797,6 @@
 
   function onInputChange() {
     autosizeInput();
-    if (window.RundeerPalette && typeof window.RundeerPalette.updateInputLines === "function") window.RundeerPalette.updateInputLines();
     const cursor = inputEl.selectionStart || inputEl.value.length;
     const before = inputEl.value.slice(0, cursor);
     const m = before.match(/(^|\s)@([\w./-]*)$/);

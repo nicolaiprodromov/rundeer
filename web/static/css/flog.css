@@ -1,0 +1,48 @@
+.ne-flog {
+  --flog-x: 0px;
+  --flog-y: 0px;
+  --flog-w: 430px;
+  --flog-h: 280px;
+  position: absolute;
+  left: var(--flog-x);
+  top: var(--flog-y);
+  width: var(--flog-w);
+  height: var(--flog-h);
+  z-index: 75;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg-deep);
+  box-shadow: 0 18px 46px oklch(0% 0 0 / 0.52);
+  overflow: visible;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+.ne-flog[hidden] { display: none; }
+.ne-flog.is-dragging,
+.ne-flog.is-resizing { user-select: none; }
+
+.ne-flog-head {
+  cursor: grab;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.ne-flog.is-dragging .ne-flog-head { cursor: grabbing; }
+
+.ne-flog-close {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.ne-flog-body {
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.ne-flog-edge {
+  position: absolute;
+  z-index: 3;
+}
+.ne-flog-edge[data-edge="n"] { top: -3px; left: 0; right: 0; height: 6px; cursor: ns-resize; }
+.ne-flog-edge[data-edge="s"] { bottom: -3px; left: 0; right: 0; height: 6px; cursor: ns-resize; }
+.ne-flog-edge[data-edge="w"] { left: -3px; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
+.ne-flog-edge[data-edge="e"] { right: -3px; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }

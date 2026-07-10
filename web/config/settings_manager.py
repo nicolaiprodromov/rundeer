@@ -80,6 +80,7 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
             "togglePalette": "T",
             "openRuns": "R",
             "toggleAgentPanel": "N",
+            "toggleRunLog": "P",
             "cutSelection": "Mod+X",
             "deleteSelection": "Delete",
             "selectAll": "A",
