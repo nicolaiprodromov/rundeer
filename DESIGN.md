@@ -2,23 +2,21 @@
 name: "rundeer"
 description: "A batch-first studio instrument for AI image and video generation."
 colors:
-  bg: "oklch(13.5% 0.006 80)"
-  bg-deep: "oklch(10% 0.005 80)"
-  surface: "oklch(16% 0.007 80)"
-  surface-2: "oklch(19% 0.008 80)"
-  surface-3: "oklch(23% 0.009 80)"
-  line: "oklch(28% 0.010 80)"
-  line-strong: "oklch(38% 0.012 80)"
-  text: "oklch(94% 0.005 80)"
-  text-soft: "oklch(82% 0.007 80)"
-  muted: "oklch(66% 0.008 80)"
-  quiet: "oklch(48% 0.008 80)"
-  whisper: "oklch(36% 0.008 80)"
-  gold: "oklch(83% 0.130 88)"
-  gold-soft: "oklch(72% 0.090 88)"
-  gold-deep: "oklch(45% 0.090 80)"
-  violet: "oklch(70% 0.135 304)"
-  violet-soft: "oklch(58% 0.105 304)"
+  bg: "oklch(13.5% 0 0)"
+  bg-deep: "oklch(10% 0 0)"
+  surface: "oklch(16% 0 0)"
+  surface-2: "oklch(19% 0 0)"
+  surface-3: "oklch(23% 0 0)"
+  line: "oklch(28% 0 0)"
+  line-strong: "oklch(38% 0 0)"
+  text: "oklch(96% 0 0)"
+  text-soft: "oklch(82% 0 0)"
+  muted: "oklch(66% 0 0)"
+  quiet: "oklch(48% 0 0)"
+  whisper: "oklch(36% 0 0)"
+  accent: "oklch(100% 0 0)"
+  accent-2: "oklch(86% 0 0)"
+  bad: "oklch(68% 0.17 25)"
   category-primitives: "oklch(72% 0.180 235)"
   category-prompt: "oklch(72% 0.210 315)"
   category-grok-imagine: "oklch(84% 0.190 82)"
@@ -55,8 +53,7 @@ typography:
     lineHeight: 1.35
     letterSpacing: "0.02em"
 rounded:
-  sm: "2px"
-  md: "4px"
+  none: "0"
 spacing:
   space-2: "4px"
   space-3: "8px"
@@ -68,26 +65,26 @@ spacing:
   space-9: "64px"
 components:
   button-primary:
-    backgroundColor: "{colors.gold}"
+    backgroundColor: "{colors.accent}"
     textColor: "{colors.bg-deep}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.none}"
     padding: "0 14px"
     height: "34px"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.text-soft}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.none}"
     padding: "0 12px"
     height: "32px"
   panel:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.text}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.none}"
     padding: "{spacing.space-5}"
   input:
     backgroundColor: "{colors.bg-deep}"
     textColor: "{colors.text}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.none}"
     padding: "0 10px"
     height: "30px"
 ---
@@ -100,29 +97,27 @@ components:
 
 rundeer is a dark, concentrated node workbench for generating visual media in batches. The design should feel like a local studio instrument: dense enough for repeated use, sharp enough for technical trust, and expressive only where identity or state needs it.
 
-The Nodes view, Explore view, curses TUI, and plain terminal output are one visual system. The browser surfaces use warm-tinted dark neutrals, thin structural lines, compact controls, and a restrained gold action color. The terminal carries the same identity through monospaced status text and a pink-to-violet deer banner.
+The Nodes view, Explore view, curses TUI, and plain terminal output are one visual system. The browser surfaces use pure achromatic neutrals: black and dark grey surfaces, thin structural lines, compact controls, and white as the only accent. The terminal carries the same identity through monospaced status text and a pink-to-violet deer banner.
 
 The system rejects SaaS gloss, marketing page composition, rounded card sprawl, decorative glass, and generic neon cyberpunk styling. Rundeer should look like a tool a serious visual workflow hacker leaves open beside their editor.
 
 **Key Characteristics:**
 - Dense, operational panels with clear state and minimal ceremony.
 - Graph-first workflows with sockets, bundles, loops, previews, and run logs as core affordances.
-- Warm dark neutrals, gold primary action, violet as rare execution energy.
+- Achromatic black and grey neutrals with white as the single accent.
 - Compact typography with a distinctive wordmark and monospaced status language.
-- Sharp radii, thin borders, and tonal layering instead of soft card shadows.
+- Zero radii, hard corners, thin borders, and tonal layering instead of soft card shadows.
 
 ## 2. Colors
 
-The palette is a restrained product palette: warm near-black surfaces, quiet ochre-gold action, and a pink-to-violet identity gradient reserved for the deer logo and terminal banner.
+The palette is raw and achromatic: black and dark grey surfaces, white text at graded intensities, white as the only accent, and a pink-to-violet identity gradient reserved for the deer logo and terminal banner.
 
 ### Primary
-- **Cadmium Gold** (`oklch(83% 0.130 88)`): primary run actions, focused selection, and high-confidence positive states.
-- **Soft Gold** (`oklch(72% 0.090 88)`): links, secondary emphasis, hover states, and lightweight affordance hints.
-- **Deep Gold** (`oklch(45% 0.090 80)`): text selection, pressed states, and low-light emphasis backgrounds.
+- **Accent White** (`oklch(100% 0 0)`): primary run actions, focused selection, active execution, and high-confidence positive states.
+- **Dim White** (`oklch(86% 0 0)`): links, secondary emphasis, hover states, and lightweight affordance hints.
 
 ### Secondary
-- **Execution Violet** (`oklch(70% 0.135 304)`): active node execution, rare highlights, and cross-media energy states.
-- **Soft Violet** (`oklch(58% 0.105 304)`): muted active glow and secondary execution feedback.
+- **Failure Red** (`oklch(68% 0.17 25)`): the single functional error color for failed states, error borders, and the cut wire. Never decorative.
 
 ### Tertiary
 - **Deer Pink** (`#ff60ff`): start of the CLI/TUI/web deer identity gradient.
@@ -150,18 +145,18 @@ These accents are intentionally more vivid than the routine product palette. Use
 Socket accents should be saturated enough to read quickly on the graph canvas. They encode data type, not category. Bundle sockets use stronger versions of their media color.
 
 ### Neutral
-- **Studio Black** (`oklch(10% 0.005 80)`): deepest browser and terminal surface.
-- **Warm Console** (`oklch(13.5% 0.006 80)`): main app background.
-- **Panel Charcoal** (`oklch(16% 0.007 80)`): default panel fill.
-- **Raised Panel** (`oklch(19% 0.008 80)`): controls, selected surfaces, and node bodies.
-- **Working Metal** (`oklch(23% 0.009 80)`): stronger panel headers and active internal surfaces.
-- **Quiet Line** (`oklch(28% 0.010 80)`): default separators and control borders.
-- **Strong Line** (`oklch(38% 0.012 80)`): focusable panel divisions and stronger outlines.
-- **Paper Text** (`oklch(94% 0.005 80)`): primary text.
-- **Soft Text** (`oklch(82% 0.007 80)`): secondary text and input values.
-- **Muted Text** (`oklch(66% 0.008 80)`): metadata and inactive labels.
-- **Quiet Text** (`oklch(48% 0.008 80)`): placeholders and low-priority state.
-- **Whisper Text** (`oklch(36% 0.008 80)`): dividers, micro-labels, and disabled affordances.
+- **Studio Black** (`oklch(10% 0 0)`): deepest browser and terminal surface.
+- **Console Black** (`oklch(13.5% 0 0)`): main app background.
+- **Panel Charcoal** (`oklch(16% 0 0)`): default panel fill.
+- **Raised Panel** (`oklch(19% 0 0)`): controls, selected surfaces, and node bodies.
+- **Working Metal** (`oklch(23% 0 0)`): stronger panel headers and active internal surfaces.
+- **Quiet Line** (`oklch(28% 0 0)`): default separators and control borders.
+- **Strong Line** (`oklch(38% 0 0)`): focusable panel divisions and stronger outlines.
+- **Paper Text** (`oklch(96% 0 0)`): primary text.
+- **Soft Text** (`oklch(82% 0 0)`): secondary text and input values.
+- **Muted Text** (`oklch(66% 0 0)`): metadata and inactive labels.
+- **Quiet Text** (`oklch(48% 0 0)`): placeholders and low-priority state.
+- **Whisper Text** (`oklch(36% 0 0)`): dividers, micro-labels, and disabled affordances.
 
 ### Named Rules
 
@@ -169,7 +164,7 @@ Socket accents should be saturated enough to read quickly on the graph canvas. T
 
 In browser UI, prefer colored ASCII characters, a rendered image asset, or a purpose-built logo treatment for the deer identity rather than gradient-filled ordinary text.
 
-**The Gold Is a Tool Rule.** Gold marks actions, links, focus, or success. It is not decoration.
+**The White Is a Tool Rule.** The white accent marks actions, links, focus, or success. Chromatic color in product chrome is forbidden; only node category accents, socket types, media-type indicators, failure red, and the deer identity may carry hue.
 
 ## 3. Typography
 
@@ -199,8 +194,8 @@ rundeer uses tonal layering first and shadows second. Most depth comes from dark
 
 ### Shadow Vocabulary
 - **Node Rest** (`0 10px 26px oklch(0% 0 0 / 0.22)`): default floating node cards on the graph canvas.
-- **Node Selected** (`0 0 0 1px color-mix(in oklch, var(--gold) 40%, transparent), 0 4px 24px color-mix(in oklch, var(--gold) 14%, transparent)`): selected graph nodes and focus-visible spatial objects.
-- **Execution Glow** (`0 0 12px color-mix(in oklch, var(--violet) 25%, transparent)`): active node execution only.
+- **Node Selected** (`0 0 0 1px color-mix(in oklch, var(--accent) 40%, transparent), 0 4px 24px color-mix(in oklch, var(--accent) 14%, transparent)`): selected graph nodes and focus-visible spatial objects.
+- **Execution Glow** (`0 0 12px color-mix(in oklch, var(--accent) 25%, transparent)`): active node execution only.
 
 ### Named Rules
 
@@ -209,17 +204,17 @@ rundeer uses tonal layering first and shadows second. Most depth comes from dark
 ## 5. Components
 
 ### Buttons
-- **Shape:** sharp product rectangles with a `2px` radius.
-- **Primary:** gold fill, studio-black text, compact height, and icon-plus-label where the action benefits from a symbol.
+- **Shape:** hard-cornered product rectangles with zero radius.
+- **Primary:** white fill, studio-black text, compact height, and icon-plus-label where the action benefits from a symbol.
 - **Hover / Focus:** border or background shift with fast easing. Focus must be visible without relying on color alone.
 - **Ghost:** transparent or surface-tinted with muted text, used for secondary commands like reload, settings, save, load, and panel toggles.
 
 ### Chips
 - **Style:** small mono or label text on dark tonal surfaces with a thin border.
-- **State:** active chips use gold text or border, not filled saturated pills.
+- **State:** active chips use white text or border, not filled saturated pills.
 
 ### Cards / Containers
-- **Corner Style:** `2px` to `4px`, never pill-like.
+- **Corner Style:** zero radius everywhere; squares, not pills or circles.
 - **Background:** panels use `surface`, `surface-2`, and `surface-3` steps rather than bright fills.
 - **Shadow Strategy:** no routine card shadows. Use tonal layering and borders.
 - **Border:** `1px` quiet line by default; strong line only for active/focused states.
@@ -227,11 +222,11 @@ rundeer uses tonal layering first and shadows second. Most depth comes from dark
 
 ### Inputs / Fields
 - **Style:** dark recessed fill, thin border, compact height, and strong mono readability for paths and ids.
-- **Focus:** gold border or ring treatment with no layout shift.
+- **Focus:** white border or ring treatment with no layout shift.
 - **Error / Disabled:** pair color with clear text and state labels. Disabled fields should reduce contrast but remain legible.
 
 ### Navigation
-- **Style:** left rails, top tabs, and bottom toolbars are structural, not decorative. Active state uses gold or text contrast with stable dimensions. View switching between Explore and Nodes keeps the same masthead vocabulary.
+- **Style:** left rails, top tabs, and bottom toolbars are structural, not decorative. Active state uses white or text contrast with stable dimensions. View switching between Explore and Nodes keeps the same masthead vocabulary.
 
 ### Explore View
 
@@ -250,8 +245,8 @@ Node category color is structural. Headers, category menu rows, Shift+A menu sec
 ## 6. Do's and Don'ts
 
 ### Do:
-- **Do** use the warm OKLCH neutral scale from `styles.css` for browser surfaces.
-- **Do** keep primary actions rare and gold, especially `Run`, `Run Graph`, and focused run controls.
+- **Do** use the achromatic OKLCH neutral scale from `styles.css` for browser surfaces.
+- **Do** keep primary actions rare and white, especially `Run`, `Run Graph`, and focused run controls.
 - **Do** use the same status vocabulary across CLI, TUI, and web: queued, uploading, submitted, polling, downloading, done, failed, cancelled.
 - **Do** expose run outputs, file context, generated configs, graph state, and logs close to the action.
 - **Do** use compact panels and predictable controls for repeated workflows.

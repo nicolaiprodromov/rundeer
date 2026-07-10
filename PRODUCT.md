@@ -33,7 +33,7 @@ Do not separate the CLI and webapp into different brands. The terminal banner, c
 1. **Batch-first confidence.** Favor interfaces that make the run plan, count, output path, and risk visible before the user spends credits.
 2. **Show the workspace.** Keep styles, references, files, outputs, logs, and graph state close to the primary action instead of hiding them in detached documentation.
 3. **Graphs are the studio surface.** Treat command nodes, prompt nodes, loop bundles, preview nodes, and run docks as the main product vocabulary for complex workflows.
-4. **One language across terminal and web.** Reuse the same dark warm neutrals, sharp panels, monospaced status language, and pink-to-violet deer identity across CLI, TUI, graph, Explore, and fallback form surfaces.
+4. **One language across terminal and web.** Reuse the same achromatic dark neutrals, hard-cornered panels, monospaced status language, and pink-to-violet deer identity across CLI, TUI, graph, Explore, and fallback form surfaces.
 5. **Power without ceremony.** Advanced controls should be present and scannable, with graph wiring and inline preview doing the teaching instead of onboarding walls.
 6. **Artifacts are the memory.** Every run should leave inspectable outputs, logs, and config breadcrumbs so the user can compare, repeat, or extend it later.
 

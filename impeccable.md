@@ -22,12 +22,11 @@ Treat Rundeer as a product UI. It is an operational tool for media generation wo
 
 The webapp and terminal CLI share one design scheme:
 
-- Warm dark OKLCH neutrals for the working surface.
-- Gold for primary actions, focus, and success.
-- Violet for active execution energy.
+- Achromatic OKLCH neutrals for the working surface: black and dark grey only.
+- White for primary actions, focus, success, and execution energy.
 - Pink-to-violet deer identity for the ASCII logo and banner only.
 - Compact product typography with Bricolage Grotesque, Hanken Grotesk, and Geist Mono.
-- Sharp `2px` to `4px` radii, thin borders, dense panels, and tonal layering.
+- Zero radii with hard corners, thin borders, dense panels, and tonal layering.
 - Graph-native interaction patterns: sockets, bundles, loop pairs, inline previews, file exploration, and run docks.
 
 ## Onboarding Goal

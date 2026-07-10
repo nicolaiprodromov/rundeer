@@ -56,8 +56,8 @@
   overflow-wrap: anywhere;
 }
 .ne-agent-msg[data-role="user"] .ne-agent-msg-body {
-  background: color-mix(in oklch, var(--gold) 8%, var(--surface));
-  border: 1px solid color-mix(in oklch, var(--gold) 32%, var(--line));
+  background: color-mix(in oklch, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in oklch, var(--accent) 32%, var(--line));
   padding: var(--space-2) var(--space-3);
 }
 .ne-agent-msg[data-role="assistant"] .ne-agent-msg-body {
@@ -69,8 +69,8 @@
   backdrop-filter: blur(2px);
 }
 .ne-agent-thinking {
-  border: 1px solid color-mix(in oklch, var(--violet) 30%, var(--line));
-  background: color-mix(in oklch, var(--surface) 94%, var(--violet));
+  border: 1px solid color-mix(in oklch, var(--accent) 30%, var(--line));
+  background: color-mix(in oklch, var(--surface) 94%, var(--accent));
   color: var(--text-soft);
   padding: 6px var(--space-3);
 }
@@ -81,7 +81,7 @@
   font-size: 9px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: color-mix(in oklch, var(--violet) 72%, var(--text-soft));
+  color: color-mix(in oklch, var(--accent) 72%, var(--text-soft));
 }
 .ne-agent-thinking-body {
   margin: 6px 0 0;
@@ -119,11 +119,11 @@
 }
 .ne-agent-msg[data-role="assistant"] .ne-agent-msg-body li { margin: 0.2em 0; }
 .ne-agent-msg[data-role="assistant"] .ne-agent-msg-body a {
-  color: var(--gold-soft, var(--gold));
+  color: var(--accent-2);
   text-decoration: none;
-  border-bottom: 1px solid color-mix(in oklch, var(--gold) 40%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--accent) 40%, transparent);
 }
-.ne-agent-msg[data-role="assistant"] .ne-agent-msg-body a:hover { color: var(--gold); }
+.ne-agent-msg[data-role="assistant"] .ne-agent-msg-body a:hover { color: var(--accent); }
 .ne-agent-msg[data-role="assistant"] .ne-agent-msg-body code {
   font-family: var(--font-mono);
   font-size: 0.9em;
@@ -175,8 +175,8 @@
   background: var(--line);
 }
 .ne-agent-msg[data-role="error"] .ne-agent-msg-body {
-  color: var(--coral, #f87171);
-  border: 1px solid color-mix(in oklch, var(--coral, #f87171) 45%, var(--line));
+  color: var(--bad);
+  border: 1px solid color-mix(in oklch, var(--bad) 45%, var(--line));
   padding: var(--space-2) var(--space-3);
   font-family: var(--font-mono);
   font-size: 11px;
@@ -190,7 +190,7 @@
 }
 
 .ne-agent-tool {
-  border: 1px solid color-mix(in oklch, var(--violet, #8b5cf6) 28%, var(--line));
+  border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--line));
   font-family: var(--font-mono);
   font-size: 11px;
   background: color-mix(in oklch, var(--surface) 96%, var(--text));
@@ -204,7 +204,7 @@
   user-select: none;
 }
 .ne-agent-tool-glyph {
-  color: var(--violet, #8b5cf6);
+  color: var(--accent);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -224,10 +224,10 @@
   padding: 1px 5px;
   border: 1px solid var(--line);
 }
-.ne-agent-tool-status[data-status="ok"] { color: color-mix(in oklch, var(--gold) 60%, #4ade80 40%); }
-.ne-agent-tool-status[data-status="error"] { color: var(--coral, #f87171); border-color: var(--coral, #f87171); }
+.ne-agent-tool-status[data-status="ok"] { color: var(--accent-2); }
+.ne-agent-tool-status[data-status="error"] { color: var(--bad); border-color: var(--bad); }
 .ne-agent-tool-status[data-status="denied"] { color: var(--whisper); }
-.ne-agent-tool-status[data-status="running"] { color: var(--gold); }
+.ne-agent-tool-status[data-status="running"] { color: var(--accent); }
 .ne-agent-tool-body {
   border-top: 1px solid var(--line);
   padding: 8px var(--space-3);
@@ -247,8 +247,8 @@
 }
 
 .ne-agent-confirm {
-  border: 1px solid var(--gold);
-  background: color-mix(in oklch, var(--gold) 8%, var(--surface));
+  border: 1px solid var(--accent);
+  background: color-mix(in oklch, var(--accent) 8%, var(--surface));
   padding: var(--space-3);
   font-size: 12px;
 }
@@ -257,7 +257,7 @@
   font-size: 10px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--accent);
   margin-bottom: 4px;
 }
 .ne-agent-confirm-summary {
@@ -269,7 +269,7 @@
 .ne-agent-confirm-bar {
   border-top: 1px solid var(--line);
   padding: var(--space-3) var(--space-5);
-  background: color-mix(in oklch, var(--gold) 6%, var(--surface));
+  background: color-mix(in oklch, var(--accent) 6%, var(--surface));
   flex-shrink: 0;
 }
 .ne-agent-confirm-bar[hidden] { display: none; }
@@ -284,7 +284,6 @@
   position: relative;
   width: 48px;
   height: 48px;
-  border-radius: 4px;
   overflow: hidden;
   outline: 1px solid var(--pal-line, var(--line));
 }
@@ -295,7 +294,6 @@
   right: -6px;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--text);
@@ -309,7 +307,6 @@
 .ne-agent-icon-btn {
   background: none;
   border: 0;
-  border-radius: var(--pal-r, 6px);
   color: var(--quiet);
   width: 24px;
   height: 24px;
@@ -326,8 +323,8 @@
 }
 .ne-agent-icon-btn.is-active,
 .ne-agent-icon-btn[aria-expanded="true"] {
-  color: var(--gold);
-  background: color-mix(in oklch, var(--gold) 9%, transparent);
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 9%, transparent);
 }
 
 .ne-agent-mention-pop {
@@ -335,7 +332,6 @@
   z-index: 50;
   background: color-mix(in oklch, var(--bg-deep) 92%, var(--surface));
   border: 1px solid var(--line-strong);
-  border-radius: var(--pal-r, 6px);
   box-shadow: 0 8px 24px oklch(0% 0 0 / 0.4);
   max-height: 220px;
   overflow-y: auto;
@@ -347,14 +343,13 @@
 .ne-agent-mention-pop[hidden] { display: none; }
 .ne-agent-mention-item {
   padding: 4px 8px;
-  border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ne-agent-mention-item:hover,
-.ne-agent-mention-item.is-active { background: color-mix(in oklch, var(--gold) 12%, transparent); color: var(--gold); }
+.ne-agent-mention-item.is-active { background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); }
 .ne-agent-mention-item-meta { color: var(--whisper); margin-left: 6px; }
 
 .ne-agent-patch,
@@ -371,11 +366,11 @@
 .ne-agent-brain-compiled::before,
 .ne-agent-queue-note::before {
   content: "◆ ";
-  color: color-mix(in oklch, var(--gold) 62%, var(--line));
+  color: color-mix(in oklch, var(--accent) 62%, var(--line));
 }
 .ne-agent-diff-note { white-space: pre-wrap; }
 .ne-agent-diff-note::before { color: var(--quiet); }
-.ne-agent-queue-note::before { color: color-mix(in oklch, var(--violet) 60%, var(--line)); }
+.ne-agent-queue-note::before { color: color-mix(in oklch, var(--accent) 60%, var(--line)); }
 
 .ne-graph-tab[data-tab-kind="brain"] .ne-graph-tab-name::before {
   content: "🧠 ";
@@ -425,7 +420,6 @@
   --pal-bg: color-mix(in oklch, var(--bg-deep) 90%, var(--surface));
   --pal-recess: color-mix(in oklch, var(--bg-deep) 97%, var(--surface));
   --pal-line: color-mix(in oklch, var(--line) 78%, transparent);
-  --pal-r: 6px;
   position: absolute;
   inset: 0;
   z-index: 76;
@@ -501,7 +495,6 @@
   display: grid;
   grid-template-rows: 32px minmax(0, 1fr) 32px;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
   background: var(--pal-bg);
   box-shadow: 0 18px 46px oklch(0% 0 0 / 0.52);
   overflow: visible;
@@ -558,7 +551,6 @@
   gap: 4px;
   height: 24px;
   padding: 0 7px;
-  border-radius: var(--pal-r);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -571,8 +563,8 @@
   background: color-mix(in oklch, var(--text) 6%, transparent);
 }
 .ne-palette-selector[aria-expanded="true"] {
-  color: var(--gold);
-  background: color-mix(in oklch, var(--gold) 9%, transparent);
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 9%, transparent);
 }
 .ne-palette-selector-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ne-palette-selector-caret { color: var(--whisper); font-size: 10px; line-height: 1; }
@@ -597,7 +589,6 @@
   display: flex; align-items: center; gap: 6px;
   min-height: 26px;
   padding: 0 6px 0 16px;
-  border-radius: var(--pal-r);
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -605,7 +596,7 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .ne-model-row:hover { background: color-mix(in oklch, var(--text) 5%, transparent); color: var(--text); }
-.ne-model-row.is-active { color: var(--gold); background: color-mix(in oklch, var(--gold) 9%, transparent); }
+.ne-model-row.is-active { color: var(--accent); background: color-mix(in oklch, var(--accent) 9%, transparent); }
 .ne-model-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .ne-palette-middle {
@@ -655,7 +646,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--pal-r);
   background: transparent;
   color: var(--quiet);
   cursor: pointer;
@@ -666,8 +656,8 @@
 }
 .ne-palette-pane-close:hover,
 .ne-palette-pane-action:hover {
-  color: var(--gold);
-  background: color-mix(in oklch, var(--gold) 9%, transparent);
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 9%, transparent);
 }
 
 .ne-palette-pane-chat { padding: 0; }
@@ -679,14 +669,13 @@
   gap: 6px;
   padding: 2px;
   flex-shrink: 0;
-  border-radius: var(--pal-r);
   transition: box-shadow var(--duration-fast) var(--ease-out);
 }
 .ne-agent-composer:focus-within {
-  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--gold) 28%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 28%, transparent);
 }
 .ne-agent-composer.is-dropping {
-  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--gold) 55%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 55%, transparent);
 }
 .ne-agent-composer .ne-agent-attachments { padding: 6px 6px 0; }
 .ne-agent-input-row {
@@ -711,15 +700,14 @@
   display: flex;
   gap: 2px;
   padding: 2px;
-  border-radius: var(--pal-r);
   background: color-mix(in oklch, var(--pal-recess) 82%, transparent);
 }
 .ne-agent-input-actions .ne-agent-icon-btn {
   width: 22px;
   height: 22px;
 }
-.ne-agent-input-actions .ne-agent-send { color: var(--gold-soft); }
-.ne-agent-input-actions .ne-agent-send:hover { color: var(--gold); background: color-mix(in oklch, var(--gold) 10%, transparent); }
+.ne-agent-input-actions .ne-agent-send { color: var(--accent-2); }
+.ne-agent-input-actions .ne-agent-send:hover { color: var(--accent); background: color-mix(in oklch, var(--accent) 10%, transparent); }
 .ne-agent-input {
   width: 100%;
   min-height: 0;
@@ -757,10 +745,10 @@
   letter-spacing: 0.06em;
   color: var(--quiet);
 }
-.ne-status.is-running { color: var(--violet); animation: pulse 1.2s ease-in-out infinite; }
-.ne-status.is-paused { color: color-mix(in oklch, var(--violet) 74%, var(--gold)); }
-.ne-status.is-done { color: var(--gold); }
-.ne-status.is-failed { color: oklch(72% 0.15 25); }
+.ne-status.is-running { color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.ne-status.is-paused { color: var(--accent-2); }
+.ne-status.is-done { color: var(--accent); }
+.ne-status.is-failed { color: var(--bad); }
 .ne-status.is-cancelled { color: var(--quiet); }
 .ne-palette-footer .ne-run-control {
   display: flex;
@@ -785,36 +773,31 @@
   font-size: 11px;
   letter-spacing: 0;
   border: 0;
-  border-radius: var(--pal-r);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .ne-palette-footer .ne-footer-run {
-  background: var(--gold);
+  background: var(--accent);
   color: var(--bg-deep);
 }
-.ne-palette-footer .ne-footer-run:hover { background: oklch(86% 0.135 88); }
+.ne-palette-footer .ne-footer-run:hover { background: var(--accent-2); }
 .ne-palette-footer .ne-footer-run .btn-glyph { color: var(--bg-deep); font-size: 10px; }
 .ne-palette-footer .ne-footer-stop,
 .ne-palette-footer .ne-footer-pause {
   flex: 0 0 24px;
 }
 .ne-palette-footer .ne-footer-stop {
-  background: color-mix(in oklch, oklch(72% 0.15 25) 82%, var(--surface-2));
+  background: color-mix(in oklch, var(--bad) 82%, var(--surface-2));
   color: var(--bg-deep);
 }
-.ne-palette-footer .ne-footer-stop:hover { background: color-mix(in oklch, oklch(72% 0.15 25) 92%, var(--text)); }
+.ne-palette-footer .ne-footer-stop:hover { background: color-mix(in oklch, var(--bad) 92%, var(--text)); }
 .ne-palette-footer .ne-footer-pause {
-  background: color-mix(in oklch, var(--violet) 74%, var(--surface-2));
+  background: color-mix(in oklch, var(--accent) 74%, var(--surface-2));
   color: var(--bg-deep);
 }
-.ne-palette-footer .ne-footer-pause:hover { background: color-mix(in oklch, var(--violet) 86%, var(--text)); }
-.ne-palette-footer .ne-run-control[data-state="paused"] .ne-footer-pause { background: var(--gold); }
+.ne-palette-footer .ne-footer-pause:hover { background: color-mix(in oklch, var(--accent) 86%, var(--text)); }
+.ne-palette-footer .ne-run-control[data-state="paused"] .ne-footer-pause { background: var(--accent); }
 .ne-palette-footer .ne-footer-stop .btn-glyph,
 .ne-palette-footer .ne-footer-pause .btn-glyph { color: var(--bg-deep); font-size: 10px; }
-.ne-palette-footer .ne-run-control[data-state="running"] .ne-footer-stop,
-.ne-palette-footer .ne-run-control[data-state="paused"] .ne-footer-stop { border-radius: var(--pal-r) 0 0 var(--pal-r); }
-.ne-palette-footer .ne-run-control[data-state="running"] .ne-footer-pause,
-.ne-palette-footer .ne-run-control[data-state="paused"] .ne-footer-pause { border-radius: 0 var(--pal-r) var(--pal-r) 0; }
 
 .ne-current-tab {
   display: flex;
@@ -823,13 +806,13 @@
   min-width: 0;
 }
 .ne-current-tab-new {
-  background: var(--gold);
+  background: var(--accent);
   color: var(--bg-deep);
   font-size: 13px;
   font-weight: 600;
 }
 .ne-current-tab-new:hover {
-  background: oklch(86% 0.135 88);
+  background: var(--accent-2);
   color: var(--bg-deep);
 }
 .ne-current-tab-button {
@@ -841,7 +824,6 @@
   align-items: center;
   gap: 6px;
   padding: 0 7px;
-  border-radius: var(--pal-r);
   color: var(--muted);
   text-align: left;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
@@ -851,8 +833,8 @@
   background: color-mix(in oklch, var(--text) 6%, transparent);
 }
 .ne-current-tab-button[aria-expanded="true"] {
-  color: var(--gold);
-  background: color-mix(in oklch, var(--gold) 9%, transparent);
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 9%, transparent);
 }
 .ne-current-tab-label {
   font-family: var(--font-mono);
@@ -874,7 +856,7 @@
 .ne-current-tab-state {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--gold);
+  color: var(--accent);
 }
 
 .ne-graph-tabs {
@@ -889,7 +871,6 @@
   min-height: 26px;
   width: 100%;
   padding: 0 4px 0 8px;
-  border-radius: var(--pal-r);
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.04em;
@@ -900,19 +881,18 @@
 }
 .ne-graph-tab:hover { color: var(--text); background: color-mix(in oklch, var(--text) 5%, transparent); }
 .ne-graph-tab.is-active {
-  color: var(--gold);
-  background: color-mix(in oklch, var(--gold) 9%, transparent);
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 9%, transparent);
 }
 .ne-graph-tab.is-running {
-  color: color-mix(in oklch, var(--violet) 74%, var(--text));
-  background: color-mix(in oklch, var(--violet) 10%, transparent);
+  color: color-mix(in oklch, var(--accent) 74%, var(--text));
+  background: color-mix(in oklch, var(--accent) 10%, transparent);
 }
 .ne-graph-tab-run-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: var(--violet);
-  box-shadow: 0 0 10px color-mix(in oklch, var(--violet) 45%, transparent);
+  background: var(--accent);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--accent) 45%, transparent);
   flex: 0 0 auto;
 }
 .ne-graph-tab-name {
@@ -921,7 +901,7 @@
   flex: 1 1 auto;
 }
 .ne-graph-tab-dirty {
-  color: var(--gold);
+  color: var(--accent);
   font-weight: 700;
   margin-left: 2px;
 }
@@ -934,9 +914,8 @@
   cursor: pointer;
   padding: 0 4px;
   height: 18px;
-  border-radius: var(--pal-r);
 }
-.ne-graph-tab-close:hover { color: var(--gold); }
+.ne-graph-tab-close:hover { color: var(--accent); }
 
 .ne-palette-pane .ne-graph-tabs,
 .ne-palette-pane .ne-agent-history,
@@ -956,7 +935,6 @@
   gap: 4px;
   min-height: 26px;
   padding: 0 4px 0 8px;
-  border-radius: var(--pal-r);
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--text-soft);
@@ -964,14 +942,13 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .ne-agent-history-item:hover { color: var(--text); background: color-mix(in oklch, var(--text) 5%, transparent); }
-.ne-agent-history-item.is-active { color: var(--gold); background: color-mix(in oklch, var(--gold) 9%, transparent); }
+.ne-agent-history-item.is-active { color: var(--accent); background: color-mix(in oklch, var(--accent) 9%, transparent); }
 .ne-agent-history-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ne-agent-history-delete {
   background: none; border: 0; color: var(--whisper); cursor: pointer;
   font-family: var(--font-mono); font-size: 11px; padding: 2px 4px;
-  border-radius: var(--pal-r);
 }
-.ne-agent-history-delete:hover { color: var(--coral, #f87171); }
+.ne-agent-history-delete:hover { color: var(--bad); }
 
 .ne-agent-list {
   display: flex;
@@ -985,7 +962,6 @@
   gap: 4px;
   min-height: 26px;
   padding: 0 4px 0 8px;
-  border-radius: var(--pal-r);
   color: var(--text-soft);
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -997,8 +973,8 @@
   background: color-mix(in oklch, var(--text) 5%, transparent);
 }
 .ne-agent-row.is-active {
-  color: var(--gold);
-  background: color-mix(in oklch, var(--gold) 9%, transparent);
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 9%, transparent);
 }
 .ne-agent-row-name {
   min-width: 0;
@@ -1016,7 +992,7 @@
   font-family: var(--font-mono);
   font-size: 12px;
 }
-.ne-agent-row-action:hover { color: var(--gold); }
+.ne-agent-row-action:hover { color: var(--accent); }
 .ne-agent-row-action[disabled] { opacity: 0.35; cursor: not-allowed; }
 
 .ne-palette-edge {
@@ -1096,7 +1072,7 @@
   text-shadow: 0 1px 2px oklch(0% 0 0 / 0.72);
 }
 .ne-agent-conversation .ne-agent-msg[data-role="user"] .ne-agent-msg-body {
-  background: color-mix(in oklch, var(--gold) 7%, oklch(0% 0 0 / 0.28));
+  background: color-mix(in oklch, var(--accent) 7%, oklch(0% 0 0 / 0.28));
   backdrop-filter: blur(2px);
 }
 .ne-agent-conversation .ne-agent-msg[data-role="assistant"] .ne-agent-msg-body {
