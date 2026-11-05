@@ -663,3 +663,22 @@ def math_op(a: Any, b: Any, op: str, eps: float = 1e-4) -> np.ndarray:
     if op == "less-equal":
         return (A <= B).astype(np.float32)
     raise AssertionError("unreachable")
+
+
+def sensor_noise(arr: Any, amount: Any = 0.2, grain: int = 1, mono: bool = True, seed: int = 0) -> np.ndarray:
+    img = _as_array(arr)
+    if img.ndim == 2:
+        img = img[..., None]
+    if img.ndim != 3:
+        raise ValueError("sensor_noise: image must be spatial")
+    h, w = img.shape[:2]
+    rgb = _promote_to((h, w), img, 3)
+    a = img[..., 3:4] if img.shape[-1] >= 4 else np.ones((h, w, 1), dtype=np.float32)
+    g = max(1, int(grain))
+    gh, gw = -(-h // g), -(-w // g)
+    rng = np.random.default_rng(int(seed))
+    n = rng.standard_normal((gh, gw, 1 if mono else 3)).astype(np.float32)
+    n = np.repeat(np.repeat(n, g, axis=0), g, axis=1)[:h, :w]
+    amt = _to_alpha(amount, (h, w))
+    out = np.clip(rgb + n * amt, 0.0, 1.0)
+    return np.concatenate([out, a], axis=-1).astype(np.float32)

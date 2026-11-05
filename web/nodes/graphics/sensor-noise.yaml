@@ -1,0 +1,39 @@
+sensor-noise:
+  label: Sensor Noise
+  category: Graphics
+  desc: Add seeded gaussian grain to an image (RGB only, alpha kept). Feed a blurred mask into a constant Ramp for a grainy dither edge.
+  in:
+  - id: image
+    label: Image
+    type: any
+  - id: amount
+    label: Amount
+    kind: range
+    min: 0
+    max: 1
+    step: 0.01
+    default: 0.2
+    passthroughWired: true
+    type: any
+  - id: grain
+    label: Grain (px)
+    kind: range
+    min: 1
+    max: 16
+    step: 1
+    default: 1
+  - id: mono
+    label: Mono
+    kind: checkbox
+    default: true
+  - id: seed
+    label: Seed
+    kind: int
+    default: 0
+  out:
+  - id: out
+    label: Out
+    type: any
+  traits: [liveUpdate]
+  src: web/nodes/graphics/sensor-noise.js
+  api: /api/graphics/sensor-noise

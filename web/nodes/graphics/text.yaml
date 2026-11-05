@@ -1,0 +1,103 @@
+text-image:
+  label: Text
+  category: Graphics
+  desc: Render a single line of text into a transparent PNG with an optional box or pill backdrop. Wrap words in **double asterisks** for the bold font. Set Split to render each part as its own box in one row.
+  defaultWidth: 300
+  defaultHeight: 300
+  resizable: true
+  in:
+  - id: text
+    label: Text
+    kind: text
+    default: TEXT
+    passthroughWired: true
+    type: text
+  - id: font
+    label: Font
+    kind: text
+    default: NeueMontreal-Regular.otf
+    passthroughWired: true
+    type: any
+  - id: bold_font
+    label: Bold Font
+    kind: text
+    default: NeueMontreal-Bold.ttf
+    passthroughWired: true
+    type: any
+  - id: size
+    label: Size
+    kind: float
+    default: 64
+    passthroughWired: true
+    type: float
+  - id: color
+    label: Color
+    kind: color
+    default: '#ffffff'
+    passthroughWired: true
+    type: color
+  - id: shape
+    label: Shape
+    kind: select
+    options: [box, pill, none]
+    default: box
+    passthroughWired: true
+    type: text
+  - id: bg
+    label: Fill
+    kind: color
+    default: '#4e3c8f'
+    passthroughWired: true
+    type: color
+  - id: stroke
+    label: Stroke
+    kind: float
+    default: 0
+    passthroughWired: true
+    type: float
+  - id: stroke_color
+    label: Stroke Color
+    kind: color
+    default: '#ffffff'
+    passthroughWired: true
+    type: color
+  - id: pad_x
+    label: Pad X
+    kind: float
+    default: 14
+    passthroughWired: true
+    type: float
+  - id: pad_y
+    label: Pad Y
+    kind: float
+    default: 4
+    passthroughWired: true
+    type: float
+  - id: tracking
+    label: Tracking
+    kind: float
+    default: 0
+    passthroughWired: true
+    type: float
+  - id: split
+    label: Split
+    kind: text
+    default: ''
+    passthroughWired: true
+    type: text
+  - id: gap
+    label: Gap
+    kind: float
+    default: 12
+    passthroughWired: true
+    type: float
+  out:
+  - id: out
+    label: Image
+    type: image
+  - id: dims
+    label: Dims
+    type: vector
+  traits: [preview]
+  src: web/nodes/graphics/text.js
+  api: /api/graphics/text

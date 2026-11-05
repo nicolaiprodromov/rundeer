@@ -42,7 +42,7 @@ from docopt import docopt
 
 from rundeer import __version__
 from rundeer.core.api import GrokClient
-from rundeer.core.models import load_vision_config, make_vision_client
+from rundeer.core.models import make_vision_client
 from rundeer.core.bootstrap import ensure_rundeer_dir
 from rundeer.core.config import (
     load_project_env,
@@ -95,6 +95,7 @@ Options:
                                (in addition to, or instead of, style-folder refs).
     --reference=<ids>          Comma-separated style-reference indices (max 5).
     --resolution=<r>           Output image resolution: 1k or 2k.
+    --quality=<q>              Output image quality: low or medium.
     --pad-reference            Enable reference aspect-ratio padding.
     --no-pad-reference         Disable reference aspect-ratio padding.
     --ref-quality=<q>          JPEG quality for references (1-100).
@@ -130,6 +131,7 @@ Options:
     --motion=<text>            Motion description (video edits only).
     --duration=<s>             Video duration (video edits only).
     --resolution=<r>           Output resolution: 1k|2k (image) or 480p|720p|1080p (video).
+    --quality=<q>              Output image quality: low or medium (image edits only).
     --reference=<ids>          Style reference indices (total with inputs <=5).
     --pad-reference            Enable aspect-ratio padding.
     --no-pad-reference         Disable aspect-ratio padding.
@@ -156,6 +158,7 @@ Options:
     --input=<paths>            1-5 input images to compose. Falls back to the
                                `input` field in the config.
     --resolution=<r>           Output image resolution: 1k or 2k.
+    --quality=<q>              Output image quality: low or medium.
     --pad-reference            Enable aspect-ratio padding.
     --no-pad-reference         Disable aspect-ratio padding.
     --ref-quality=<q>          JPEG quality for inputs (1-100).
@@ -371,6 +374,7 @@ def cmd_image(argv: List[str]) -> int:
     inputs = parse_inputs(args.get("--input"), cfg)
     references = parse_references(args.get("--reference"), cfg)
     resolution = args.get("--resolution") or cfg.get("image_resolution") or None
+    quality = args.get("--quality") or cfg.get("image_quality") or None
     pad_ref = _tri_bool(args, "--pad-reference", "--no-pad-reference", cfg.get("pad_reference", True))
     ref_quality = int(args.get("--ref-quality") or cfg.get("ref_quality", 85))
 
@@ -378,7 +382,7 @@ def cmd_image(argv: List[str]) -> int:
         style=common["style"], subject=common["subject"],
         inputs=inputs, references=references, iterations=common["iterations"],
         aspect_ratio=common["aspect_ratio"], model=common["model"],
-        resolution=resolution,
+        resolution=resolution, quality=quality,
         pad_reference=pad_ref, ref_quality=ref_quality,
         output_dir_arg=common["output_dir"], output_name=common["output_name"],
         cache_dir=cache,
@@ -458,9 +462,11 @@ def cmd_edit(argv: List[str]) -> int:
     raw_resolution = args.get("--resolution") or cfg.get("resolution")
     if type_ == "image":
         image_resolution = raw_resolution or cfg.get("image_resolution") or None
+        image_quality = args.get("--quality") or cfg.get("image_quality") or None
         video_resolution = video_cfg.get("resolution", "720p")
     else:
         image_resolution = None
+        image_quality = None
         video_resolution = raw_resolution or video_cfg.get("resolution", "720p")
 
     plan = edit_mod.build_jobs(
@@ -469,8 +475,8 @@ def cmd_edit(argv: List[str]) -> int:
         inputs=inputs, references=references,
         iterations=common["iterations"],
         aspect_ratio=common["aspect_ratio"],
-        model=args.get("--model"),
-        image_resolution=image_resolution,
+        model=common["model"],
+        image_resolution=image_resolution, image_quality=image_quality,
         duration=duration, resolution=video_resolution,
         pad_reference=pad_ref, ref_quality=ref_quality,
         output_dir_arg=common["output_dir"], output_name=common["output_name"],
@@ -525,6 +531,7 @@ def cmd_merge(argv: List[str]) -> int:
 
     inputs = parse_inputs(args.get("--input"), cfg)
     resolution = args.get("--resolution") or cfg.get("image_resolution") or None
+    quality = args.get("--quality") or cfg.get("image_quality") or None
     pad_ref = _tri_bool(args, "--pad-reference", "--no-pad-reference", cfg.get("pad_reference", True))
     ref_quality = int(args.get("--ref-quality") or cfg.get("ref_quality", 85))
 
@@ -532,7 +539,7 @@ def cmd_merge(argv: List[str]) -> int:
         style=common["style"], subject=common["subject"],
         inputs=inputs, iterations=common["iterations"],
         aspect_ratio=common["aspect_ratio"], model=common["model"],
-        resolution=resolution,
+        resolution=resolution, quality=quality,
         pad_reference=pad_ref, ref_quality=ref_quality,
         output_dir_arg=common["output_dir"], output_name=common["output_name"],
         cache_dir=cache,
@@ -827,6 +834,8 @@ def _hoist_top_level_config(argv: List[str]) -> List[str]:
 
 def main(argv: Optional[List[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    for s in (sys.stdout, sys.stderr):
+        s.reconfigure(encoding="utf-8", errors="replace")
 
 
     if not argv or argv[0] in ("-h", "--help"):

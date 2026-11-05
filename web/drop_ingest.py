@@ -50,7 +50,7 @@ def save_drop_stream(root: Path, name: str, reader: BinaryIO, length: int) -> Di
             remaining -= len(chunk)
         os.close(fd)
         fd = -1
-        os.rename(tmp, str(dest))
+        os.replace(tmp, dest)
     except BaseException:
         if fd >= 0:
             os.close(fd)
