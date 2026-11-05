@@ -56,6 +56,12 @@ cmd-merge:
     default: ''
     placeholder: 1k or 2k
     group: media
+  - id: quality
+    label: Quality
+    kind: select
+    options: ['', low, medium]
+    default: ''
+    group: media
   - id: pad_reference
     label: Pad Inputs
     kind: checkbox

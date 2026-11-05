@@ -42,6 +42,7 @@ def build_jobs(
     aspect_ratio: str,
     model: Optional[str],
     image_resolution: Optional[str] = None,
+    image_quality: Optional[str] = None,
     duration: int,
     resolution: str,
     pad_reference: bool,
@@ -116,6 +117,7 @@ def build_jobs(
                     "aspect_ratio": aspect_ratio,
                     "image_urls": all_uris,
                     "resolution": image_resolution or None,
+                    "quality": image_quality or None,
                 },
                 output_path=output_dir / f"{output_name}_{i:02d}.png",
             ))
@@ -192,6 +194,7 @@ def make_worker(client: GrokClient, type_: str):
                 aspect_ratio=job.params["aspect_ratio"],
                 image_urls=job.params["image_urls"],
                 resolution=job.params.get("resolution"),
+                quality=job.params.get("quality"),
             )
             if not responses:
                 raise RuntimeError("empty response")

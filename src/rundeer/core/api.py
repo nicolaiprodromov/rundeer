@@ -6,16 +6,8 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse
 
 from .rate_limit import RateLimiter
-
-
-def _api_host_from_base_url(base_url: Optional[str]) -> Optional[str]:
-    if not base_url:
-        return None
-    parsed = urlparse(base_url if "://" in base_url else f"https://{base_url}")
-    return parsed.netloc or parsed.path.split("/", 1)[0] or None
 
 
 class GrokClient:
@@ -31,14 +23,7 @@ class GrokClient:
         if client is None:
             from xai_sdk import Client
 
-            kwargs: Dict[str, Any] = {}
-            api_key = os.environ.get("GROK_IMAGINE_API_KEY")
-            api_host = _api_host_from_base_url(os.environ.get("GROK_IMAGINE_BASE_URL"))
-            if api_key:
-                kwargs["api_key"] = api_key
-            if api_host:
-                kwargs["api_host"] = api_host
-            client = Client(**kwargs)
+            client = Client(api_key=os.environ.get("XAI_API_KEY"))
         self._client = client
         self._rate_limiter = RateLimiter(rate_limits, state_path=rate_limit_state_path)
 
@@ -53,6 +38,7 @@ class GrokClient:
         aspect_ratio: str = "1:1",
         image_urls: Optional[List[str]] = None,
         resolution: Optional[str] = None,
+        quality: Optional[str] = None,
     ) -> List[Any]:
         self._acquire_request_slot()
         params: Dict[str, Any] = {"aspect_ratio": aspect_ratio}
@@ -60,6 +46,8 @@ class GrokClient:
             params["image_urls"] = image_urls
         if resolution:
             params["resolution"] = resolution
+        if quality:
+            params["quality"] = quality
         t0 = time.monotonic()
         responses = self._client.image.sample_batch(prompt, model, n, **params)
         result = list(responses)

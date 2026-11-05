@@ -56,6 +56,12 @@ cmd-image:
     default: ''
     placeholder: 1k or 2k
     group: media
+  - id: quality
+    label: Quality
+    kind: select
+    options: ['', low, medium]
+    default: ''
+    group: media
   - id: reference_ids
     label: Style Reference IDs
     kind: text

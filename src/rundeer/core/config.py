@@ -338,6 +338,7 @@ def normalize_config(raw: Dict[str, Any]) -> Dict[str, Any]:
     _set("model", image.get("model"))
     _set("aspect_ratio", image.get("aspect_ratio"))
     _set("image_resolution", image.get("resolution"))
+    _set("image_quality", image.get("quality"))
 
 
 

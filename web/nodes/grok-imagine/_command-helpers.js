@@ -63,6 +63,7 @@
     const model = str("model", "");
     const aspectRatio = str("aspect_ratio", "");
     const resolution = str("resolution", "");
+    const quality = str("quality", "");
     const usesImageModel = command === "image" || command === "merge" || command === "edit";
     const usesVideoModel = command === "video" || command === "extend" || command === "edit";
     const payload = {
@@ -94,6 +95,7 @@
         model: usesImageModel ? model : "",
         aspect_ratio: command === "image" || command === "merge" || (command === "edit" && str("edit_type", "image") === "image") ? aspectRatio : "",
         resolution: command === "image" || command === "merge" || (command === "edit" && str("edit_type", "image") === "image") ? resolution : "",
+        quality: command === "image" || command === "merge" || (command === "edit" && str("edit_type", "image") === "image") ? quality : "",
       },
       video: {
         model: usesVideoModel ? model : "",

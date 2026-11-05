@@ -66,6 +66,12 @@ cmd-edit:
     default: ''
     placeholder: 1k/2k or 480p/720p/1080p
     group: media
+  - id: quality
+    label: Quality
+    kind: select
+    options: ['', low, medium]
+    default: ''
+    group: media
   - id: duration
     label: Duration (s)
     kind: int
