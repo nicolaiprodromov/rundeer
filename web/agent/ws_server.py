@@ -303,8 +303,6 @@ class AgentWSServer:
                     self.settings = AgentSettings(
                         enabled=self.settings.enabled,
                         model=new_model,
-                        api_key=self.settings.api_key,
-                        base_url=self.settings.base_url,
                         ws_host=self.settings.ws_host,
                         ws_port=self.settings.ws_port,
                         max_turns=self.settings.max_turns,

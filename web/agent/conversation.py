@@ -10,7 +10,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional
 
 import litellm
 
-from rundeer.core.models import resolve_llm_api_key, GrokRawLLM, grok_raw_describe_image
+from rundeer.core.models import resolve_llm_api_key
 from .config import AgentSettings
 from .profiles import DEFAULT_AGENT_ID, normalize_agent_id
 from .diff import diff_graphs, format_diff_note, has_changes
@@ -242,8 +242,6 @@ class Conversation:
         merged = AgentSettings(
             enabled=self.settings.enabled,
             model=str(overrides.get("model") or self.settings.model),
-            api_key=self.settings.api_key,
-            base_url=self.settings.base_url,
             ws_host=self.settings.ws_host,
             ws_port=self.settings.ws_port,
             max_turns=int(overrides.get("max_turns") or self.settings.max_turns),
@@ -433,110 +431,12 @@ class Conversation:
             yield evt("error", message="no model configured in settings")
             raise RuntimeError("no model configured in settings")
 
-        if model.startswith("grok_raw/"):
-            grok_raw = GrokRawLLM(model=model, max_tokens=settings.max_tokens if settings.max_tokens < 99999999 else None)
-            messages_for_llm = [system_msg, *self._messages_for_llm()]
-            tools = build_litellm_tools(self.tool_overrides)
-            try:
-                stream = grok_raw.acompletion_stream(messages_for_llm, tools=tools if tools else None)
-            except Exception as exc:
-                yield evt("error", message=f"grok_raw call failed: {exc}")
-                raise
-
-            accumulated_text = ""
-            accumulated_reasoning = ""
-            last_usage = None
-            tool_calls_acc: Dict[int, Dict[str, Any]] = {}
-            finish_reason: Optional[str] = None
-
-            try:
-                async for chunk in stream:
-                    if self.cancel_event.is_set():
-                        raise CancelledTurn()
-                    try:
-                        choice = chunk.choices[0]
-                    except (AttributeError, IndexError):
-                        chunk_usage = getattr(chunk, "usage", None)
-                        if chunk_usage:
-                            last_usage = chunk_usage
-                        continue
-                    delta = getattr(choice, "delta", None)
-                    if delta is None:
-                        continue
-
-                    reasoning = _delta_text(delta, "reasoning_content")
-                    if reasoning:
-                        accumulated_reasoning += reasoning
-                        yield evt("reasoning", id=msg_id, delta=reasoning)
-
-                    text = _delta_text(delta, "content")
-                    if text:
-                        accumulated_text += text
-                        yield evt("token", id=msg_id, delta=text)
-
-                    tcs = _delta_field(delta, "tool_calls")
-                    if tcs:
-                        for tc in tcs:
-                            idx = getattr(tc, "index", 0) or 0
-                            slot = tool_calls_acc.setdefault(idx, {"id": None, "name": "", "arguments": ""})
-                            if getattr(tc, "id", None):
-                                slot["id"] = tc.id
-                            fn = getattr(tc, "function", None)
-                            if fn is not None:
-                                if getattr(fn, "name", None):
-                                    slot["name"] += fn.name
-                                if getattr(fn, "arguments", None):
-                                    slot["arguments"] += fn.arguments
-                    finish_reason = getattr(choice, "finish_reason", finish_reason)
-                    chunk_usage = getattr(chunk, "usage", None)
-                    if chunk_usage:
-                        last_usage = chunk_usage
-                    if not self._resume_event.is_set():
-                        await self._resume_event.wait()
-                        if self.cancel_event.is_set():
-                            raise CancelledTurn()
-            except CancelledTurn:
-                raise
-            except Exception as exc:
-                yield evt("error", message=f"grok_raw stream error: {exc}")
-                if not accumulated_text and not tool_calls_acc:
-                    raise
-
-            tool_calls_final = []
-            for idx in sorted(tool_calls_acc.keys()):
-                tc = tool_calls_acc[idx]
-                if not tc["name"]:
-                    continue
-                tool_calls_final.append({
-                    "id": tc["id"] or f"call_{uuid.uuid4().hex[:10]}",
-                    "type": "function",
-                    "function": {"name": tc["name"], "arguments": tc["arguments"] or "{}"},
-                })
-
-            assistant_msg: Dict[str, Any] = {"role": "assistant", "content": accumulated_text or None}
-            if accumulated_reasoning:
-                assistant_msg["_reasoning"] = accumulated_reasoning
-            if tool_calls_final:
-                assistant_msg["tool_calls"] = tool_calls_final
-            self.messages.append(assistant_msg)
-            self._persist()
-            yield evt("message_end", role="assistant", id=msg_id, finish_reason=finish_reason, tool_call_count=len(tool_calls_final))
-
-            if last_usage:
-                prompt_tokens = getattr(last_usage, "prompt_tokens", 0) or 0
-                completion_tokens = getattr(last_usage, "completion_tokens", 0) or 0
-                total_tokens = getattr(last_usage, "total_tokens", 0) or 0
-                if not total_tokens:
-                    total_tokens = prompt_tokens + completion_tokens
-                self.total_tokens_used += total_tokens
-                yield evt("usage", prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, total_tokens=total_tokens, session_total=self.total_tokens_used)
-            return
-
         tools = build_litellm_tools(self.tool_overrides)
         call_kwargs: Dict[str, Any] = {
             "model": model,
             "messages": [system_msg, *self._messages_for_llm()],
             "stream": True,
+            "drop_params": True,
         }
         if tools:
             call_kwargs["tools"] = tools
@@ -754,27 +654,14 @@ class Conversation:
 
 
         if isinstance(result, dict) and result.get("_attach_vision") and result.get("data_url"):
-            model = self.effective_settings.model or ""
-            if model.startswith("grok_raw/"):
-                data_url = result["data_url"]
-                question = result.get("_vision_question") or "Describe this image in detail."
-                loop = asyncio.get_running_loop()
-                description = await loop.run_in_executor(
-                    None,
-                    lambda: grok_raw_describe_image(data_url, question),
-                )
-                light = {k: v for k, v in result.items() if k not in {"data_url", "_attach_vision", "_vision_question"}}
-                light["vision_description"] = description
-                result = light
-            else:
-                self._pending_vision.append({
-                    "type": "image_url",
-                    "image_url": {"url": result["data_url"]},
-                })
-                light = {k: v for k, v in result.items() if k not in {"data_url", "_attach_vision", "_vision_question"}}
-                light["vision_attached"] = True
-                result = light
-                self._queue_vision_inject()
+            self._pending_vision.append({
+                "type": "image_url",
+                "image_url": {"url": result["data_url"]},
+            })
+            light = {k: v for k, v in result.items() if k not in {"data_url", "_attach_vision", "_vision_question"}}
+            light["vision_attached"] = True
+            result = light
+            self._queue_vision_inject()
 
 
         result_for_model = _truncate_for_model(result)

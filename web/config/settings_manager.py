@@ -14,7 +14,7 @@ _settings_cache: Dict[str, Any] | None = None
 DEFAULT_SETTINGS: Dict[str, Any] = {
     "settings": {
         "Agent": {
-            "Provider": "grok_raw/sxs-claude-opus-4-8/Default",
+            "Provider": "anthropic/claude-opus-5-5/Default",
             "Max_turns": 4000,
             "Max_tokens": 99999999,
         },
@@ -31,7 +31,7 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
                     "cell_size": 30,
                     "thickness": 1,
                     "opacity": 0.5,
-                    "selection_color": "oklch(13.5% 0.006 80)",
+                    "selection_color": "oklch(96% 0 0)",
                 },
                 "Node Menu": {
                     "position": "left",

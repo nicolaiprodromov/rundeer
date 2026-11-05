@@ -4,9 +4,10 @@ import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from rundeer.core.config import load_project_env
+from rundeer.core.models import provider_model, resolve_llm_api_key
 from rundeer.core.paths import config_path
 from web.config.settings_manager import get_cached_settings, load_settings_yaml
 
@@ -18,8 +19,6 @@ DEFAULT_AGENT_PORT_OFFSET = 1
 class AgentSettings:
     enabled: bool = True
     model: str = ""
-    api_key: Optional[str] = None
-    base_url: Optional[str] = None
     ws_host: str = "127.0.0.1"
     ws_port: int = 0
     max_turns: int = 4000
@@ -35,7 +34,6 @@ class AgentSettings:
         return {
             "enabled": self.enabled,
             "model": self.model,
-            "base_url": self.base_url,
             "max_turns": self.max_turns,
             "max_tokens": self.max_tokens,
             "max_tool_iterations": self.max_tool_iterations,
@@ -43,7 +41,7 @@ class AgentSettings:
             "max_list_entries": self.max_list_entries,
             "max_web_search_per_turn": self.max_web_search_per_turn,
             "vision_enabled": self.vision_enabled,
-            "api_key_present": bool(self.api_key),
+            "api_key_present": bool(resolve_llm_api_key(self.model)),
         }
 
 
@@ -56,11 +54,6 @@ def _read_config_json(root: Path) -> Dict[str, Any]:
         return data if isinstance(data, dict) else {}
     except (OSError, json.JSONDecodeError):
         return {}
-
-
-def _parse_provider(provider: str) -> str:
-    parts = provider.strip().rsplit("/", 1)
-    return parts[0] if parts else ""
 
 
 def _read_yaml_agent(root: Path) -> Dict[str, Any]:
@@ -77,7 +70,7 @@ def get_agent_settings(root: Path) -> AgentSettings:
     agent_cfg = cfg.get("agent") if isinstance(cfg.get("agent"), dict) else {}
     yaml_agent = _read_yaml_agent(root)
 
-    model = _parse_provider(str(yaml_agent.get("Provider") or ""))
+    model = provider_model(str(yaml_agent.get("Provider") or ""))
 
     enabled_raw = agent_cfg.get("enabled", True)
     if isinstance(enabled_raw, str):
@@ -88,8 +81,6 @@ def get_agent_settings(root: Path) -> AgentSettings:
     return AgentSettings(
         enabled=enabled,
         model=model,
-        api_key=None,
-        base_url=None,
         ws_host=str(agent_cfg.get("ws_host") or "127.0.0.1"),
         ws_port=int(os.environ.get("AGENT_PORT") or agent_cfg.get("ws_port") or 0),
         max_turns=int(yaml_agent.get("Max_turns") or agent_cfg.get("max_turns") or 4000),
@@ -100,7 +91,7 @@ def get_agent_settings(root: Path) -> AgentSettings:
         max_web_search_per_turn=int(agent_cfg.get("max_web_search_per_turn") or 8),
         vision_enabled=bool(agent_cfg.get("vision_enabled", True)),
         extra={k: v for k, v in agent_cfg.items() if k not in {
-            "enabled", "model", "base_url", "ws_host", "ws_port",
+            "enabled", "model", "ws_host", "ws_port",
             "max_tool_iterations", "max_file_bytes", "max_list_entries",
             "max_web_search_per_turn", "vision_enabled", "max_turns", "max_tokens",
         }},

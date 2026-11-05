@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 from typing import Union
@@ -21,13 +20,13 @@ def fractal(prompt: str, iterations: Union[int, str] = 1) -> str:
             iterations = 1
     iterations = max(1, int(iterations or 1))
 
-    model_name = (os.environ.get("RUNDEER_LLM_MODEL") or "").strip()
-    if not model_name:
-        print("[fractal] RUNDEER_LLM_MODEL is not set", file=sys.stderr)
-        return ""
-
     import litellm
-    from rundeer.core.models import resolve_llm_api_key
+    from rundeer.core.models import llm_model, resolve_llm_api_key
+
+    model_name = llm_model(Path(__file__).resolve().parents[2])
+    if not model_name:
+        print("[fractal] no Agent.Provider model set in web/config/settings.yaml", file=sys.stderr)
+        return ""
 
     api_key = resolve_llm_api_key(model_name)
     system_prompt = load_prompt()
@@ -50,6 +49,7 @@ def fractal(prompt: str, iterations: Union[int, str] = 1) -> str:
                 ],
                 "temperature": 0.3,
                 "max_tokens": 1500,
+                "drop_params": True,
             }
             if api_key:
                 call_kwargs["api_key"] = api_key

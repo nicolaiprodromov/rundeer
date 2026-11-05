@@ -80,18 +80,11 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
 
     prompt_text = str(payload.get("prompt") or "")
     instructions = str(payload.get("instructions") or "Rewrite the following prompt to be more concise and vivid.")
-    model_override = str(payload.get("model") or "").strip()
-    if not model_override:
-        data = get_cached_settings(root)
-        prov = str((data.get("settings") or {}).get("Agent", {}).get("Provider") or "")
-        parts = prov.strip().rsplit("/", 1)
-        model_override = parts[0] if parts else ""
-    model_name = model_override
-
+    from rundeer.core.models import llm_model, resolve_llm_api_key
+    model_name = str(payload.get("model") or "").strip() or llm_model(root)
     if not model_name:
         return {"error": "no model configured in settings", "filtered_prompt": prompt_text}
 
-    from rundeer.core.models import resolve_llm_api_key
     api_key = resolve_llm_api_key(model_name)
 
     try:
@@ -126,20 +119,11 @@ def filter_prompt(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     if mt >= 99999999:
         mt = None
 
-    if model_name.startswith("grok_raw/"):
-        import asyncio
-        from rundeer.core.models import GrokRawLLM
-        try:
-            resp = asyncio.run(GrokRawLLM(model=model_name, max_tokens=mt, reasoning_effort=reasoning_effort if is_reasoning else None).acompletion(msgs))
-            msg = resp["choices"][0]["message"]
-            return {"filtered_prompt": msg.get("content") or "", "thinking": _reasoning_text(msg)}
-        except Exception as exc:
-            return {"error": str(exc), "filtered_prompt": prompt_text}
-
     import litellm
     call_kwargs: Dict[str, Any] = {
         "model": model_name,
         "messages": msgs,
+        "drop_params": True,
     }
     if api_key:
         call_kwargs["api_key"] = api_key
