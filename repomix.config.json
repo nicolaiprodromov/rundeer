@@ -1,14 +1,14 @@
 {
   "$schema": "https://repomix.com/schemas/latest/schema.json",
   "input": {
-    "maxFileSize": 50000000
+    "maxFileSize": 1000000
   },
   "output": {
     "filePath": ".repomix/rundeer-context.xml",
     "style": "xml",
     "parsableStyle": false,
     "compress": true,
-    "headerText": "Rundeer whole-project AI context pack. Source files remain authoritative; generated output is read-only context.",
+    "headerText": "Rundeer code context pack. Source files remain authoritative; generated output is read-only context.",
     "fileSummary": true,
     "directoryStructure": true,
     "files": true,
@@ -17,45 +17,35 @@
     "showLineNumbers": false,
     "truncateBase64": true,
     "topFilesLength": 20,
-    "tokenCountTree": 1000,
-    "includeFullDirectoryStructure": false,
     "git": {
       "sortByChanges": true,
       "sortByChangesMaxCommits": 100,
       "includeDiffs": false,
-      "includeLogs": false,
-      "includeLogsCount": 20
+      "includeLogs": false
     }
   },
   "include": [
-    "**/*",
-    ".github/**/*.md",
-    ".gitignore",
-    ".repomixignore",
-    ".env.example"
+    "rundeer.py",
+    "__init__.py",
+    "__main__.py",
+    "requirements.txt",
+    "src/rundeer/**/*.py",
+    "web/**/*.py",
+    "web/**/*.js",
+    "web/**/*.mjs",
+    "web/**/*.yaml",
+    "web/**/*.css",
+    "web/**/*.html",
+    ".rundeer/config.json",
+    ".rundeer/batch.json",
+    ".rundeer/def/*.py"
   ],
   "ignore": {
     "useGitignore": true,
-    "useDotIgnore": true,
     "useDefaultPatterns": true,
     "customPatterns": [
-      ".env",
-      ".env.*",
-      ".rundeer/data/**",
-      ".rundeer/outputs/**",
-      ".rundeer/graphs/**",
-      ".rundeer/agent/**",
-      ".repomix/**",
-      ".vscode/**",
-      ".crush/**",
-      ".niku/**",
       "**/__pycache__/**",
-      "**/.pytest_cache/**",
-      "**/.mypy_cache/**",
-      "**/.ruff_cache/**",
-      "**/node_modules/**",
-      "**/Reference/**",
-      "repomix-output.*"
+      "**/node_modules/**"
     ]
   },
   "security": {

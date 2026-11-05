@@ -1,10 +1,6 @@
-# RUNDEER PROJECT RULES
+# rundeer
 
-You are a coding agent working on the Rundeer project.
-
-## What Rundeer is
-
-Rundeer is in `alpha pre-launch phase`. *Only you and the user have access to this codebase at the moment.*
+## What rundeer is
 
 Rundeer is a CLI-backed, node-based, visual programming workbench for *AI-enhanced image and video generation/creation/editing*. The main goal of rundeer is to support professional artists in the development of high quality audio-visual content with granular control & high throughput 
 
@@ -29,7 +25,7 @@ Rundeer allows for complex & emergent procedural workflows by giving the user th
 
 ## Hard Rules
 - **NEVER stage/add, commit or push**. *Git operations are off the table, only read operations are allowed.*
-- At the start of every Rundeer task, before searching, reading, editing, or planning, run `npx -y repomix@latest -c repomix.config.json` from the repository root and use `.repomix/rundeer-context.xml` as the first orientation map.
+- At the start of every Rundeer task, before searching, reading, editing, or planning, run `npx -y repomix@1.18.1 -c repomix.config.json` from the repository root and use `.repomix/rundeer-context.xml` as the first orientation map.
 - Never write code comments.
 - Never write docstrings.
 - Never add inline explanatory comments in any language.
@@ -45,7 +41,7 @@ Rundeer allows for complex & emergent procedural workflows by giving the user th
 
 ## Workflow
 
-1. Run `npx -y repomix@latest -c repomix.config.json` from the repository root.
+1. Run `npx -y repomix@1.18.1 -c repomix.config.json` from the repository root.
 2. Use `.repomix/rundeer-context.xml` for the initial whole-project map. Use the output of repomix to understand the project and task.
 3. Dive deep into the section/s the user is talking about in the repomix output file that contains the entire codebaset, so you can manage context while reasoning. only read from actual files when doing actual coding. VERY IMPORTANT to read from the repomix file output in .repomix/rundeer while planning and reasoning and figuring out what to do not from the actual codebase!!!
 4. Reason about the task.
@@ -59,7 +55,7 @@ Rundeer allows for complex & emergent procedural workflows by giving the user th
 1. ALWAYS read the current codebase repomix context first when thinking, then ALWAYS read the actual files before editing.
 2. Use `src/rundeer/core/paths.py` for `.rundeer` paths.
 3. DO NOT CODE FALLBACKS AND HALF-BAKED PATCHES. The user is an experienced coder and only needs the implementation to be done, if any fallbacks or safety for production ready code is needed to keep the app alive you will be told before, there is no need to code extra fallbacks to "not break the app", focus on building good, not on maintaining old conventions and structures.
-4. For UI work, use `impeccable.md` as the onboarding map and consult `.grok/skills/impeccable/SKILL.md` when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality. Respect `PRODUCT.md` and `DESIGN.md` for product register, audience, visual tokens, typography, colors, and interaction principles.
+4. For UI work, use `impeccable.md` as the onboarding map and invoke the `/impeccable` skill (`.claude/skills/impeccable/SKILL.md`) when the task is frontend design, UX, visual polish, responsive behavior, or interaction quality. Respect `PRODUCT.md` and `DESIGN.md` for product register, audience, visual tokens, typography, colors, and interaction principles.
 5. DO NOT CODE FALLBACKS OR PRESERVE ANY OLD FUNCTIONALITY. When the user requests features, because we are in a pre-release phase, there is no need to preserve old functionality, legacy code or to create fallbacks and live migrations. Old graphs in `.rundeer/graphs/` and other data, logs, configs or whatever that might break after code changes must be adapted or the user must be warned directly about this. REPEAT: DO NOT CODE FALLBACKS OR LIVE MIGRATIONS, DO NOT PRESERVE ANY OLD FUNCTIONALITY AND NO LEGACY CODE PRESERVATION.
 6. VERY IMPORTANT: When a new feature or functionality is requested by the user, you must isolate this code and make it modular enough to be easily integrated in different parts of the code in the future.
 7. Use small names for variables and functions, the idea is to reduce human readability, while maintaining agent readbility, in order to keep token level as low as possible, while still retaining good semantics for you to be able to code correctly.

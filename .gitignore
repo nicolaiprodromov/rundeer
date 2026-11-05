@@ -29,7 +29,6 @@ package-lock.json
 repomix-output.*
 
 .crush/
-.grok/
 .claude/
 .github/
 .vscode/
