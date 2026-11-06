@@ -1,0 +1,36 @@
+palette:
+  label: Palette
+  category: Graphics
+  desc: Random harmonious palette on every resolve. Base and Accent keep a minimum contrast; Ink is the most readable light/dark tint over Base.
+  defaultWidth: 260
+  in:
+  - id: harmony
+    label: Harmony
+    kind: select
+    options: [random, complementary, analogous, triadic, split, mono]
+    default: random
+    type: text
+  - id: light
+    label: Light Base Chance
+    kind: range
+    default: 0.3
+    min: 0
+    max: 1
+    step: 0.05
+    type: float
+  - id: contrast
+    label: Min Base/Accent Contrast
+    kind: float
+    default: 2
+    type: float
+  out:
+  - id: base
+    label: Base
+    type: color
+  - id: accent
+    label: Accent
+    type: color
+  - id: ink
+    label: Ink
+    type: color
+  src: web/nodes/graphics/palette.js

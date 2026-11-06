@@ -15,7 +15,7 @@ from typing import List, Optional, Tuple
 from PIL import Image, ImageOps
 
 from rundeer.core.config import parse_aspect_ratio
-from rundeer.core.paths import cache_dir, atomic_pil, atomic_wb
+from rundeer.core.paths import cache_dir, atomic_pil, atomic_wb, dest_lock
 
 
 def pad_to_aspect_ratio(image_path: Path, target_ratio: float) -> Tuple[bytes, str]:
@@ -160,7 +160,10 @@ def _source_key(src: Path) -> str:
 
 
 def _save_rgba_png(image: Image.Image, dest: Path) -> Path:
-    return atomic_pil(image, dest, format="PNG", optimize=True)
+    with dest_lock(dest):
+        if dest.is_file():
+            return dest
+        return atomic_pil(image, dest, format="PNG", optimize=True)
 
 
 def crop_media(root: Path, src: Path, size: Tuple[int, int], position: Tuple[int, int]) -> Path:

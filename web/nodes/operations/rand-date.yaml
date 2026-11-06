@@ -1,0 +1,29 @@
+rand-date:
+  label: Random Date
+  category: Operations
+  desc: 'Random date within Span days after Start (blank = today), formatted with tokens {WEEKDAY} {WD} {MONTH} {MON} {D} {DD} {M} {MM} {YYYY} {YY}.'
+  defaultWidth: 280
+  in:
+  - id: start
+    label: Start
+    kind: text
+    default: ''
+    placeholder: YYYY-MM-DD (blank = today)
+    type: text
+  - id: span
+    label: Span (days)
+    kind: int
+    default: 120
+    min: 0
+    step: 1
+    type: integer
+  - id: fmt
+    label: Format
+    kind: text
+    default: '{WEEKDAY}, {MONTH} {D}, {YYYY}'
+    type: text
+  out:
+  - id: out
+    label: Date
+    type: text
+  src: web/nodes/operations/rand-date.js

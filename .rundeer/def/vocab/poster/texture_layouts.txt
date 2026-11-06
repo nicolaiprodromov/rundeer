@@ -1,0 +1,9 @@
+The word is repeated in three stacked rows that fill the entire frame edge to edge and bleed off all four sides. The middle row is upside down. Letters are tall, vertically stretched and packed tightly with very little space between them.
+A single enormous instance of the word fills the whole frame, cropped by all four edges, letters tall and touching each other.
+The word repeats in a dense diagonal pattern across the frame, rows tilted at 30 degrees, bleeding off all edges.
+The word repeats around concentric rings radiating from the center of the frame, filling it to the edges.
+The word is stacked in five tight rows, alternating mirrored and normal, filling the frame edge to edge.
+The word is written vertically, rotated 90 degrees, repeated in four tall columns that fill the frame edge to edge.
+The letters are scattered and overlapping at random angles and sizes across the entire frame, bleeding off the edges.
+The word repeats along a warped rippling grid like a waving flag, filling the frame edge to edge.
+Two huge rows of the word fill the frame, the bottom row mirrored like a reflection, letters packed tightly and bleeding off the sides.

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import tempfile
+import threading
+import uuid
 from pathlib import Path
 
 
@@ -52,8 +54,16 @@ def definitions_dir(root: Path | str) -> Path:
     return rundeer_dir(root) / "def"
 
 
+def vocab_dir(root: Path | str) -> Path:
+    return definitions_dir(root) / "vocab"
+
+
 def presets_dir(root: Path | str) -> Path:
     return rundeer_dir(root) / "presets"
+
+
+def layouts_dir(root: Path | str) -> Path:
+    return presets_dir(root) / "layouts"
 
 
 def web_state_path(root: Path | str) -> Path:
@@ -103,7 +113,7 @@ def atomic_wb(dest: Path, data: bytes) -> Path:
         os.write(fd, data)
         os.close(fd)
         fd = -1
-        os.rename(tmp, str(dest))
+        os.replace(tmp, dest)
     except BaseException:
         if fd >= 0:
             os.close(fd)
@@ -115,19 +125,34 @@ def atomic_wb(dest: Path, data: bytes) -> Path:
     return dest
 
 
+_LK = threading.Lock()
+_DL: dict = {}
+
+
+def dest_lock(dest: Path) -> threading.RLock:
+    with _LK:
+        return _DL.setdefault(str(dest), threading.RLock())
+
+
+def _tmp(dest: Path, suffix: str) -> Path:
+    return dest.with_name(f".{dest.stem}.{uuid.uuid4().hex[:8]}.atmp{suffix}")
+
+
 def atomic_pil(img, dest: Path, **kw) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dest.with_name("." + dest.stem + ".atmp" + dest.suffix)
+    tmp = _tmp(dest, dest.suffix)
     img.save(tmp, **kw)
-    tmp.rename(dest)
+    with dest_lock(dest):
+        tmp.replace(dest)
     return dest
 
 
 def atomic_np(arr, dest: Path) -> Path:
     import numpy as np
     dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dest.with_name("." + dest.stem + ".atmp.npy")
+    tmp = _tmp(dest, ".npy")
     np.save(tmp, arr)
-    tmp.rename(dest)
+    with dest_lock(dest):
+        tmp.replace(dest)
     return dest
 

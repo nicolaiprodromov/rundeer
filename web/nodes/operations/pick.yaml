@@ -1,0 +1,37 @@
+pick:
+  label: Pick
+  category: Operations
+  desc: Pick random item(s) from a newline list, a bundle, and/or a vocab file under .rundeer/def/vocab. Re-rolls on every resolve (every loop iteration).
+  defaultWidth: 280
+  in:
+  - id: list
+    label: List
+    kind: text
+    default: ''
+    placeholder: one item per line, or wire a bundle
+    passthroughWired: true
+    type: any
+  - id: file
+    label: Vocab File
+    kind: text
+    default: ''
+    placeholder: poster/artists.txt
+    type: text
+  - id: count
+    label: Count
+    kind: int
+    default: 1
+    min: 1
+    step: 1
+    type: integer
+  - id: sep
+    label: Separator
+    kind: text
+    default: ', '
+    type: text
+  out:
+  - id: out
+    label: Value
+    type: any
+  src: web/nodes/operations/pick.js
+  api: /api/pick
