@@ -14,7 +14,14 @@
     const v = src[edge.fromSocket];
     items = Array.isArray(v) ? v : (v ? [v] : []);
   }
-  const times = Math.max(0, parseInt(decNode?.props?.times, 10) || 0);
+  let times = decNode?.props?.times;
+  const timesEdges = helpers.activeIncomingEdges(decomposeNodeId, "times");
+  if (timesEdges.length > 0) {
+    const edge = timesEdges[0];
+    const src = await helpers.resolveNodeWithPausedWork(helpers.work, edge.fromNode, helpers.cache, helpers.loopCtx, helpers.opts);
+    times = src[edge.fromSocket];
+  }
+  times = Math.max(0, parseInt(times, 10) || 0);
   const n = items.length > 0 ? items.length : times;
   let seed = decNode?.props?.seed ?? "";
   const seedEdges = helpers.activeIncomingEdges(decomposeNodeId, "seed");
@@ -26,9 +33,10 @@
   const itemEdges = helpers.activeIncomingEdges(helpers.nodeId, "item");
   const collected = [];
   let lastVal = seed;
+  const outer = { cache: helpers.cache, ctx: helpers.loopCtx };
   for (let i = 0; i < n; i++) {
     await helpers.waitForGraphRunReady(helpers.opts);
-    const subCtx = { ...helpers.loopCtx, [loopId]: { i, n, items, prev: lastVal } };
+    const subCtx = { ...helpers.loopCtx, [loopId]: { i, n, items, prev: lastVal, outer } };
     const subCache = {};
     let v;
     if (itemEdges.length > 0) {

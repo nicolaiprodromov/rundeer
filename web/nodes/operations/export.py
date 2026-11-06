@@ -73,8 +73,7 @@ def _exp_files(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
     name = str(payload.get("name") or "").strip()
     if not name:
         raise ValueError("name is required")
-    stem = Path(name).stem
-    ext = Path(name).suffix
+    base = Path(name)
     as_type = str(payload.get("asType") or "").strip().lower()
     crf = _crf(payload)
     out = []
@@ -86,7 +85,7 @@ def _exp_files(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
         src = safe_project_path(root, rel_s)
         if not src.is_file():
             continue
-        dest = _dest(root, f"{stem}_{i:03d}{ext}")
+        dest = _dest(root, base.with_name(f"{base.stem}_{i:03d}{base.suffix}").as_posix())
         r = _save_video(root, src, dest, crf) if as_type == "video" else _save_image(root, src, dest)
         if isinstance(r, dict) and r.get("error"):
             return r

@@ -1,0 +1,70 @@
+grid:
+  label: Grid
+  category: Graphics
+  defaultWidth: 280
+  desc: Place blocks into a uniform cols x rows grid on a canvas, each fitted and centered in its cell. Wire Dims (or a dims bundle) in order; Count > 0 repeats the last Dims up to Count blocks; Positions and Scales come out as bundles ready for Canvas.
+  in:
+  - id: dims
+    label: Dims
+    type: vector
+    multi: true
+  - id: count
+    label: Count
+    kind: int
+    default: 0
+    min: 0
+    step: 1
+    passthroughWired: true
+    type: integer
+  - id: size
+    label: Size
+    kind: text
+    default: 1080,1350
+    placeholder: width,height
+    passthroughWired: true
+    type: vector
+  - id: cols
+    label: Cols
+    kind: int
+    default: 3
+    min: 1
+    step: 1
+    type: integer
+  - id: rows
+    label: Rows
+    kind: int
+    default: 0
+    min: 0
+    step: 1
+    type: integer
+  - id: margin
+    label: Margin
+    kind: float
+    default: 60
+    type: float
+  - id: top
+    label: Top Extra
+    kind: float
+    default: 0
+    type: float
+  - id: bottom
+    label: Bottom Extra
+    kind: float
+    default: 0
+    type: float
+  - id: gap
+    label: Gap
+    kind: float
+    default: 16
+    type: float
+  out:
+  - id: positions
+    label: Positions
+    type: vector
+  - id: scales
+    label: Scales
+    type: vector
+  - id: cell
+    label: Cell
+    type: vector
+  src: web/nodes/graphics/grid.js

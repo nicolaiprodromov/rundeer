@@ -1,0 +1,19 @@
+hold:
+  label: Hold
+  category: Loop
+  desc: Evaluate the input outside the chosen loop, once per run of that loop, and reuse it on every iteration (freeze AI images, randoms, palettes across frames or cells)
+  in:
+  - id: in
+    label: In
+    type: any
+  - id: loop_id
+    label: Loop ID
+    kind: text
+    default: loop1
+    placeholder: loop to hold across
+  out:
+  - id: out
+    label: Out
+    type: any
+  lazy: [in]
+  src: web/nodes/loop/hold.js
