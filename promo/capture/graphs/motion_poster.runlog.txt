@@ -1,0 +1,2829 @@
+▶ Running graph (1 terminal node)
+
+▶ Resolving n93 (preview)…
+  ↳ Pick → night
+  ↳ Pick → wide extended grotesque
+  ↳ Pick → The word repeats in a dense diagonal pattern across the fram
+  ↳ image · "Giant wide extended grotesque lettering spelling t"
+  ↳ run promo-9
+  ↳ Resizing .rundeer/outputs/motion_tex_0_01.png 1080×1350 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/motion_tex_0_01_249284e5ec30.png
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0491
+  ↳ Wave(cosine) → 0.0422
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_99d3f278ed439b7b.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_99d3f278ed439b7b_blur3.png
+  ↳ Wave(sine) → 0.1200
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -1.0000
+  ↳ Wave(sine) → -15.6262
+  ↳ Mapping rot=-15.626230588510836° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 25.8736
+  ↳ Blurring .rundeer/data/cache/uv/render_7fe056c6b636204e.png (r=25.873568440999357)…
+  ↳ → .rundeer/data/cache/blurred/render_7fe056c6b636204e_blur25p87.png
+  ↳ Sensor Noise seed=0 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Palette split #2b596e #ecce8b #f5f8fa
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Text "**rundeer**" 203×68
+  ↳ Pick → **AFTERGLOW** SERIES
+  ↳ Text "**AFTERGLOW** SERIES" 849×109
+  ↳ Random Date → SUNDAY, DECEMBER 13, 2026
+  ↳ Text "SUNDAY, DECEMBER 13, 2026" 701×67
+  ↳ Pick → BERLIN ROOM
+  ↳ Text "BERLIN ROOM" 328×62
+  ↳ Pick → GARAGE, SYNTHWAVE, EXPERIMENTAL
+  ↳ Text "GARAGE, SYNTHWAVE, EXPERIMENTAL" 578×47
+  ↳ Pick → JUNO
+  ↳ Text "JUNO" 528×222
+  ↳ Pick → 00
+  ↳ Text "OPEN DOORS: 21:00" 482×67
+  ↳ Math(add) → 22
+  ↳ Text "**SHOW TIME: 22:00**" 460×67
+  ↳ Layout zigzag · 8 blocks
+  ↳ Canvas 8 images 1080×1350 [wired] (8/8 positions, 8/8 scales wired)
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0421
+  ↳ Wave(cosine) → 0.0416
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_5460921283676185.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_5460921283676185_blur3.png
+  ↳ Wave(sine) → 0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.9444
+  ↳ Wave(sine) → -13.8897
+  ↳ Mapping rot=-13.889748811841534° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 27.2628
+  ↳ Blurring .rundeer/data/cache/uv/render_2f57d69dfc887064.png (r=27.2627538623348)…
+  ↳ → .rundeer/data/cache/blurred/render_2f57d69dfc887064_blur27p26.png
+  ↳ Sensor Noise seed=1 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0354
+  ↳ Wave(cosine) → 0.0398
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_c89b02bec9f0432c.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_c89b02bec9f0432c_blur3.png
+  ↳ Wave(sine) → 0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.8889
+  ↳ Wave(sine) → -12.2060
+  ↳ Mapping rot=-12.20602915525415° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 28.6097
+  ↳ Blurring .rundeer/data/cache/uv/render_290578ac25a365f3.png (r=28.609729587604708)…
+  ↳ → .rundeer/data/cache/blurred/render_290578ac25a365f3_blur28p61.png
+  ↳ Sensor Noise seed=2 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0291
+  ↳ Wave(cosine) → 0.0369
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_ea0acb22be8ae192.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_ea0acb22be8ae192_blur3.png
+  ↳ Wave(sine) → 0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.8333
+  ↳ Wave(sine) → -10.6262
+  ↳ Mapping rot=-10.626230588510836° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 29.8736
+  ↳ Blurring .rundeer/data/cache/uv/render_4e91f056d0151769.png (r=29.873568440999357)…
+  ↳ → .rundeer/data/cache/blurred/render_4e91f056d0151769_blur29p87.png
+  ↳ Sensor Noise seed=3 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0234
+  ↳ Wave(cosine) → 0.0329
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_71f67192f750f420.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_71f67192f750f420_blur3.png
+  ↳ Wave(sine) → 0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.7778
+  ↳ Wave(sine) → -9.1984
+  ↳ Mapping rot=-9.198354491645443° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 31.0159
+  ↳ Blurring .rundeer/data/cache/uv/render_ef4b211c02fe8fc1.png (r=31.01586931849167)…
+  ↳ → .rundeer/data/cache/blurred/render_ef4b211c02fe8fc1_blur31p02.png
+  ↳ Sensor Noise seed=4 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0184
+  ↳ Wave(cosine) → 0.0279
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_e502c085237245b6.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_e502c085237245b6_blur3.png
+  ↳ Wave(sine) → 0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.7222
+  ↳ Wave(sine) → -7.9658
+  ↳ Mapping rot=-7.965786157321056° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 32.0019
+  ↳ Blurring .rundeer/data/cache/uv/render_d7a8992235aec7b6.png (r=32.00192398595118)…
+  ↳ → .rundeer/data/cache/blurred/render_d7a8992235aec7b6_blur32.png
+  ↳ Sensor Noise seed=5 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0144
+  ↳ Wave(cosine) → 0.0222
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_ec1946e4a65afe5a.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_ec1946e4a65afe5a_blur3.png
+  ↳ Wave(sine) → 0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.6667
+  ↳ Wave(sine) → -6.9660
+  ↳ Mapping rot=-6.965976550666451° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 32.8018
+  ↳ Blurring .rundeer/data/cache/uv/render_be939e8721515788.png (r=32.801771671274864)…
+  ↳ → .rundeer/data/cache/blurred/render_be939e8721515788_blur32p8.png
+  ↳ Sensor Noise seed=6 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0115
+  ↳ Wave(cosine) → 0.0159
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_e9af715d37e00632.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_e9af715d37e00632_blur3.png
+  ↳ Wave(sine) → 0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.6111
+  ↳ Wave(sine) → -6.2293
+  ↳ Mapping rot=-6.229304380651753° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 33.3911
+  ↳ Blurring .rundeer/data/cache/uv/render_db70ab4a50ee9493.png (r=33.39110940728662)…
+  ↳ → .rundeer/data/cache/blurred/render_db70ab4a50ee9493_blur33p39.png
+  ↳ Sensor Noise seed=7 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0097
+  ↳ Wave(cosine) → 0.0092
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_279ec1098a3f78cd.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_279ec1098a3f78cd_blur3.png
+  ↳ Wave(sine) → 0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.5556
+  ↳ Wave(sine) → -5.7782
+  ↳ Mapping rot=-5.778153058388757° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 33.7520
+  ↳ Blurring .rundeer/data/cache/uv/render_a31030497f50713c.png (r=33.75203046509702)…
+  ↳ → .rundeer/data/cache/blurred/render_a31030497f50713c_blur33p75.png
+  ↳ Sensor Noise seed=8 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0091
+  ↳ Wave(cosine) → 0.0022
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_af7689d906ee6847.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_af7689d906ee6847_blur3.png
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.5000
+  ↳ Wave(sine) → -5.6262
+  ↳ Mapping rot=-5.626230588510836° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 33.8736
+  ↳ Blurring .rundeer/data/cache/uv/render_79abd0f1c589d7df.png (r=33.87356844099936)…
+  ↳ → .rundeer/data/cache/blurred/render_79abd0f1c589d7df_blur33p87.png
+  ↳ Sensor Noise seed=9 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0097
+  ↳ Wave(cosine) → -0.0047
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_878149bb6e3fc45c.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_878149bb6e3fc45c_blur3.png
+  ↳ Wave(sine) → -0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.4444
+  ↳ Wave(sine) → -5.7782
+  ↳ Mapping rot=-5.778153058388757° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 33.7520
+  ↳ Blurring .rundeer/data/cache/uv/render_fdc82ac789736b57.png (r=33.75203046509702)…
+  ↳ → .rundeer/data/cache/blurred/render_fdc82ac789736b57_blur33p75.png
+  ↳ Sensor Noise seed=10 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0115
+  ↳ Wave(cosine) → -0.0115
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_2d551268bc5fceed.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_2d551268bc5fceed_blur3.png
+  ↳ Wave(sine) → -0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.3889
+  ↳ Wave(sine) → -6.2293
+  ↳ Mapping rot=-6.229304380651751° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 33.3911
+  ↳ Blurring .rundeer/data/cache/uv/render_ae597cafff5a50c0.png (r=33.39110940728662)…
+  ↳ → .rundeer/data/cache/blurred/render_ae597cafff5a50c0_blur33p39.png
+  ↳ Sensor Noise seed=11 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0144
+  ↳ Wave(cosine) → -0.0178
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_24814246088bcde2.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_24814246088bcde2_blur3.png
+  ↳ Wave(sine) → -0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.3333
+  ↳ Wave(sine) → -6.9660
+  ↳ Mapping rot=-6.965976550666449° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 32.8018
+  ↳ Blurring .rundeer/data/cache/uv/render_5bb538d99ff96a0a.png (r=32.801771671274864)…
+  ↳ → .rundeer/data/cache/blurred/render_5bb538d99ff96a0a_blur32p8.png
+  ↳ Sensor Noise seed=12 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0184
+  ↳ Wave(cosine) → -0.0235
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_83e11a6b5c92934d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_83e11a6b5c92934d_blur3.png
+  ↳ Wave(sine) → -0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.2778
+  ↳ Wave(sine) → -7.9658
+  ↳ Mapping rot=-7.965786157321056° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 32.0019
+  ↳ Blurring .rundeer/data/cache/uv/render_a9e4470bc3012bc2.png (r=32.00192398595118)…
+  ↳ → .rundeer/data/cache/blurred/render_a9e4470bc3012bc2_blur32.png
+  ↳ Sensor Noise seed=13 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0234
+  ↳ Wave(cosine) → -0.0284
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_3d5a9c1eaeadf072.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_3d5a9c1eaeadf072_blur3.png
+  ↳ Wave(sine) → -0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.2222
+  ↳ Wave(sine) → -9.1984
+  ↳ Mapping rot=-9.198354491645441° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 31.0159
+  ↳ Blurring .rundeer/data/cache/uv/render_d71fbebc11be6308.png (r=31.015869318491674)…
+  ↳ → .rundeer/data/cache/blurred/render_d71fbebc11be6308_blur31p02.png
+  ↳ Sensor Noise seed=14 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0291
+  ↳ Wave(cosine) → -0.0324
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_b73202753f241baf.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_b73202753f241baf_blur3.png
+  ↳ Wave(sine) → -0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.1667
+  ↳ Wave(sine) → -10.6262
+  ↳ Mapping rot=-10.626230588510836° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 29.8736
+  ↳ Blurring .rundeer/data/cache/uv/render_30b182dce1fe617b.png (r=29.873568440999357)…
+  ↳ → .rundeer/data/cache/blurred/render_30b182dce1fe617b_blur29p87.png
+  ↳ Sensor Noise seed=15 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0354
+  ↳ Wave(cosine) → -0.0354
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_abb22c3f2a2e8051.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_abb22c3f2a2e8051_blur3.png
+  ↳ Wave(sine) → -0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.1111
+  ↳ Wave(sine) → -12.2060
+  ↳ Mapping rot=-12.206029155254146° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 28.6097
+  ↳ Blurring .rundeer/data/cache/uv/render_e8df412d09e2d05a.png (r=28.609729587604708)…
+  ↳ → .rundeer/data/cache/blurred/render_e8df412d09e2d05a_blur28p61.png
+  ↳ Sensor Noise seed=16 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0421
+  ↳ Wave(cosine) → -0.0372
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0265b4dde87f7357.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0265b4dde87f7357_blur3.png
+  ↳ Wave(sine) → -0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.0556
+  ↳ Wave(sine) → -13.8897
+  ↳ Mapping rot=-13.889748811841528° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 27.2628
+  ↳ Blurring .rundeer/data/cache/uv/render_f7b0ff1e38d83610.png (r=27.2627538623348)…
+  ↳ → .rundeer/data/cache/blurred/render_f7b0ff1e38d83610_blur27p26.png
+  ↳ Sensor Noise seed=17 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0491
+  ↳ Wave(cosine) → -0.0378
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_2a3beadb9aad35df.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_2a3beadb9aad35df_blur3.png
+  ↳ Wave(sine) → -0.1200
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.0000
+  ↳ Wave(sine) → -15.6262
+  ↳ Mapping rot=-15.626230588510834° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 25.8736
+  ↳ Blurring .rundeer/data/cache/uv/render_db7ce4b0de6dc40a.png (r=25.873568440999357)…
+  ↳ → .rundeer/data/cache/blurred/render_db7ce4b0de6dc40a_blur25p87.png
+  ↳ Sensor Noise seed=18 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0560
+  ↳ Wave(cosine) → -0.0372
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_8a8d04e47df76878.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_8a8d04e47df76878_blur3.png
+  ↳ Wave(sine) → -0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.0556
+  ↳ Wave(sine) → -17.3627
+  ↳ Mapping rot=-17.36271236518014° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 24.4844
+  ↳ Blurring .rundeer/data/cache/uv/render_55ffe7ff06b5ba44.png (r=24.484383019663913)…
+  ↳ → .rundeer/data/cache/blurred/render_55ffe7ff06b5ba44_blur24p48.png
+  ↳ Sensor Noise seed=19 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0628
+  ↳ Wave(cosine) → -0.0354
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_edae26dd608cd9b5.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_edae26dd608cd9b5_blur3.png
+  ↳ Wave(sine) → -0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.1111
+  ↳ Wave(sine) → -19.0464
+  ↳ Mapping rot=-19.046432021767522° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 23.1374
+  ↳ Blurring .rundeer/data/cache/uv/render_fb9e42a46e43c65c.png (r=23.13740729439401)…
+  ↳ → .rundeer/data/cache/blurred/render_fb9e42a46e43c65c_blur23p14.png
+  ↳ Sensor Noise seed=20 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0691
+  ↳ Wave(cosine) → -0.0324
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0c27d9b974fcdb0d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0c27d9b974fcdb0d_blur3.png
+  ↳ Wave(sine) → -0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.1667
+  ↳ Wave(sine) → -20.6262
+  ↳ Mapping rot=-20.626230588510836° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 21.8736
+  ↳ Blurring .rundeer/data/cache/uv/render_86250a4757b03590.png (r=21.873568440999357)…
+  ↳ → .rundeer/data/cache/blurred/render_86250a4757b03590_blur21p87.png
+  ↳ Sensor Noise seed=21 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0748
+  ↳ Wave(cosine) → -0.0284
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_74f3c11beebc6129.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_74f3c11beebc6129_blur3.png
+  ↳ Wave(sine) → -0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.2222
+  ↳ Wave(sine) → -22.0541
+  ↳ Mapping rot=-22.05410668537623° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 20.7313
+  ↳ Blurring .rundeer/data/cache/uv/render_74f69610f2cbb43b.png (r=20.731267563507043)…
+  ↳ → .rundeer/data/cache/blurred/render_74f69610f2cbb43b_blur20p73.png
+  ↳ Sensor Noise seed=22 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0797
+  ↳ Wave(cosine) → -0.0235
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_04f1adc5437af4cb.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_04f1adc5437af4cb_blur3.png
+  ↳ Wave(sine) → -0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.2778
+  ↳ Wave(sine) → -23.2867
+  ↳ Mapping rot=-23.286675019700617° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 19.7452
+  ↳ Blurring .rundeer/data/cache/uv/render_c9f56f144489caf0.png (r=19.745212896047533)…
+  ↳ → .rundeer/data/cache/blurred/render_c9f56f144489caf0_blur19p75.png
+  ↳ Sensor Noise seed=23 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0837
+  ↳ Wave(cosine) → -0.0178
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0d6058fafd9a6333.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0d6058fafd9a6333_blur3.png
+  ↳ Wave(sine) → -0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.3333
+  ↳ Wave(sine) → -24.2865
+  ↳ Mapping rot=-24.286484626355218° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 18.9454
+  ↳ Blurring .rundeer/data/cache/uv/render_2d591f6db4c11fbd.png (r=18.94536521072385)…
+  ↳ → .rundeer/data/cache/blurred/render_2d591f6db4c11fbd_blur18p95.png
+  ↳ Sensor Noise seed=24 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0867
+  ↳ Wave(cosine) → -0.0115
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_82d2d9ecea8c94e4.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_82d2d9ecea8c94e4_blur3.png
+  ↳ Wave(sine) → -0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.3889
+  ↳ Wave(sine) → -25.0232
+  ↳ Mapping rot=-25.023156796369918° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 18.3560
+  ↳ Blurring .rundeer/data/cache/uv/render_965d559b330e32a5.png (r=18.356027474712093)…
+  ↳ → .rundeer/data/cache/blurred/render_965d559b330e32a5_blur18p36.png
+  ↳ Sensor Noise seed=25 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0885
+  ↳ Wave(cosine) → -0.0047
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0242f109d64fe4b6.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0242f109d64fe4b6_blur3.png
+  ↳ Wave(sine) → -0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.4444
+  ↳ Wave(sine) → -25.4743
+  ↳ Mapping rot=-25.474308118632916° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 17.9951
+  ↳ Blurring .rundeer/data/cache/uv/render_fc25eb4951ca2c04.png (r=17.99510641690169)…
+  ↳ → .rundeer/data/cache/blurred/render_fc25eb4951ca2c04_blur18.png
+  ↳ Sensor Noise seed=26 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0891
+  ↳ Wave(cosine) → 0.0022
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_3af46de703e31ac1.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_3af46de703e31ac1_blur3.png
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.5000
+  ↳ Wave(sine) → -25.6262
+  ↳ Mapping rot=-25.626230588510836° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 17.8736
+  ↳ Blurring .rundeer/data/cache/uv/render_210ed4b2a7402dc7.png (r=17.873568440999357)…
+  ↳ → .rundeer/data/cache/blurred/render_210ed4b2a7402dc7_blur17p87.png
+  ↳ Sensor Noise seed=27 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0885
+  ↳ Wave(cosine) → 0.0092
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_f8cfe875c6fc8a6b.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_f8cfe875c6fc8a6b_blur3.png
+  ↳ Wave(sine) → 0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.5556
+  ↳ Wave(sine) → -25.4743
+  ↳ Mapping rot=-25.47430811863292° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 17.9951
+  ↳ Blurring .rundeer/data/cache/uv/render_9c54722940ad1659.png (r=17.99510641690169)…
+  ↳ → .rundeer/data/cache/blurred/render_9c54722940ad1659_blur18.png
+  ↳ Sensor Noise seed=28 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0867
+  ↳ Wave(cosine) → 0.0159
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_92e24b1db69de8ff.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_92e24b1db69de8ff_blur3.png
+  ↳ Wave(sine) → 0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.6111
+  ↳ Wave(sine) → -25.0232
+  ↳ Mapping rot=-25.023156796369918° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 18.3560
+  ↳ Blurring .rundeer/data/cache/uv/render_2b1e66bd3178b48d.png (r=18.35602747471209)…
+  ↳ → .rundeer/data/cache/blurred/render_2b1e66bd3178b48d_blur18p36.png
+  ↳ Sensor Noise seed=29 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0837
+  ↳ Wave(cosine) → 0.0222
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_9002c2fe0c186545.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_9002c2fe0c186545_blur3.png
+  ↳ Wave(sine) → 0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.6667
+  ↳ Wave(sine) → -24.2865
+  ↳ Mapping rot=-24.28648462635522° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 18.9454
+  ↳ Blurring .rundeer/data/cache/uv/render_262413741999511f.png (r=18.94536521072385)…
+  ↳ → .rundeer/data/cache/blurred/render_262413741999511f_blur18p95.png
+  ↳ Sensor Noise seed=30 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0797
+  ↳ Wave(cosine) → 0.0279
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_08f0d97c4c00464e.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_08f0d97c4c00464e_blur3.png
+  ↳ Wave(sine) → 0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.7222
+  ↳ Wave(sine) → -23.2867
+  ↳ Mapping rot=-23.286675019700617° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 19.7452
+  ↳ Blurring .rundeer/data/cache/uv/render_67c39cdf033db953.png (r=19.745212896047533)…
+  ↳ → .rundeer/data/cache/blurred/render_67c39cdf033db953_blur19p75.png
+  ↳ Sensor Noise seed=31 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0748
+  ↳ Wave(cosine) → 0.0329
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_387a9cbbed0653df.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_387a9cbbed0653df_blur3.png
+  ↳ Wave(sine) → 0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.7778
+  ↳ Wave(sine) → -22.0541
+  ↳ Mapping rot=-22.054106685376233° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 20.7313
+  ↳ Blurring .rundeer/data/cache/uv/render_da89b81a6acdcc2b.png (r=20.73126756350704)…
+  ↳ → .rundeer/data/cache/blurred/render_da89b81a6acdcc2b_blur20p73.png
+  ↳ Sensor Noise seed=32 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0691
+  ↳ Wave(cosine) → 0.0369
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_e7379657104a645c.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_e7379657104a645c_blur3.png
+  ↳ Wave(sine) → 0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.8333
+  ↳ Wave(sine) → -20.6262
+  ↳ Mapping rot=-20.62623058851084° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 21.8736
+  ↳ Blurring .rundeer/data/cache/uv/render_a12803b1a7dcc90b.png (r=21.873568440999353)…
+  ↳ → .rundeer/data/cache/blurred/render_a12803b1a7dcc90b_blur21p87.png
+  ↳ Sensor Noise seed=33 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0628
+  ↳ Wave(cosine) → 0.0398
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_955bafc793c84d93.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_955bafc793c84d93_blur3.png
+  ↳ Wave(sine) → 0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.8889
+  ↳ Wave(sine) → -19.0464
+  ↳ Mapping rot=-19.04643202176753° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 23.1374
+  ↳ Blurring .rundeer/data/cache/uv/render_26f6bc4868a38aa6.png (r=23.137407294394002)…
+  ↳ → .rundeer/data/cache/blurred/render_26f6bc4868a38aa6_blur23p14.png
+  ↳ Sensor Noise seed=34 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0560
+  ↳ Wave(cosine) → 0.0416
+  ↳ Mapping rot=7.334304978830112° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_8ac1415a5fdad018.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_8ac1415a5fdad018_blur3.png
+  ↳ Wave(sine) → 0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.9444
+  ↳ Wave(sine) → -17.3627
+  ↳ Mapping rot=-17.36271236518014° scale=(1.0613176438369472,0.9383310913224685)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 24.4844
+  ↳ Blurring .rundeer/data/cache/uv/render_f24e2c2b8ca22f3f.png (r=24.484383019663913)…
+  ↳ → .rundeer/data/cache/blurred/render_f24e2c2b8ca22f3f_blur24p48.png
+  ↳ Sensor Noise seed=35 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Assembling 36 frames → promo_runs/motion_poster/motion_0.mp4 (mp4, 12fps)…
+  ↳ → .rundeer/outputs/promo_runs/motion_poster/motion_0.mp4
+  ↳ Pick → glow
+  ↳ Pick → squished bouncy
+  ↳ Pick → The word repeats in a dense diagonal pattern across the fram
+  ↳ image · "Giant squished bouncy lettering spelling the word "
+  ↳ run promo-10
+  ↳ Resizing .rundeer/outputs/motion_tex_1_01.png 1080×1350 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/motion_tex_1_01_a7134e9c4e1e.png
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0293
+  ↳ Wave(cosine) → 0.0479
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_39da8cad01fe7ad9.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_39da8cad01fe7ad9_blur3.png
+  ↳ Wave(sine) → 0.1200
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -1.0000
+  ↳ Wave(sine) → 16.0448
+  ↳ Mapping rot=16.044803565589696° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 19.4207
+  ↳ Blurring .rundeer/data/cache/uv/render_34af31cbfe3cb512.png (r=19.42065105741451)…
+  ↳ → .rundeer/data/cache/blurred/render_34af31cbfe3cb512_blur19p42.png
+  ↳ Sensor Noise seed=0 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Palette triadic #4d3d20 #ac7fd2 #faf8f5
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Text "**rundeer**" 203×68
+  ↳ Pick → **STATIC** SESSIONS
+  ↳ Text "**STATIC** SESSIONS" 751×109
+  ↳ Random Date → MONDAY, APRIL 26, 2027
+  ↳ Text "MONDAY, APRIL 26, 2027" 590×67
+  ↳ Pick → GLASSHOUSE
+  ↳ Text "GLASSHOUSE" 327×62
+  ↳ Pick → POST-PUNK, DUB, TRANCE
+  ↳ Text "POST-PUNK, DUB, TRANCE" 400×47
+  ↳ Pick → AURELIO
+  ↳ Text "AURELIO" 621×169
+  ↳ Pick → 00
+  ↳ Text "OPEN DOORS: 20:00" 496×67
+  ↳ Math(add) → 21
+  ↳ Text "**SHOW TIME: 21:00**" 451×67
+  ↳ Layout left_stack · 8 blocks
+  ↳ Canvas 8 images 1080×1350 [wired] (8/8 positions, 8/8 scales wired)
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0224
+  ↳ Wave(cosine) → 0.0472
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_73c51b537cf7b80a.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_73c51b537cf7b80a_blur3.png
+  ↳ Wave(sine) → 0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.9444
+  ↳ Wave(sine) → 17.7813
+  ↳ Mapping rot=17.781285342259° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 20.8098
+  ↳ Blurring .rundeer/data/cache/uv/render_baceb144ff140939.png (r=20.809836478749954)…
+  ↳ → .rundeer/data/cache/blurred/render_baceb144ff140939_blur20p81.png
+  ↳ Sensor Noise seed=1 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0157
+  ↳ Wave(cosine) → 0.0454
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_6ab186b89e4dd1e5.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_6ab186b89e4dd1e5_blur3.png
+  ↳ Wave(sine) → 0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.8889
+  ↳ Wave(sine) → 19.4650
+  ↳ Mapping rot=19.465004998846382° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 22.1568
+  ↳ Blurring .rundeer/data/cache/uv/render_f280fb86a0bbe729.png (r=22.15681220401986)…
+  ↳ → .rundeer/data/cache/blurred/render_f280fb86a0bbe729_blur22p16.png
+  ↳ Sensor Noise seed=2 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0093
+  ↳ Wave(cosine) → 0.0425
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0797eb53f862c4b6.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0797eb53f862c4b6_blur3.png
+  ↳ Wave(sine) → 0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.8333
+  ↳ Wave(sine) → 21.0448
+  ↳ Mapping rot=21.044803565589696° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 23.4207
+  ↳ Blurring .rundeer/data/cache/uv/render_fbb597b8f2ac6390.png (r=23.42065105741451)…
+  ↳ → .rundeer/data/cache/blurred/render_fbb597b8f2ac6390_blur23p42.png
+  ↳ Sensor Noise seed=3 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0036
+  ↳ Wave(cosine) → 0.0385
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_f9fb22ce60db2b2a.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_f9fb22ce60db2b2a_blur3.png
+  ↳ Wave(sine) → 0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.7778
+  ↳ Wave(sine) → 22.4727
+  ↳ Mapping rot=22.47267966245509° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 24.5630
+  ↳ Blurring .rundeer/data/cache/uv/render_2639d2d6be7b9dd0.png (r=24.562951934906824)…
+  ↳ → .rundeer/data/cache/blurred/render_2639d2d6be7b9dd0_blur24p56.png
+  ↳ Sensor Noise seed=4 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0013
+  ↳ Wave(cosine) → 0.0336
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0e211724a6a0aa41.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0e211724a6a0aa41_blur3.png
+  ↳ Wave(sine) → 0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.7222
+  ↳ Wave(sine) → 23.7052
+  ↳ Mapping rot=23.705247996779477° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 25.5490
+  ↳ Blurring .rundeer/data/cache/uv/render_4e469596468fa049.png (r=25.549006602366333)…
+  ↳ → .rundeer/data/cache/blurred/render_4e469596468fa049_blur25p55.png
+  ↳ Sensor Noise seed=5 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0053
+  ↳ Wave(cosine) → 0.0279
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0c1a791bd5ad1bc9.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0c1a791bd5ad1bc9_blur3.png
+  ↳ Wave(sine) → 0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.6667
+  ↳ Wave(sine) → 24.7051
+  ↳ Mapping rot=24.70505760343408° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 26.3489
+  ↳ Blurring .rundeer/data/cache/uv/render_987c657e9cb1a708.png (r=26.348854287690017)…
+  ↳ → .rundeer/data/cache/blurred/render_987c657e9cb1a708_blur26p35.png
+  ↳ Sensor Noise seed=6 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0083
+  ↳ Wave(cosine) → 0.0215
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_c56b275cd04aed8b.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_c56b275cd04aed8b_blur3.png
+  ↳ Wave(sine) → 0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.6111
+  ↳ Wave(sine) → 25.4417
+  ↳ Mapping rot=25.441729773448778° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 26.9382
+  ↳ Blurring .rundeer/data/cache/uv/render_97d203ed30f1d888.png (r=26.938192023701777)…
+  ↳ → .rundeer/data/cache/blurred/render_97d203ed30f1d888_blur26p94.png
+  ↳ Sensor Noise seed=7 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0101
+  ↳ Wave(cosine) → 0.0148
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_da0e4ffc475cf66e.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_da0e4ffc475cf66e_blur3.png
+  ↳ Wave(sine) → 0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.5556
+  ↳ Wave(sine) → 25.8929
+  ↳ Mapping rot=25.892881095711775° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 27.2991
+  ↳ Blurring .rundeer/data/cache/uv/render_f8538cacbd47827c.png (r=27.299113081512175)…
+  ↳ → .rundeer/data/cache/blurred/render_f8538cacbd47827c_blur27p3.png
+  ↳ Sensor Noise seed=8 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0107
+  ↳ Wave(cosine) → 0.0079
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_b83644c6762fe88d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_b83644c6762fe88d_blur3.png
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.5000
+  ↳ Wave(sine) → 26.0448
+  ↳ Mapping rot=26.044803565589696° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 27.4207
+  ↳ Blurring .rundeer/data/cache/uv/render_1b73592a6e5620e8.png (r=27.42065105741451)…
+  ↳ → .rundeer/data/cache/blurred/render_1b73592a6e5620e8_blur27p42.png
+  ↳ Sensor Noise seed=9 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0101
+  ↳ Wave(cosine) → 0.0009
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0820b48015257496.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0820b48015257496_blur3.png
+  ↳ Wave(sine) → -0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.4444
+  ↳ Wave(sine) → 25.8929
+  ↳ Mapping rot=25.892881095711775° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 27.2991
+  ↳ Blurring .rundeer/data/cache/uv/render_a0c3da40ed973066.png (r=27.299113081512175)…
+  ↳ → .rundeer/data/cache/blurred/render_a0c3da40ed973066_blur27p3.png
+  ↳ Sensor Noise seed=10 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0083
+  ↳ Wave(cosine) → -0.0058
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_5ee61ac9e4b3eb73.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_5ee61ac9e4b3eb73_blur3.png
+  ↳ Wave(sine) → -0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.3889
+  ↳ Wave(sine) → 25.4417
+  ↳ Mapping rot=25.44172977344878° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 26.9382
+  ↳ Blurring .rundeer/data/cache/uv/render_2624493a3cec1572.png (r=26.938192023701777)…
+  ↳ → .rundeer/data/cache/blurred/render_2624493a3cec1572_blur26p94.png
+  ↳ Sensor Noise seed=11 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0053
+  ↳ Wave(cosine) → -0.0121
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_eceecbce8e0df2e4.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_eceecbce8e0df2e4_blur3.png
+  ↳ Wave(sine) → -0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.3333
+  ↳ Wave(sine) → 24.7051
+  ↳ Mapping rot=24.705057603434085° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 26.3489
+  ↳ Blurring .rundeer/data/cache/uv/render_1eae84efff824ec4.png (r=26.34885428769002)…
+  ↳ → .rundeer/data/cache/blurred/render_1eae84efff824ec4_blur26p35.png
+  ↳ Sensor Noise seed=12 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0013
+  ↳ Wave(cosine) → -0.0179
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_ca8d28bd5834fa78.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_ca8d28bd5834fa78_blur3.png
+  ↳ Wave(sine) → -0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.2778
+  ↳ Wave(sine) → 23.7052
+  ↳ Mapping rot=23.705247996779477° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 25.5490
+  ↳ Blurring .rundeer/data/cache/uv/render_a566cac66878a1d1.png (r=25.549006602366333)…
+  ↳ → .rundeer/data/cache/blurred/render_a566cac66878a1d1_blur25p55.png
+  ↳ Sensor Noise seed=13 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0036
+  ↳ Wave(cosine) → -0.0228
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_03780f4840afc53e.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_03780f4840afc53e_blur3.png
+  ↳ Wave(sine) → -0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.2222
+  ↳ Wave(sine) → 22.4727
+  ↳ Mapping rot=22.472679662455093° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 24.5630
+  ↳ Blurring .rundeer/data/cache/uv/render_f68633a9da4e932d.png (r=24.562951934906827)…
+  ↳ → .rundeer/data/cache/blurred/render_f68633a9da4e932d_blur24p56.png
+  ↳ Sensor Noise seed=14 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0093
+  ↳ Wave(cosine) → -0.0268
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_817938940b889408.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_817938940b889408_blur3.png
+  ↳ Wave(sine) → -0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.1667
+  ↳ Wave(sine) → 21.0448
+  ↳ Mapping rot=21.044803565589696° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 23.4207
+  ↳ Blurring .rundeer/data/cache/uv/render_1d1b884d1ad866a2.png (r=23.42065105741451)…
+  ↳ → .rundeer/data/cache/blurred/render_1d1b884d1ad866a2_blur23p42.png
+  ↳ Sensor Noise seed=15 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0157
+  ↳ Wave(cosine) → -0.0297
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_b01fea70a74fbc92.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_b01fea70a74fbc92_blur3.png
+  ↳ Wave(sine) → -0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.1111
+  ↳ Wave(sine) → 19.4650
+  ↳ Mapping rot=19.465004998846386° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 22.1568
+  ↳ Blurring .rundeer/data/cache/uv/render_f09aa8bca423e452.png (r=22.15681220401986)…
+  ↳ → .rundeer/data/cache/blurred/render_f09aa8bca423e452_blur22p16.png
+  ↳ Sensor Noise seed=16 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0224
+  ↳ Wave(cosine) → -0.0315
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_bc2814106d81b2fb.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_bc2814106d81b2fb_blur3.png
+  ↳ Wave(sine) → -0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.0556
+  ↳ Wave(sine) → 17.7813
+  ↳ Mapping rot=17.781285342259004° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 20.8098
+  ↳ Blurring .rundeer/data/cache/uv/render_31374cbb9dd108fb.png (r=20.809836478749954)…
+  ↳ → .rundeer/data/cache/blurred/render_31374cbb9dd108fb_blur20p81.png
+  ↳ Sensor Noise seed=17 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0293
+  ↳ Wave(cosine) → -0.0321
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_ace08b4140b0020d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_ace08b4140b0020d_blur3.png
+  ↳ Wave(sine) → -0.1200
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.0000
+  ↳ Wave(sine) → 16.0448
+  ↳ Mapping rot=16.044803565589696° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 19.4207
+  ↳ Blurring .rundeer/data/cache/uv/render_afab6287f7aa699e.png (r=19.42065105741451)…
+  ↳ → .rundeer/data/cache/blurred/render_afab6287f7aa699e_blur19p42.png
+  ↳ Sensor Noise seed=18 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0363
+  ↳ Wave(cosine) → -0.0315
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_c12642f3934a583f.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_c12642f3934a583f_blur3.png
+  ↳ Wave(sine) → -0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.0556
+  ↳ Wave(sine) → 14.3083
+  ↳ Mapping rot=14.308321788920392° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 18.0315
+  ↳ Blurring .rundeer/data/cache/uv/render_4a53906b41e0a6a0.png (r=18.031465636079066)…
+  ↳ → .rundeer/data/cache/blurred/render_4a53906b41e0a6a0_blur18p03.png
+  ↳ Sensor Noise seed=19 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0430
+  ↳ Wave(cosine) → -0.0297
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_29097563b2011981.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_29097563b2011981_blur3.png
+  ↳ Wave(sine) → -0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.1111
+  ↳ Wave(sine) → 12.6246
+  ↳ Mapping rot=12.62460213233301° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 16.6845
+  ↳ Blurring .rundeer/data/cache/uv/render_ee24373c7ac2963d.png (r=16.684489910809162)…
+  ↳ → .rundeer/data/cache/blurred/render_ee24373c7ac2963d_blur16p68.png
+  ↳ Sensor Noise seed=20 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0493
+  ↳ Wave(cosine) → -0.0268
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_fdcfb7c93b039cea.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_fdcfb7c93b039cea_blur3.png
+  ↳ Wave(sine) → -0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.1667
+  ↳ Wave(sine) → 11.0448
+  ↳ Mapping rot=11.044803565589696° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 15.4207
+  ↳ Blurring .rundeer/data/cache/uv/render_652c8d837a129b0a.png (r=15.42065105741451)…
+  ↳ → .rundeer/data/cache/blurred/render_652c8d837a129b0a_blur15p42.png
+  ↳ Sensor Noise seed=21 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0550
+  ↳ Wave(cosine) → -0.0228
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_44661a978e1d15e2.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_44661a978e1d15e2_blur3.png
+  ↳ Wave(sine) → -0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.2222
+  ↳ Wave(sine) → 9.6169
+  ↳ Mapping rot=9.616927468724302° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 14.2784
+  ↳ Blurring .rundeer/data/cache/uv/render_641dd55d67d7d057.png (r=14.278350179922196)…
+  ↳ → .rundeer/data/cache/blurred/render_641dd55d67d7d057_blur14p28.png
+  ↳ Sensor Noise seed=22 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0600
+  ↳ Wave(cosine) → -0.0179
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_a7dc79f364706493.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_a7dc79f364706493_blur3.png
+  ↳ Wave(sine) → -0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.2778
+  ↳ Wave(sine) → 8.3844
+  ↳ Mapping rot=8.384359134399917° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 13.2923
+  ↳ Blurring .rundeer/data/cache/uv/render_871e4dabe4a02fbf.png (r=13.292295512462687)…
+  ↳ → .rundeer/data/cache/blurred/render_871e4dabe4a02fbf_blur13p29.png
+  ↳ Sensor Noise seed=23 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0640
+  ↳ Wave(cosine) → -0.0121
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_91bcc7342e1fc38d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_91bcc7342e1fc38d_blur3.png
+  ↳ Wave(sine) → -0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.3333
+  ↳ Wave(sine) → 7.3845
+  ↳ Mapping rot=7.384549527745312° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 12.4924
+  ↳ Blurring .rundeer/data/cache/uv/render_7f771f671b721d2d.png (r=12.492447827139003)…
+  ↳ → .rundeer/data/cache/blurred/render_7f771f671b721d2d_blur12p49.png
+  ↳ Sensor Noise seed=24 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0669
+  ↳ Wave(cosine) → -0.0058
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_1ba0ab8628e8042d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_1ba0ab8628e8042d_blur3.png
+  ↳ Wave(sine) → -0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.3889
+  ↳ Wave(sine) → 6.6479
+  ↳ Mapping rot=6.647877357730614° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 11.9031
+  ↳ Blurring .rundeer/data/cache/uv/render_ce9e700241f300a7.png (r=11.903110091127244)…
+  ↳ → .rundeer/data/cache/blurred/render_ce9e700241f300a7_blur11p9.png
+  ↳ Sensor Noise seed=25 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0687
+  ↳ Wave(cosine) → 0.0009
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_5a602c82b89def82.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_5a602c82b89def82_blur3.png
+  ↳ Wave(sine) → -0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.4444
+  ↳ Wave(sine) → 6.1967
+  ↳ Mapping rot=6.196726035467616° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 11.5422
+  ↳ Blurring .rundeer/data/cache/uv/render_89626ef09394ab0d.png (r=11.542189033316845)…
+  ↳ → .rundeer/data/cache/blurred/render_89626ef09394ab0d_blur11p54.png
+  ↳ Sensor Noise seed=26 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0693
+  ↳ Wave(cosine) → 0.0079
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_9f35fa2d588ed023.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_9f35fa2d588ed023_blur3.png
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.5000
+  ↳ Wave(sine) → 6.0448
+  ↳ Mapping rot=6.044803565589696° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 11.4207
+  ↳ Blurring .rundeer/data/cache/uv/render_89d0d1db79776975.png (r=11.42065105741451)…
+  ↳ → .rundeer/data/cache/blurred/render_89d0d1db79776975_blur11p42.png
+  ↳ Sensor Noise seed=27 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0687
+  ↳ Wave(cosine) → 0.0148
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_28274ca27af6d3a9.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_28274ca27af6d3a9_blur3.png
+  ↳ Wave(sine) → 0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.5556
+  ↳ Wave(sine) → 6.1967
+  ↳ Mapping rot=6.196726035467615° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 11.5422
+  ↳ Blurring .rundeer/data/cache/uv/render_168bce4f7ef4d257.png (r=11.542189033316845)…
+  ↳ → .rundeer/data/cache/blurred/render_168bce4f7ef4d257_blur11p54.png
+  ↳ Sensor Noise seed=28 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0669
+  ↳ Wave(cosine) → 0.0215
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_44faecc910dac66d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_44faecc910dac66d_blur3.png
+  ↳ Wave(sine) → 0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.6111
+  ↳ Wave(sine) → 6.6479
+  ↳ Mapping rot=6.6478773577306125° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 11.9031
+  ↳ Blurring .rundeer/data/cache/uv/render_922e28fd50f5d5f2.png (r=11.903110091127242)…
+  ↳ → .rundeer/data/cache/blurred/render_922e28fd50f5d5f2_blur11p9.png
+  ↳ Sensor Noise seed=29 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0640
+  ↳ Wave(cosine) → 0.0279
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_22d3b82c81bb0bfd.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_22d3b82c81bb0bfd_blur3.png
+  ↳ Wave(sine) → 0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.6667
+  ↳ Wave(sine) → 7.3845
+  ↳ Mapping rot=7.38454952774531° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 12.4924
+  ↳ Blurring .rundeer/data/cache/uv/render_7d74c41eee34f161.png (r=12.492447827139001)…
+  ↳ → .rundeer/data/cache/blurred/render_7d74c41eee34f161_blur12p49.png
+  ↳ Sensor Noise seed=30 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0600
+  ↳ Wave(cosine) → 0.0336
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_d30261fe36dfa30f.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_d30261fe36dfa30f_blur3.png
+  ↳ Wave(sine) → 0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.7222
+  ↳ Wave(sine) → 8.3844
+  ↳ Mapping rot=8.384359134399915° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 13.2923
+  ↳ Blurring .rundeer/data/cache/uv/render_699fd296eb0355b2.png (r=13.292295512462685)…
+  ↳ → .rundeer/data/cache/blurred/render_699fd296eb0355b2_blur13p29.png
+  ↳ Sensor Noise seed=31 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0550
+  ↳ Wave(cosine) → 0.0385
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_dad3ec1e9a6ea9da.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_dad3ec1e9a6ea9da_blur3.png
+  ↳ Wave(sine) → 0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.7778
+  ↳ Wave(sine) → 9.6169
+  ↳ Mapping rot=9.616927468724299° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 14.2784
+  ↳ Blurring .rundeer/data/cache/uv/render_162f792769b8b599.png (r=14.278350179922192)…
+  ↳ → .rundeer/data/cache/blurred/render_162f792769b8b599_blur14p28.png
+  ↳ Sensor Noise seed=32 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0493
+  ↳ Wave(cosine) → 0.0425
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_619c48ba8e330cbb.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_619c48ba8e330cbb_blur3.png
+  ↳ Wave(sine) → 0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.8333
+  ↳ Wave(sine) → 11.0448
+  ↳ Mapping rot=11.044803565589692° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 15.4207
+  ↳ Blurring .rundeer/data/cache/uv/render_281634ad722e37b8.png (r=15.420651057414506)…
+  ↳ → .rundeer/data/cache/blurred/render_281634ad722e37b8_blur15p42.png
+  ↳ Sensor Noise seed=33 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0430
+  ↳ Wave(cosine) → 0.0454
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_156544c7aadb082b.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_156544c7aadb082b_blur3.png
+  ↳ Wave(sine) → 0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.8889
+  ↳ Wave(sine) → 12.6246
+  ↳ Mapping rot=12.624602132333003° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 16.6845
+  ↳ Blurring .rundeer/data/cache/uv/render_89fc281bbc49e7ea.png (r=16.684489910809155)…
+  ↳ → .rundeer/data/cache/blurred/render_89fc281bbc49e7ea_blur16p68.png
+  ↳ Sensor Noise seed=34 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0363
+  ↳ Wave(cosine) → 0.0472
+  ↳ Mapping rot=-3.4979875119770263° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_576cf0706fdb298e.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_576cf0706fdb298e_blur3.png
+  ↳ Wave(sine) → 0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.9444
+  ↳ Wave(sine) → 14.3083
+  ↳ Mapping rot=14.308321788920392° scale=(1.1813987516549285,0.805306116526195)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 18.0315
+  ↳ Blurring .rundeer/data/cache/uv/render_67485f6e31ec21d9.png (r=18.031465636079066)…
+  ↳ → .rundeer/data/cache/blurred/render_67485f6e31ec21d9_blur18p03.png
+  ↳ Sensor Noise seed=35 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Assembling 36 frames → promo_runs/motion_poster/motion_1.mp4 (mp4, 12fps)…
+  ↳ → .rundeer/outputs/promo_runs/motion_poster/motion_1.mp4
+  ↳ Pick → wave
+  ↳ Pick → squished bouncy
+  ↳ Pick → The word repeats around concentric rings radiating from the 
+  ↳ image · "Giant squished bouncy lettering spelling the word "
+  ↳ run promo-11
+  ↳ Resizing .rundeer/outputs/motion_tex_2_01.png 1080×1350 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/motion_tex_2_01_c7ac4eb07b28.png
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0372
+  ↳ Wave(cosine) → 0.0750
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_107668fce6907a9f.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_107668fce6907a9f_blur3.png
+  ↳ Wave(sine) → 0.1200
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -1.0000
+  ↳ Wave(sine) → 12.3623
+  ↳ Mapping rot=12.362276979608616° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 32.6509
+  ↳ Blurring .rundeer/data/cache/uv/render_778bb7d5d9d9d150.png (r=32.65093753442234)…
+  ↳ → .rundeer/data/cache/blurred/render_778bb7d5d9d9d150_blur32p65.png
+  ↳ Sensor Noise seed=0 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Palette mono light #c6eba5 #68a909 #141d0c
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Text "**rundeer**" 203×68
+  ↳ Pick → **MONOLITH** NIGHTS
+  ↳ Text "**MONOLITH** NIGHTS" 785×109
+  ↳ Random Date → THURSDAY, NOVEMBER 26, 2026
+  ↳ Text "THURSDAY, NOVEMBER 26, 2026" 778×67
+  ↳ Pick → CANAL STAGE
+  ↳ Text "CANAL STAGE" 332×62
+  ↳ Pick → HOUSE, DISCO, JAZZ
+  ↳ Text "HOUSE, DISCO, JAZZ" 321×47
+  ↳ Pick → MAREN
+  ↳ Text "MAREN" 469×149
+  ↳ Pick → 30
+  ↳ Text "OPEN DOORS: 20:30" 493×67
+  ↳ Math(add) → 21
+  ↳ Text "**SHOW TIME: 21:30**" 448×67
+  ↳ Layout center_stack · 8 blocks
+  ↳ Canvas 8 images 1080×1350 [wired] (8/8 positions, 8/8 scales wired)
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0442
+  ↳ Wave(cosine) → 0.0744
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_edb6c985b7eda7ca.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_edb6c985b7eda7ca_blur3.png
+  ↳ Wave(sine) → 0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.9444
+  ↳ Wave(sine) → 14.0988
+  ↳ Mapping rot=14.098758756277919° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 34.0401
+  ↳ Blurring .rundeer/data/cache/uv/render_d4ae75a47322b50c.png (r=34.04012295575778)…
+  ↳ → .rundeer/data/cache/blurred/render_d4ae75a47322b50c_blur34p04.png
+  ↳ Sensor Noise seed=1 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0509
+  ↳ Wave(cosine) → 0.0726
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_659225366a43b356.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_659225366a43b356_blur3.png
+  ↳ Wave(sine) → 0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.8889
+  ↳ Wave(sine) → 15.7825
+  ↳ Mapping rot=15.782478412865302° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 35.3871
+  ↳ Blurring .rundeer/data/cache/uv/render_b407e0bb04baeaf4.png (r=35.38709868102769)…
+  ↳ → .rundeer/data/cache/blurred/render_b407e0bb04baeaf4_blur35p39.png
+  ↳ Sensor Noise seed=2 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0572
+  ↳ Wave(cosine) → 0.0696
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_3069d402720d0833.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_3069d402720d0833_blur3.png
+  ↳ Wave(sine) → 0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.8333
+  ↳ Wave(sine) → 17.3623
+  ↳ Mapping rot=17.362276979608616° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 36.6509
+  ↳ Blurring .rundeer/data/cache/uv/render_e8421351669d16ff.png (r=36.65093753442234)…
+  ↳ → .rundeer/data/cache/blurred/render_e8421351669d16ff_blur36p65.png
+  ↳ Sensor Noise seed=3 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0629
+  ↳ Wave(cosine) → 0.0656
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_56329a991efa177c.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_56329a991efa177c_blur3.png
+  ↳ Wave(sine) → 0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.7778
+  ↳ Wave(sine) → 18.7902
+  ↳ Mapping rot=18.79015307647401° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 37.7932
+  ↳ Blurring .rundeer/data/cache/uv/render_a48a98ae77c3382d.png (r=37.79323841191466)…
+  ↳ → .rundeer/data/cache/blurred/render_a48a98ae77c3382d_blur37p79.png
+  ↳ Sensor Noise seed=4 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0679
+  ↳ Wave(cosine) → 0.0607
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_e91145d3f966f626.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_e91145d3f966f626_blur3.png
+  ↳ Wave(sine) → 0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.7222
+  ↳ Wave(sine) → 20.0227
+  ↳ Mapping rot=20.022721410798397° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 38.7793
+  ↳ Blurring .rundeer/data/cache/uv/render_d609fe238a41f61a.png (r=38.77929307937416)…
+  ↳ → .rundeer/data/cache/blurred/render_d609fe238a41f61a_blur38p78.png
+  ↳ Sensor Noise seed=5 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0719
+  ↳ Wave(cosine) → 0.0550
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_52fff88b1f118214.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_52fff88b1f118214_blur3.png
+  ↳ Wave(sine) → 0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.6667
+  ↳ Wave(sine) → 21.0225
+  ↳ Mapping rot=21.022531017453° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 39.5791
+  ↳ Blurring .rundeer/data/cache/uv/render_7907f63c6405fdc9.png (r=39.57914076469785)…
+  ↳ → .rundeer/data/cache/blurred/render_7907f63c6405fdc9_blur39p58.png
+  ↳ Sensor Noise seed=6 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0748
+  ↳ Wave(cosine) → 0.0487
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_60148e66cd3b8d2e.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_60148e66cd3b8d2e_blur3.png
+  ↳ Wave(sine) → 0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.6111
+  ↳ Wave(sine) → 21.7592
+  ↳ Mapping rot=21.759203187467698° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 40.1685
+  ↳ Blurring .rundeer/data/cache/uv/render_58a4b7d42e6a5b38.png (r=40.168478500709604)…
+  ↳ → .rundeer/data/cache/blurred/render_58a4b7d42e6a5b38_blur40p17.png
+  ↳ Sensor Noise seed=7 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0766
+  ↳ Wave(cosine) → 0.0419
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_3443650f8fa51818.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_3443650f8fa51818_blur3.png
+  ↳ Wave(sine) → 0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.5556
+  ↳ Wave(sine) → 22.2104
+  ↳ Mapping rot=22.210354509730696° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 40.5294
+  ↳ Blurring .rundeer/data/cache/uv/render_949e219b61f5b187.png (r=40.529399558520005)…
+  ↳ → .rundeer/data/cache/blurred/render_949e219b61f5b187_blur40p53.png
+  ↳ Sensor Noise seed=8 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0772
+  ↳ Wave(cosine) → 0.0350
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_3767b571962c15cd.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_3767b571962c15cd_blur3.png
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.5000
+  ↳ Wave(sine) → 22.3623
+  ↳ Mapping rot=22.362276979608616° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 40.6509
+  ↳ Blurring .rundeer/data/cache/uv/render_efeba6b98ac1698d.png (r=40.65093753442234)…
+  ↳ → .rundeer/data/cache/blurred/render_efeba6b98ac1698d_blur40p65.png
+  ↳ Sensor Noise seed=9 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0766
+  ↳ Wave(cosine) → 0.0280
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_faa4863579c0f648.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_faa4863579c0f648_blur3.png
+  ↳ Wave(sine) → -0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.4444
+  ↳ Wave(sine) → 22.2104
+  ↳ Mapping rot=22.210354509730696° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 40.5294
+  ↳ Blurring .rundeer/data/cache/uv/render_5ea975cb8439d054.png (r=40.529399558520005)…
+  ↳ → .rundeer/data/cache/blurred/render_5ea975cb8439d054_blur40p53.png
+  ↳ Sensor Noise seed=10 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0748
+  ↳ Wave(cosine) → 0.0213
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_435efcde94307027.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_435efcde94307027_blur3.png
+  ↳ Wave(sine) → -0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.3889
+  ↳ Wave(sine) → 21.7592
+  ↳ Mapping rot=21.7592031874677° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 40.1685
+  ↳ Blurring .rundeer/data/cache/uv/render_e01cddbda5e3ae82.png (r=40.16847850070961)…
+  ↳ → .rundeer/data/cache/blurred/render_e01cddbda5e3ae82_blur40p17.png
+  ↳ Sensor Noise seed=11 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0719
+  ↳ Wave(cosine) → 0.0150
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_ddfdfa5102dac9d6.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_ddfdfa5102dac9d6_blur3.png
+  ↳ Wave(sine) → -0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.3333
+  ↳ Wave(sine) → 21.0225
+  ↳ Mapping rot=21.022531017453005° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 39.5791
+  ↳ Blurring .rundeer/data/cache/uv/render_53336c8ff0859f69.png (r=39.57914076469785)…
+  ↳ → .rundeer/data/cache/blurred/render_53336c8ff0859f69_blur39p58.png
+  ↳ Sensor Noise seed=12 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0679
+  ↳ Wave(cosine) → 0.0093
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_276f0c94d218e75a.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_276f0c94d218e75a_blur3.png
+  ↳ Wave(sine) → -0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.2778
+  ↳ Wave(sine) → 20.0227
+  ↳ Mapping rot=20.022721410798397° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 38.7793
+  ↳ Blurring .rundeer/data/cache/uv/render_b101bb5850145db8.png (r=38.77929307937416)…
+  ↳ → .rundeer/data/cache/blurred/render_b101bb5850145db8_blur38p78.png
+  ↳ Sensor Noise seed=13 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0629
+  ↳ Wave(cosine) → 0.0043
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_151f3d47975906de.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_151f3d47975906de_blur3.png
+  ↳ Wave(sine) → -0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.2222
+  ↳ Wave(sine) → 18.7902
+  ↳ Mapping rot=18.790153076474013° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 37.7932
+  ↳ Blurring .rundeer/data/cache/uv/render_47a6310f5c09db1c.png (r=37.79323841191466)…
+  ↳ → .rundeer/data/cache/blurred/render_47a6310f5c09db1c_blur37p79.png
+  ↳ Sensor Noise seed=14 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0572
+  ↳ Wave(cosine) → 0.0003
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_63f7c4745ba6bddf.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_63f7c4745ba6bddf_blur3.png
+  ↳ Wave(sine) → -0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.1667
+  ↳ Wave(sine) → 17.3623
+  ↳ Mapping rot=17.362276979608616° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 36.6509
+  ↳ Blurring .rundeer/data/cache/uv/render_e3cd7514f21946ca.png (r=36.65093753442234)…
+  ↳ → .rundeer/data/cache/blurred/render_e3cd7514f21946ca_blur36p65.png
+  ↳ Sensor Noise seed=15 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0509
+  ↳ Wave(cosine) → -0.0026
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_79af0ee782d4a2eb.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_79af0ee782d4a2eb_blur3.png
+  ↳ Wave(sine) → -0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.1111
+  ↳ Wave(sine) → 15.7825
+  ↳ Mapping rot=15.782478412865306° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 35.3871
+  ↳ Blurring .rundeer/data/cache/uv/render_da1f709f535e7b68.png (r=35.387098681027695)…
+  ↳ → .rundeer/data/cache/blurred/render_da1f709f535e7b68_blur35p39.png
+  ↳ Sensor Noise seed=16 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0442
+  ↳ Wave(cosine) → -0.0044
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0b4c1af3a11a5206.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0b4c1af3a11a5206_blur3.png
+  ↳ Wave(sine) → -0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → -0.0556
+  ↳ Wave(sine) → 14.0988
+  ↳ Mapping rot=14.098758756277924° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 34.0401
+  ↳ Blurring .rundeer/data/cache/uv/render_97449b24cf8c748e.png (r=34.04012295575779)…
+  ↳ → .rundeer/data/cache/blurred/render_97449b24cf8c748e_blur34p04.png
+  ↳ Sensor Noise seed=17 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0372
+  ↳ Wave(cosine) → -0.0050
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_46b5479252cf42bc.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_46b5479252cf42bc_blur3.png
+  ↳ Wave(sine) → -0.1200
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.0000
+  ↳ Wave(sine) → 12.3623
+  ↳ Mapping rot=12.362276979608618° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 32.6509
+  ↳ Blurring .rundeer/data/cache/uv/render_4751e989088e206b.png (r=32.65093753442234)…
+  ↳ → .rundeer/data/cache/blurred/render_4751e989088e206b_blur32p65.png
+  ↳ Sensor Noise seed=18 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0303
+  ↳ Wave(cosine) → -0.0044
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_a32aad3a640c4c17.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_a32aad3a640c4c17_blur3.png
+  ↳ Wave(sine) → -0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.0556
+  ↳ Wave(sine) → 10.6258
+  ↳ Mapping rot=10.625795202939312° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 31.2618
+  ↳ Blurring .rundeer/data/cache/uv/render_9b412d427dde9380.png (r=31.261752113086896)…
+  ↳ → .rundeer/data/cache/blurred/render_9b412d427dde9380_blur31p26.png
+  ↳ Sensor Noise seed=19 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0235
+  ↳ Wave(cosine) → -0.0026
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0174e83d1b60214d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0174e83d1b60214d_blur3.png
+  ↳ Wave(sine) → -0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.1111
+  ↳ Wave(sine) → 8.9421
+  ↳ Mapping rot=8.94207554635193° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 29.9148
+  ↳ Blurring .rundeer/data/cache/uv/render_adb0d593ef793309.png (r=29.914776387816993)…
+  ↳ → .rundeer/data/cache/blurred/render_adb0d593ef793309_blur29p91.png
+  ↳ Sensor Noise seed=20 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0172
+  ↳ Wave(cosine) → 0.0003
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_2a76d9bcf410f81a.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_2a76d9bcf410f81a_blur3.png
+  ↳ Wave(sine) → -0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.1667
+  ↳ Wave(sine) → 7.3623
+  ↳ Mapping rot=7.362276979608615° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 28.6509
+  ↳ Blurring .rundeer/data/cache/uv/render_9f0240279d0d5d44.png (r=28.65093753442234)…
+  ↳ → .rundeer/data/cache/blurred/render_9f0240279d0d5d44_blur28p65.png
+  ↳ Sensor Noise seed=21 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0115
+  ↳ Wave(cosine) → 0.0043
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_f00df79ebdff9486.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_f00df79ebdff9486_blur3.png
+  ↳ Wave(sine) → -0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.2222
+  ↳ Wave(sine) → 5.9344
+  ↳ Mapping rot=5.9344008827432235° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 27.5086
+  ↳ Blurring .rundeer/data/cache/uv/render_518a58eb4dc7b445.png (r=27.508636656930026)…
+  ↳ → .rundeer/data/cache/blurred/render_518a58eb4dc7b445_blur27p51.png
+  ↳ Sensor Noise seed=22 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0066
+  ↳ Wave(cosine) → 0.0093
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_0763b0d4a007f48d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_0763b0d4a007f48d_blur3.png
+  ↳ Wave(sine) → -0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.2778
+  ↳ Wave(sine) → 4.7018
+  ↳ Mapping rot=4.701832548418837° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 26.5226
+  ↳ Blurring .rundeer/data/cache/uv/render_407727deadc16e1d.png (r=26.522581989470517)…
+  ↳ → .rundeer/data/cache/blurred/render_407727deadc16e1d_blur26p52.png
+  ↳ Sensor Noise seed=23 grain=1
+  ↳ Wave(sine) → 0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0026
+  ↳ Wave(cosine) → 0.0150
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_8aa177f320b18169.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_8aa177f320b18169_blur3.png
+  ↳ Wave(sine) → -0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.3333
+  ↳ Wave(sine) → 3.7020
+  ↳ Mapping rot=3.7020229417642323° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 25.7227
+  ↳ Blurring .rundeer/data/cache/uv/render_fbc401122b88bee9.png (r=25.722734304146833)…
+  ↳ → .rundeer/data/cache/blurred/render_fbc401122b88bee9_blur25p72.png
+  ↳ Sensor Noise seed=24 grain=1
+  ↳ Wave(sine) → 0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0004
+  ↳ Wave(cosine) → 0.0213
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_267a3743d5eaf1ab.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_267a3743d5eaf1ab_blur3.png
+  ↳ Wave(sine) → -0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.3889
+  ↳ Wave(sine) → 2.9654
+  ↳ Mapping rot=2.9653507717495344° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 25.1334
+  ↳ Blurring .rundeer/data/cache/uv/render_ed1796556b5d2a4e.png (r=25.133396568135076)…
+  ↳ → .rundeer/data/cache/blurred/render_ed1796556b5d2a4e_blur25p13.png
+  ↳ Sensor Noise seed=25 grain=1
+  ↳ Wave(sine) → 0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0022
+  ↳ Wave(cosine) → 0.0280
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_34ea949451dc2fd7.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_34ea949451dc2fd7_blur3.png
+  ↳ Wave(sine) → -0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.4444
+  ↳ Wave(sine) → 2.5142
+  ↳ Mapping rot=2.5141994494865365° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 24.7725
+  ↳ Blurring .rundeer/data/cache/uv/render_e43ef63f8e514370.png (r=24.772475510324675)…
+  ↳ → .rundeer/data/cache/blurred/render_e43ef63f8e514370_blur24p77.png
+  ↳ Sensor Noise seed=26 grain=1
+  ↳ Wave(sine) → 0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0028
+  ↳ Wave(cosine) → 0.0350
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_d26621131e86952e.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_d26621131e86952e_blur3.png
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.5000
+  ↳ Wave(sine) → 2.3623
+  ↳ Mapping rot=2.362276979608616° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 24.6509
+  ↳ Blurring .rundeer/data/cache/uv/render_d8ee8ce6382ce3f9.png (r=24.65093753442234)…
+  ↳ → .rundeer/data/cache/blurred/render_d8ee8ce6382ce3f9_blur24p65.png
+  ↳ Sensor Noise seed=27 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0022
+  ↳ Wave(cosine) → 0.0419
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_3f5aa5492732a876.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_3f5aa5492732a876_blur3.png
+  ↳ Wave(sine) → 0.0208
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.5556
+  ↳ Wave(sine) → 2.5142
+  ↳ Mapping rot=2.5141994494865347° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 24.7725
+  ↳ Blurring .rundeer/data/cache/uv/render_a28aecfc805935f2.png (r=24.772475510324675)…
+  ↳ → .rundeer/data/cache/blurred/render_a28aecfc805935f2_blur24p77.png
+  ↳ Sensor Noise seed=28 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → -0.0004
+  ↳ Wave(cosine) → 0.0487
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_15dd75ce8800bbc1.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_15dd75ce8800bbc1_blur3.png
+  ↳ Wave(sine) → 0.0410
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.6111
+  ↳ Wave(sine) → 2.9654
+  ↳ Mapping rot=2.9653507717495327° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 25.1334
+  ↳ Blurring .rundeer/data/cache/uv/render_f421ee225fcc1d95.png (r=25.133396568135073)…
+  ↳ → .rundeer/data/cache/blurred/render_f421ee225fcc1d95_blur25p13.png
+  ↳ Sensor Noise seed=29 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0026
+  ↳ Wave(cosine) → 0.0550
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_b73bcbf3f884b9e6.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_b73bcbf3f884b9e6_blur3.png
+  ↳ Wave(sine) → 0.0600
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.6667
+  ↳ Wave(sine) → 3.7020
+  ↳ Mapping rot=3.7020229417642305° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 25.7227
+  ↳ Blurring .rundeer/data/cache/uv/render_f06be79966705017.png (r=25.722734304146833)…
+  ↳ → .rundeer/data/cache/blurred/render_f06be79966705017_blur25p72.png
+  ↳ Sensor Noise seed=30 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0066
+  ↳ Wave(cosine) → 0.0607
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_a99c394fe5863ee3.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_a99c394fe5863ee3_blur3.png
+  ↳ Wave(sine) → 0.0771
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.7222
+  ↳ Wave(sine) → 4.7018
+  ↳ Mapping rot=4.701832548418835° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 26.5226
+  ↳ Blurring .rundeer/data/cache/uv/render_03baef0687d426d9.png (r=26.522581989470517)…
+  ↳ → .rundeer/data/cache/blurred/render_03baef0687d426d9_blur26p52.png
+  ↳ Sensor Noise seed=31 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0115
+  ↳ Wave(cosine) → 0.0656
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_03375d9291f7263e.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_03375d9291f7263e_blur3.png
+  ↳ Wave(sine) → 0.0919
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.7778
+  ↳ Wave(sine) → 5.9344
+  ↳ Mapping rot=5.93440088274322° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 27.5086
+  ↳ Blurring .rundeer/data/cache/uv/render_4c1a00fbeab1881e.png (r=27.508636656930022)…
+  ↳ → .rundeer/data/cache/blurred/render_4c1a00fbeab1881e_blur27p51.png
+  ↳ Sensor Noise seed=32 grain=1
+  ↳ Wave(sine) → -0.0985
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0172
+  ↳ Wave(cosine) → 0.0696
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_ba1abb2e62279d57.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_ba1abb2e62279d57_blur3.png
+  ↳ Wave(sine) → 0.1039
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.8333
+  ↳ Wave(sine) → 7.3623
+  ↳ Mapping rot=7.362276979608612° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 28.6509
+  ↳ Blurring .rundeer/data/cache/uv/render_e565719d4c9554c7.png (r=28.650937534422336)…
+  ↳ → .rundeer/data/cache/blurred/render_e565719d4c9554c7_blur28p65.png
+  ↳ Sensor Noise seed=33 grain=1
+  ↳ Wave(sine) → -0.0866
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0235
+  ↳ Wave(cosine) → 0.0726
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_428e6c010867c5e2.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_428e6c010867c5e2_blur3.png
+  ↳ Wave(sine) → 0.1128
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.8889
+  ↳ Wave(sine) → 8.9421
+  ↳ Mapping rot=8.942075546351923° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 29.9148
+  ↳ Blurring .rundeer/data/cache/uv/render_7cdebcb7a2c54aed.png (r=29.914776387816985)…
+  ↳ → .rundeer/data/cache/blurred/render_7cdebcb7a2c54aed_blur29p91.png
+  ↳ Sensor Noise seed=34 grain=1
+  ↳ Wave(sine) → -0.0643
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Wave(sine) → 0.0303
+  ↳ Wave(cosine) → 0.0744
+  ↳ Mapping rot=-3.1264455560908164° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_63ad1ad4da97f83d.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_63ad1ad4da97f83d_blur3.png
+  ↳ Wave(sine) → 0.1182
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Wave(saw) → 0.9444
+  ↳ Wave(sine) → 10.6258
+  ↳ Mapping rot=10.625795202939312° scale=(1.2814069583675105,0.5178449087877167)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 31.2618
+  ↳ Blurring .rundeer/data/cache/uv/render_f76fbef6fe25e12f.png (r=31.261752113086896)…
+  ↳ → .rundeer/data/cache/blurred/render_f76fbef6fe25e12f_blur31p26.png
+  ↳ Sensor Noise seed=35 grain=1
+  ↳ Wave(sine) → -0.0342
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Mix mix
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Assembling 36 frames → promo_runs/motion_poster/motion_2.mp4 (mp4, 12fps)…
+  ↳ → .rundeer/outputs/promo_runs/motion_poster/motion_2.mp4
+  ↳ Resizing .rundeer/outputs/motion_tex_2_01.png 1080×1350 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/motion_tex_2_01_c7ac4eb07b28.png
+  ↳ Coord 1080×1350
+  ↳ Wave(saw) → -1.0000
+  ↳ Wave(sine) → 16.2571
+  ↳ Mapping rot=16.257070914991942° scale=(0.982441345934078,0.8887800811383815)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(sine) → 31.3075
+  ↳ Blurring .rundeer/data/cache/uv/render_11809b824c8b0fc9.png (r=31.30754559580088)…
+  ↳ → .rundeer/data/cache/blurred/render_11809b824c8b0fc9_blur31p31.png
+  ↳ Sensor Noise seed=0 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Ramp constant
+  ↳ Palette complementary #111c95 #c7c86a #f5f5fa
+  ↳ Mix mix
+  ↳ Wave(sine) → 0.0180
+  ↳ Wave(cosine) → 0.0033
+  ↳ Mapping rot=4.345908836890494° scale=(0.9,0.82)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_c8d0c4938024da78.png (r=3)…
+  ↳ → .rundeer/data/cache/blurred/render_c8d0c4938024da78_blur3.png
+  ↳ Wave(sine) → 0.1200
+  ↳ Math add
+  ↳ Ramp linear
+  ↳ Mix mix
+  ↳ Text "**rundeer**" 203×68
+  ↳ Pick → **STATIC** SESSIONS
+  ↳ Text "**STATIC** SESSIONS" 751×109
+  ↳ Random Date → TUESDAY, DECEMBER 29, 2026
+  ↳ Text "TUESDAY, DECEMBER 29, 2026" 739×67
+  ↳ Pick → DOCK 11
+  ↳ Text "DOCK 11" 195×62
+  ↳ Pick → HOUSE, GARAGE, TECHNO
+  ↳ Text "HOUSE, GARAGE, TECHNO" 403×47
+  ↳ Pick → INDIGO FALLS
+  ↳ Text "INDIGO FALLS" 894×158
+  ↳ Pick → 00
+  ↳ Text "OPEN DOORS: 19:00" 483×67
+  ↳ Math(add) → 20
+  ↳ Text "**SHOW TIME: 20:00**" 463×67
+  ↳ Layout left_stack · 8 blocks
+  ↳ Canvas 8 images 1080×1350 [wired] (8/8 positions, 8/8 scales wired)
+  ↳ Canvas 2 images 1080×1350 [wired] (2/2 positions, 2/2 scales wired)

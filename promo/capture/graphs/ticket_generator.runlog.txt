@@ -1,0 +1,246 @@
+▶ Running graph (2 terminal nodes)
+
+▶ Resolving n83 (preview)…
+  ↳ Pick → bloom
+  ↳ Pick → stencil cut-out
+  ↳ Pick → The word repeats along a warped rippling grid like a waving 
+  ↳ image · "Giant stencil cut-out lettering spelling the word "
+  ↳ run promo-0
+  ↳ Resizing .rundeer/outputs/ticket_tex_0_01.png 1360×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/ticket_tex_0_01_36624cd15a39.png
+  ↳ Coord 1360×640
+  ↳ Mapping rot=-13.837360270630246° scale=(1.3436341577744422,0.6777440577784509)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_dc206da17c36e210.png (r=11.143048192677142)…
+  ↳ → .rundeer/data/cache/blurred/render_dc206da17c36e210_blur11p14.png
+  ↳ Sensor Noise seed=38666 grain=1
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Palette analogous light #c2e6c3 #64ae25 #0c1d0d
+  ↳ Mix mix
+  ↳ Coord 440×640
+  ↳ Mix mix
+  ↳ Coord 640×10
+  ↳ Math multiply
+  ↳ Math modulo
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Text "RDR-1886-HT" 186×39
+  ↳ Pick → F
+  ↳ Text "SEC F · ROW 17" 235×39
+  ↳ Text "**SEAT 25**" 213×63
+  ↳ Text "**GATE 2**" 211×81
+  ↳ Barcode "RDR-1886-HT" 352×96
+  ↳ Random Date → MONDAY, NOVEMBER 23, 2026
+  ↳ Text "MONDAY, NOVEMBER 23, 2026" 361×35
+  ↳ Layout ticket/stub/stack · 6 blocks
+  ↳ Canvas 8 images 440×640 [wired] (8/8 positions, 8/8 scales, 2/8 rotations wired)
+  ↳ Text "**rundeer**" 173×56
+  ↳ Pick → **DRIFT** SESSIONS
+  ↳ Text "**DRIFT** SESSIONS" 451×72
+  ↳ Pick → NIKO SAAR
+  ↳ Text "NIKO SAAR" 700×157
+  ↳ Text "MONDAY, NOVEMBER 23, 2026" 646×59
+  ↳ Pick → CRYSTAL PALACE
+  ↳ Text "CRYSTAL PALACE" 394×59
+  ↳ Pick → 30
+  ↳ Text "DOORS 18:30" 289×59
+  ↳ Pick → GENERAL ADMISSION
+  ↳ Text "GENERAL ADMISSION" 374×52
+  ↳ Text "**€49.00**" 177×59
+  ↳ Layout ticket/center_band · 8 blocks
+  ↳ Canvas 10 images 1800×640 [wired] (10/10 positions, 10/10 scales wired)
+  ↳ Pick → dream
+  ↳ Pick → wide extended grotesque
+  ↳ Pick → The letters are scattered and overlapping at random angles a
+  ↳ image · "Giant wide extended grotesque lettering spelling t"
+  ↳ run promo-1
+  ↳ Resizing .rundeer/outputs/ticket_tex_1_01.png 1360×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/ticket_tex_1_01_2774c8515574.png
+  ↳ Coord 1360×640
+  ↳ Mapping rot=-11.881911796883863° scale=(0.9207655400804831,0.8037507281919043)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_7b2b7126120ce460.png (r=21.469824220226258)…
+  ↳ → .rundeer/data/cache/blurred/render_7b2b7126120ce460_blur21p47.png
+  ↳ Sensor Noise seed=40900 grain=1
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Palette mono #9a6e18 #eb9f44 #faf8f5
+  ↳ Mix mix
+  ↳ Coord 440×640
+  ↳ Mix mix
+  ↳ Coord 640×10
+  ↳ Math multiply
+  ↳ Math modulo
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Text "RDR-1920-MT" 186×39
+  ↳ Pick → E
+  ↳ Text "SEC E · ROW 17" 235×39
+  ↳ Text "**SEAT 33**" 213×63
+  ↳ Text "**GATE 5**" 212×81
+  ↳ Barcode "RDR-1920-MT" 352×96
+  ↳ Random Date → FRIDAY, MARCH 19, 2027
+  ↳ Text "FRIDAY, MARCH 19, 2027" 318×35
+  ↳ Layout ticket/stub/stack · 6 blocks
+  ↳ Canvas 8 images 440×640 [wired] (8/8 positions, 8/8 scales, 2/8 rotations wired)
+  ↳ Text "**rundeer**" 173×56
+  ↳ Pick → **ECHO** CHAMBER
+  ↳ Text "**ECHO** CHAMBER" 443×72
+  ↳ Pick → ELIO ROSS
+  ↳ Text "ELIO ROSS" 715×163
+  ↳ Text "FRIDAY, MARCH 19, 2027" 512×59
+  ↳ Pick → HALL 7
+  ↳ Text "HALL 7" 164×59
+  ↳ Pick → 30
+  ↳ Text "DOORS 19:30" 289×59
+  ↳ Pick → EARLY BIRD
+  ↳ Text "EARLY BIRD" 219×52
+  ↳ Text "**€54.00**" 176×59
+  ↳ Layout ticket/headline_left · 8 blocks
+  ↳ Canvas 10 images 1800×640 [wired] (10/10 positions, 10/10 scales wired)
+  ↳ Pick → bass
+  ↳ Pick → squished bouncy
+  ↳ Pick → The word repeats in a dense diagonal pattern across the fram
+  ↳ image · "Giant squished bouncy lettering spelling the word "
+  ↳ run promo-2
+  ↳ Resizing .rundeer/outputs/ticket_tex_2_01.png 1360×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/ticket_tex_2_01_220d97d1cc8d.png
+  ↳ Coord 1360×640
+  ↳ Mapping rot=5.907297614877052° scale=(0.7269032266099945,0.6216661234093707)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_95ef20b203ea5c92.png (r=14.866281057515128)…
+  ↳ → .rundeer/data/cache/blurred/render_95ef20b203ea5c92_blur14p87.png
+  ↳ Sensor Noise seed=13991 grain=1
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Palette analogous #47157b #d58ee2 #f7f5fa
+  ↳ Mix mix
+  ↳ Coord 440×640
+  ↳ Mix mix
+  ↳ Coord 640×10
+  ↳ Math multiply
+  ↳ Math modulo
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Text "RDR-4015-WJ" 186×39
+  ↳ Pick → C
+  ↳ Text "SEC C · ROW 7" 219×39
+  ↳ Text "**SEAT 33**" 213×63
+  ↳ Text "**GATE 1**" 200×81
+  ↳ Barcode "RDR-4015-WJ" 352×96
+  ↳ Random Date → SATURDAY, APRIL 24, 2027
+  ↳ Text "SATURDAY, APRIL 24, 2027" 346×35
+  ↳ Layout ticket/stub/stack · 6 blocks
+  ↳ Canvas 8 images 440×640 [wired] (8/8 positions, 8/8 scales, 2/8 rotations wired)
+  ↳ Text "**rundeer**" 173×56
+  ↳ Pick → **GOLDEN HOUR** LIVE
+  ↳ Text "**GOLDEN HOUR** LIVE" 526×72
+  ↳ Pick → ODESSA BLUE
+  ↳ Text "ODESSA BLUE" 936×163
+  ↳ Text "SATURDAY, APRIL 24, 2027" 559×59
+  ↳ Pick → NORTH ARENA
+  ↳ Text "NORTH ARENA" 326×59
+  ↳ Pick → 00
+  ↳ Text "DOORS 19:00" 291×59
+  ↳ Pick → BACKSTAGE PASS
+  ↳ Text "BACKSTAGE PASS" 325×52
+  ↳ Text "**€73.00**" 173×59
+  ↳ Layout ticket/headline_left · 8 blocks
+  ↳ Canvas 10 images 1800×640 [wired] (10/10 positions, 10/10 scales wired)
+  ↳ Pick → glow
+  ↳ Pick → wavy psychedelic 1960s
+  ↳ Pick → The word repeats around concentric rings radiating from the 
+  ↳ image · "Giant wavy psychedelic 1960s lettering spelling th"
+  ↳ run promo-3
+  ↳ Resizing .rundeer/outputs/ticket_tex_3_01.png 1360×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/ticket_tex_3_01_7a27a3147e3b.png
+  ↳ Coord 1360×640
+  ↳ Mapping rot=10.231845262504052° scale=(0.8357318143840601,0.9558726138903659)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_6d0c5361adad5844.png (r=27.0302251677426)…
+  ↳ → .rundeer/data/cache/blurred/render_6d0c5361adad5844_blur27p03.png
+  ↳ Sensor Noise seed=46639 grain=1
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Palette complementary light #f7e5aa #364fac #1d190c
+  ↳ Mix mix
+  ↳ Coord 440×640
+  ↳ Mix mix
+  ↳ Coord 640×10
+  ↳ Math multiply
+  ↳ Math modulo
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Text "RDR-4949-OF" 186×39
+  ↳ Pick → F
+  ↳ Text "SEC F · ROW 12" 235×39
+  ↳ Text "**SEAT 1**" 183×63
+  ↳ Text "**GATE 4**" 214×81
+  ↳ Barcode "RDR-4949-OF" 352×96
+  ↳ Random Date → SUNDAY, APRIL 4, 2027
+  ↳ Text "SUNDAY, APRIL 4, 2027" 304×35
+  ↳ Layout ticket/stub/centered · 6 blocks
+  ↳ Canvas 8 images 440×640 [wired] (8/8 positions, 8/8 scales, 2/8 rotations wired)
+  ↳ Text "**rundeer**" 173×56
+  ↳ Pick → **SIGNAL** LIVE
+  ↳ Text "**SIGNAL** LIVE" 341×72
+  ↳ Pick → THEO MARCH
+  ↳ Text "THEO MARCH" 1107×201
+  ↳ Text "SUNDAY, APRIL 4, 2027" 482×59
+  ↳ Pick → THE ORBIT
+  ↳ Text "THE ORBIT" 245×59
+  ↳ Pick → 00
+  ↳ Text "DOORS 21:00" 290×59
+  ↳ Pick → FLOOR STANDING
+  ↳ Text "FLOOR STANDING" 319×52
+  ↳ Text "**€70.00**" 175×59
+  ↳ Layout ticket/center_band · 8 blocks
+  ↳ Canvas 10 images 1800×640 [wired] (10/10 positions, 10/10 scales wired)
+▶ Resolving n84 (export)…
+  ↳ Exporting bundle (4 images)…
+  ↳ → 4 files
+  ↳ Resizing .rundeer/outputs/ticket_tex_3_01.png 1360×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/ticket_tex_3_01_7a27a3147e3b.png
+  ↳ Coord 1360×640
+  ↳ Mapping rot=3.886196714117016° scale=(1.2212171391091564,0.8087641600721907)
+  ↳ Render (bilinear, mirror)
+  ↳ Blurring .rundeer/data/cache/uv/render_9a226cf9cbea75e8.png (r=22.000024058198477)…
+  ↳ → .rundeer/data/cache/blurred/render_9a226cf9cbea75e8_blur22.png
+  ↳ Sensor Noise seed=12762 grain=1
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Palette triadic light #e8cdc7 #1ba64a #1d0f0c
+  ↳ Mix mix
+  ↳ Coord 440×640
+  ↳ Mix mix
+  ↳ Coord 640×10
+  ↳ Math multiply
+  ↳ Math modulo
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Text "**rundeer**" 173×56
+  ↳ Pick → **PULSE** CLUB
+  ↳ Text "**PULSE** CLUB" 345×72
+  ↳ Pick → FENN
+  ↳ Text "FENN" 470×202
+  ↳ Random Date → SUNDAY, FEBRUARY 28, 2027
+  ↳ Text "SUNDAY, FEBRUARY 28, 2027" 612×59
+  ↳ Pick → WAREHOUSE B
+  ↳ Text "WAREHOUSE B" 334×59
+  ↳ Pick → 00
+  ↳ Text "DOORS 21:00" 290×59
+  ↳ Pick → FLOOR STANDING
+  ↳ Text "FLOOR STANDING" 319×52
+  ↳ Text "**€70.00**" 175×59
+  ↳ Text "RDR-1283-VQ" 186×39
+  ↳ Pick → C
+  ↳ Text "SEC C · ROW 19" 235×39
+  ↳ Text "**SEAT 39**" 213×63
+  ↳ Text "**GATE 3**" 212×81
+  ↳ Barcode "RDR-1283-VQ" 352×96
+  ↳ Text "SUNDAY, FEBRUARY 28, 2027" 361×35
+  ↳ Layout ticket/stub/stack · 6 blocks
+  ↳ Canvas 8 images 440×640 [wired] (8/8 positions, 8/8 scales, 2/8 rotations wired)
+  ↳ Layout ticket/headline_left · 8 blocks
+  ↳ Canvas 10 images 1800×640 [wired] (10/10 positions, 10/10 scales wired)

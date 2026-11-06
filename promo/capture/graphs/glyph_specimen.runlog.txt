@@ -1,0 +1,612 @@
+▶ Running graph (2 terminal nodes)
+
+▶ Resolving n63 (preview)…
+  ↳ Coord 1080×1350
+  ↳ Palette analogous #2e8985 #91bce3 #0c1d1c
+  ↳ Mix mix
+  ↳ Pick → &
+  ↳ Pick → wide extended grotesque
+  ↳ image · "A single giant wide extended grotesque glyph "&" c"
+  ↳ run promo-6
+  ↳ Resizing .rundeer/outputs/specimen_glyph_0_01.png 640×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/specimen_glyph_0_01_7cb15140ceb8.png
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0000
+  ↳ Wave(saw) → 0.0000
+  ↳ Wave(triangle) → 0.8500
+  ↳ Wave(saw) → 1.0000
+  ↳ Mapping rot=0° scale=(0.85,1)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 0.0000
+  ↳ Blurring .rundeer/data/cache/uv/render_8d8db44626b80752.png (r=0)…
+  ↳ → .rundeer/data/cache/blurred/render_8d8db44626b80752_blur0.png
+  ↳ Wave(saw) → 0.0000
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 1
+  ↳ Text "Nº 1 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0771
+  ↳ Wave(saw) → -0.7563
+  ↳ Wave(triangle) → 0.9167
+  ↳ Wave(saw) → 0.9444
+  ↳ Mapping rot=-0.7562657539322069° scale=(0.9166666666666666,0.9444444444444444)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 3.1111
+  ↳ Blurring .rundeer/data/cache/uv/render_2802b98fed8d844e.png (r=3.1111111111111107)…
+  ↳ → .rundeer/data/cache/blurred/render_2802b98fed8d844e_blur3p11.png
+  ↳ Wave(saw) → 0.0400
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → 0.0788
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 2
+  ↳ Text "Nº 2 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.1182
+  ↳ Wave(saw) → -1.5125
+  ↳ Wave(triangle) → 0.9833
+  ↳ Wave(saw) → 0.8889
+  ↳ Mapping rot=-1.512531507864414° scale=(0.9833333333333333,0.8888888888888888)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 6.2222
+  ↳ Blurring .rundeer/data/cache/uv/render_b49e69f2c028c243.png (r=6.222222222222221)…
+  ↳ → .rundeer/data/cache/blurred/render_b49e69f2c028c243_blur6p22.png
+  ↳ Wave(saw) → 0.0800
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → 0.0274
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 3
+  ↳ Text "Nº 3 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.1039
+  ↳ Wave(saw) → -2.2688
+  ↳ Wave(triangle) → 1.0500
+  ↳ Wave(saw) → 0.8333
+  ↳ Mapping rot=-2.268797261796621° scale=(1.05,0.8333333333333334)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 9.3333
+  ↳ Blurring .rundeer/data/cache/uv/render_188caeaaa30bcd63.png (r=9.333333333333332)…
+  ↳ → .rundeer/data/cache/blurred/render_188caeaaa30bcd63_blur9p33.png
+  ↳ Wave(saw) → 0.1200
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → -0.0693
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 4
+  ↳ Text "Nº 4 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0410
+  ↳ Wave(saw) → -3.0251
+  ↳ Wave(triangle) → 1.1167
+  ↳ Wave(saw) → 0.7778
+  ↳ Mapping rot=-3.025063015728828° scale=(1.1166666666666667,0.7777777777777778)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 12.4444
+  ↳ Blurring .rundeer/data/cache/uv/render_f1c6b7a865e93d73.png (r=12.444444444444443)…
+  ↳ → .rundeer/data/cache/blurred/render_f1c6b7a865e93d73_blur12p44.png
+  ↳ Wave(saw) → 0.1600
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → -0.0514
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 5
+  ↳ Text "Nº 5 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.0410
+  ↳ Wave(saw) → -3.7813
+  ↳ Wave(triangle) → 1.1167
+  ↳ Wave(saw) → 0.7222
+  ↳ Mapping rot=-3.781328769661035° scale=(1.1166666666666667,0.7222222222222222)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 15.5556
+  ↳ Blurring .rundeer/data/cache/uv/render_6e92229a9369d0ea.png (r=15.555555555555557)…
+  ↳ → .rundeer/data/cache/blurred/render_6e92229a9369d0ea_blur15p56.png
+  ↳ Wave(saw) → 0.2000
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → 0.0514
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 6
+  ↳ Text "Nº 6 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.1039
+  ↳ Wave(saw) → -4.5376
+  ↳ Wave(triangle) → 1.0500
+  ↳ Wave(saw) → 0.6667
+  ↳ Mapping rot=-4.537594523593242° scale=(1.05,0.6666666666666667)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 18.6667
+  ↳ Blurring .rundeer/data/cache/uv/render_7809622d5bf54065.png (r=18.666666666666664)…
+  ↳ → .rundeer/data/cache/blurred/render_7809622d5bf54065_blur18p67.png
+  ↳ Wave(saw) → 0.2400
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → 0.0693
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 7
+  ↳ Text "Nº 7 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.1182
+  ↳ Wave(saw) → -5.2939
+  ↳ Wave(triangle) → 0.9833
+  ↳ Wave(saw) → 0.6111
+  ↳ Mapping rot=-5.293860277525449° scale=(0.9833333333333333,0.6111111111111112)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 21.7778
+  ↳ Blurring .rundeer/data/cache/uv/render_2d2fceed3f1f780a.png (r=21.77777777777778)…
+  ↳ → .rundeer/data/cache/blurred/render_2d2fceed3f1f780a_blur21p78.png
+  ↳ Wave(saw) → 0.2800
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → -0.0274
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 8
+  ↳ Text "Nº 8 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.0771
+  ↳ Wave(saw) → -6.0501
+  ↳ Wave(triangle) → 0.9167
+  ↳ Wave(saw) → 0.5556
+  ↳ Mapping rot=-6.050126031457656° scale=(0.9166666666666667,0.5555555555555556)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 24.8889
+  ↳ Blurring .rundeer/data/cache/uv/render_1e98f15b72a9cad3.png (r=24.888888888888886)…
+  ↳ → .rundeer/data/cache/blurred/render_1e98f15b72a9cad3_blur24p89.png
+  ↳ Wave(saw) → 0.3200
+  ↳ Sensor Noise seed=6700 grain=1
+  ↳ Wave(sine) → -0.0788
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 9
+  ↳ Text "Nº 9 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Pick → **ELASTIC** SANS
+  ↳ Text "**ELASTIC** SANS" 666×124
+  ↳ Text "WIDE EXTENDED GROTESQUE" 357×37
+  ↳ Text "GLYPH "&" · 9 CUTS" 279×37
+  ↳ Text "**rundeer** type lab" 215×45
+  ↳ Random Date → APRIL 2027
+  ↳ Text "APRIL 2027" 143×35
+  ↳ Grid 3×3 · 9 blocks · cell 315×315
+  ↳ Layout specimen/masthead_right · 5 blocks
+  ↳ Canvas 15 images 1080×1350 [wired] (15/15 positions, 15/15 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Palette mono #58620d #e6e6b1 #f9faf5
+  ↳ Mix mix
+  ↳ Pick → &
+  ↳ Pick → melting liquid blob
+  ↳ image · "A single giant melting liquid blob glyph "&" cente"
+  ↳ run promo-7
+  ↳ Resizing .rundeer/outputs/specimen_glyph_1_01.png 640×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/specimen_glyph_1_01_29a4b53bfac5.png
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0000
+  ↳ Wave(saw) → 0.0000
+  ↳ Wave(triangle) → 0.8500
+  ↳ Wave(saw) → 1.0000
+  ↳ Mapping rot=0° scale=(0.85,1)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 0.0000
+  ↳ Blurring .rundeer/data/cache/uv/render_67f2fd156c49e11f.png (r=0)…
+  ↳ → .rundeer/data/cache/blurred/render_67f2fd156c49e11f_blur0.png
+  ↳ Wave(saw) → 0.0000
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 1
+  ↳ Text "Nº 1 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0771
+  ↳ Wave(saw) → -4.6800
+  ↳ Wave(triangle) → 0.9167
+  ↳ Wave(saw) → 0.9444
+  ↳ Mapping rot=-4.679965631121654° scale=(0.9166666666666666,0.9444444444444444)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 3.1111
+  ↳ Blurring .rundeer/data/cache/uv/render_a4996e31486483e4.png (r=3.1111111111111107)…
+  ↳ → .rundeer/data/cache/blurred/render_a4996e31486483e4_blur3p11.png
+  ↳ Wave(saw) → 0.0400
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → 0.0788
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 2
+  ↳ Text "Nº 2 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.1182
+  ↳ Wave(saw) → -9.3599
+  ↳ Wave(triangle) → 0.9833
+  ↳ Wave(saw) → 0.8889
+  ↳ Mapping rot=-9.359931262243306° scale=(0.9833333333333333,0.8888888888888888)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 6.2222
+  ↳ Blurring .rundeer/data/cache/uv/render_a096a340ccf1a4b9.png (r=6.222222222222221)…
+  ↳ → .rundeer/data/cache/blurred/render_a096a340ccf1a4b9_blur6p22.png
+  ↳ Wave(saw) → 0.0800
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → 0.0274
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 3
+  ↳ Text "Nº 3 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.1039
+  ↳ Wave(saw) → -14.0399
+  ↳ Wave(triangle) → 1.0500
+  ↳ Wave(saw) → 0.8333
+  ↳ Mapping rot=-14.039896893364958° scale=(1.05,0.8333333333333334)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 9.3333
+  ↳ Blurring .rundeer/data/cache/uv/render_b0385899db24be94.png (r=9.333333333333332)…
+  ↳ → .rundeer/data/cache/blurred/render_b0385899db24be94_blur9p33.png
+  ↳ Wave(saw) → 0.1200
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → -0.0693
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 4
+  ↳ Text "Nº 4 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0410
+  ↳ Wave(saw) → -18.7199
+  ↳ Wave(triangle) → 1.1167
+  ↳ Wave(saw) → 0.7778
+  ↳ Mapping rot=-18.71986252448661° scale=(1.1166666666666667,0.7777777777777778)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 12.4444
+  ↳ Blurring .rundeer/data/cache/uv/render_afef847b3674ae06.png (r=12.444444444444443)…
+  ↳ → .rundeer/data/cache/blurred/render_afef847b3674ae06_blur12p44.png
+  ↳ Wave(saw) → 0.1600
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → -0.0514
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 5
+  ↳ Text "Nº 5 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.0410
+  ↳ Wave(saw) → -23.3998
+  ↳ Wave(triangle) → 1.1167
+  ↳ Wave(saw) → 0.7222
+  ↳ Mapping rot=-23.399828155608265° scale=(1.1166666666666667,0.7222222222222222)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 15.5556
+  ↳ Blurring .rundeer/data/cache/uv/render_47e2e6cd9e2dd60b.png (r=15.555555555555557)…
+  ↳ → .rundeer/data/cache/blurred/render_47e2e6cd9e2dd60b_blur15p56.png
+  ↳ Wave(saw) → 0.2000
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → 0.0514
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 6
+  ↳ Text "Nº 6 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.1039
+  ↳ Wave(saw) → -28.0798
+  ↳ Wave(triangle) → 1.0500
+  ↳ Wave(saw) → 0.6667
+  ↳ Mapping rot=-28.079793786729915° scale=(1.05,0.6666666666666667)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 18.6667
+  ↳ Blurring .rundeer/data/cache/uv/render_8741e919fc892ca0.png (r=18.666666666666664)…
+  ↳ → .rundeer/data/cache/blurred/render_8741e919fc892ca0_blur18p67.png
+  ↳ Wave(saw) → 0.2400
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → 0.0693
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 7
+  ↳ Text "Nº 7 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.1182
+  ↳ Wave(saw) → -32.7598
+  ↳ Wave(triangle) → 0.9833
+  ↳ Wave(saw) → 0.6111
+  ↳ Mapping rot=-32.75975941785157° scale=(0.9833333333333333,0.6111111111111112)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 21.7778
+  ↳ Blurring .rundeer/data/cache/uv/render_9ab95f1cf1c750c9.png (r=21.77777777777778)…
+  ↳ → .rundeer/data/cache/blurred/render_9ab95f1cf1c750c9_blur21p78.png
+  ↳ Wave(saw) → 0.2800
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → -0.0274
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 8
+  ↳ Text "Nº 8 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.0771
+  ↳ Wave(saw) → -37.4397
+  ↳ Wave(triangle) → 0.9167
+  ↳ Wave(saw) → 0.5556
+  ↳ Mapping rot=-37.43972504897322° scale=(0.9166666666666667,0.5555555555555556)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 24.8889
+  ↳ Blurring .rundeer/data/cache/uv/render_bed9fd14c5d4af3d.png (r=24.888888888888886)…
+  ↳ → .rundeer/data/cache/blurred/render_bed9fd14c5d4af3d_blur24p89.png
+  ↳ Wave(saw) → 0.3200
+  ↳ Sensor Noise seed=27302 grain=1
+  ↳ Wave(sine) → -0.0788
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 9
+  ↳ Text "Nº 9 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Pick → **RDR** GROTESK
+  ↳ Text "**RDR** GROTESK" 663×124
+  ↳ Text "MELTING LIQUID BLOB" 295×37
+  ↳ Text "GLYPH "&" · 9 CUTS" 279×37
+  ↳ Text "**rundeer** type lab" 215×45
+  ↳ Random Date → JANUARY 2027
+  ↳ Text "JANUARY 2027" 171×35
+  ↳ Grid 3×3 · 9 blocks · cell 315×315
+  ↳ Layout specimen/masthead_right · 5 blocks
+  ↳ Canvas 15 images 1080×1350 [wired] (15/15 positions, 15/15 scales wired)
+  ↳ Coord 1080×1350
+  ↳ Palette analogous #623d90 #6e77d1 #f7f5fa
+  ↳ Mix mix
+  ↳ Pick → &
+  ↳ Pick → rubbery stretched cartoon
+  ↳ image · "A single giant rubbery stretched cartoon glyph "&""
+  ↳ run promo-8
+  ↳ Resizing .rundeer/outputs/specimen_glyph_2_01.png 640×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/specimen_glyph_2_01_240915e5e8f1.png
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0000
+  ↳ Wave(saw) → 0.0000
+  ↳ Wave(triangle) → 0.8500
+  ↳ Wave(saw) → 1.0000
+  ↳ Mapping rot=0° scale=(0.85,1)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 0.0000
+  ↳ Blurring .rundeer/data/cache/uv/render_f149dbfa24549754.png (r=0)…
+  ↳ → .rundeer/data/cache/blurred/render_f149dbfa24549754_blur0.png
+  ↳ Wave(saw) → 0.0000
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 1
+  ↳ Text "Nº 1 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0771
+  ↳ Wave(saw) → -5.2719
+  ↳ Wave(triangle) → 0.9167
+  ↳ Wave(saw) → 0.9444
+  ↳ Mapping rot=-5.271935124499148° scale=(0.9166666666666666,0.9444444444444444)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 3.1111
+  ↳ Blurring .rundeer/data/cache/uv/render_96c4431e4cef72e5.png (r=3.1111111111111107)…
+  ↳ → .rundeer/data/cache/blurred/render_96c4431e4cef72e5_blur3p11.png
+  ↳ Wave(saw) → 0.0400
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → 0.0788
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 2
+  ↳ Text "Nº 2 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.1182
+  ↳ Wave(saw) → -10.5439
+  ↳ Wave(triangle) → 0.9833
+  ↳ Wave(saw) → 0.8889
+  ↳ Mapping rot=-10.543870248998298° scale=(0.9833333333333333,0.8888888888888888)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 6.2222
+  ↳ Blurring .rundeer/data/cache/uv/render_55edb0c8680d459d.png (r=6.222222222222221)…
+  ↳ → .rundeer/data/cache/blurred/render_55edb0c8680d459d_blur6p22.png
+  ↳ Wave(saw) → 0.0800
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → 0.0274
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 3
+  ↳ Text "Nº 3 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.1039
+  ↳ Wave(saw) → -15.8158
+  ↳ Wave(triangle) → 1.0500
+  ↳ Wave(saw) → 0.8333
+  ↳ Mapping rot=-15.815805373497447° scale=(1.05,0.8333333333333334)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 9.3333
+  ↳ Blurring .rundeer/data/cache/uv/render_153c87f7230a3167.png (r=9.333333333333332)…
+  ↳ → .rundeer/data/cache/blurred/render_153c87f7230a3167_blur9p33.png
+  ↳ Wave(saw) → 0.1200
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → -0.0693
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 4
+  ↳ Text "Nº 4 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0410
+  ↳ Wave(saw) → -21.0877
+  ↳ Wave(triangle) → 1.1167
+  ↳ Wave(saw) → 0.7778
+  ↳ Mapping rot=-21.087740497996595° scale=(1.1166666666666667,0.7777777777777778)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 12.4444
+  ↳ Blurring .rundeer/data/cache/uv/render_fdd2a360d6431f96.png (r=12.444444444444443)…
+  ↳ → .rundeer/data/cache/blurred/render_fdd2a360d6431f96_blur12p44.png
+  ↳ Wave(saw) → 0.1600
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → -0.0514
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 5
+  ↳ Text "Nº 5 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.0410
+  ↳ Wave(saw) → -26.3597
+  ↳ Wave(triangle) → 1.1167
+  ↳ Wave(saw) → 0.7222
+  ↳ Mapping rot=-26.359675622495747° scale=(1.1166666666666667,0.7222222222222222)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 15.5556
+  ↳ Blurring .rundeer/data/cache/uv/render_ec4982558c87b208.png (r=15.555555555555557)…
+  ↳ → .rundeer/data/cache/blurred/render_ec4982558c87b208_blur15p56.png
+  ↳ Wave(saw) → 0.2000
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → 0.0514
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 6
+  ↳ Text "Nº 6 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.1039
+  ↳ Wave(saw) → -31.6316
+  ↳ Wave(triangle) → 1.0500
+  ↳ Wave(saw) → 0.6667
+  ↳ Mapping rot=-31.631610746994895° scale=(1.05,0.6666666666666667)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 18.6667
+  ↳ Blurring .rundeer/data/cache/uv/render_af5d6ffd99b218a4.png (r=18.666666666666664)…
+  ↳ → .rundeer/data/cache/blurred/render_af5d6ffd99b218a4_blur18p67.png
+  ↳ Wave(saw) → 0.2400
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → 0.0693
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 7
+  ↳ Text "Nº 7 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.1182
+  ↳ Wave(saw) → -36.9035
+  ↳ Wave(triangle) → 0.9833
+  ↳ Wave(saw) → 0.6111
+  ↳ Mapping rot=-36.903545871494046° scale=(0.9833333333333333,0.6111111111111112)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 21.7778
+  ↳ Blurring .rundeer/data/cache/uv/render_2c4aa72424296700.png (r=21.77777777777778)…
+  ↳ → .rundeer/data/cache/blurred/render_2c4aa72424296700_blur21p78.png
+  ↳ Wave(saw) → 0.2800
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → -0.0274
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 8
+  ↳ Text "Nº 8 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Coord 640×640
+  ↳ Wave(sine) → -0.0771
+  ↳ Wave(saw) → -42.1755
+  ↳ Wave(triangle) → 0.9167
+  ↳ Wave(saw) → 0.5556
+  ↳ Mapping rot=-42.17548099599319° scale=(0.9166666666666667,0.5555555555555556)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 24.8889
+  ↳ Blurring .rundeer/data/cache/uv/render_f3fa21393b53649c.png (r=24.888888888888886)…
+  ↳ → .rundeer/data/cache/blurred/render_f3fa21393b53649c_blur24p89.png
+  ↳ Wave(saw) → 0.3200
+  ↳ Sensor Noise seed=31004 grain=1
+  ↳ Wave(sine) → -0.0788
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Mix mix
+  ↳ Math(add) → 9
+  ↳ Text "Nº 9 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Pick → **CHROME** STENCIL
+  ↳ Text "**CHROME** STENCIL" 819×124
+  ↳ Text "RUBBERY STRETCHED CARTOON" 388×37
+  ↳ Text "GLYPH "&" · 9 CUTS" 279×37
+  ↳ Text "**rundeer** type lab" 215×45
+  ↳ Random Date → MARCH 2027
+  ↳ Text "MARCH 2027" 143×35
+  ↳ Grid 3×3 · 9 blocks · cell 315×315
+  ↳ Layout specimen/masthead_right · 5 blocks
+  ↳ Canvas 15 images 1080×1350 [wired] (15/15 positions, 15/15 scales wired)
+▶ Resolving n64 (export)…
+  ↳ Exporting bundle (3 images)…
+  ↳ → 3 files
+  ↳ Resizing .rundeer/outputs/specimen_glyph_2_01.png 640×640 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/specimen_glyph_2_01_240915e5e8f1.png
+  ↳ Coord 640×640
+  ↳ Wave(sine) → 0.0000
+  ↳ Wave(saw) → 0.0000
+  ↳ Wave(triangle) → 0.8500
+  ↳ Wave(saw) → 1.0000
+  ↳ Mapping rot=0° scale=(0.85,1)
+  ↳ Render (bilinear, mirror)
+  ↳ Wave(saw) → 0.0000
+  ↳ Blurring .rundeer/data/cache/uv/render_f149dbfa24549754.png (r=0)…
+  ↳ → .rundeer/data/cache/blurred/render_f149dbfa24549754_blur0.png
+  ↳ Wave(saw) → 0.0000
+  ↳ Sensor Noise seed=68735 grain=1
+  ↳ Wave(sine) → 0.0000
+  ↳ Math add
+  ↳ Ramp constant
+  ↳ Palette complementary light #cda6df #4e8830 #170c1d
+  ↳ Mix mix
+  ↳ Coord 1080×1350
+  ↳ Mix mix
+  ↳ Math(add) → 1
+  ↳ Text "Nº 1 / 9" 154×43
+  ↳ Canvas 2 images 640×720 [wired] (2/2 positions, 2/2 scales wired)
+  ↳ Pick → **RDR** GROTESK
+  ↳ Text "**RDR** GROTESK" 663×124
+  ↳ Pick → squished bouncy
+  ↳ Text "SQUISHED BOUNCY" 233×37
+  ↳ Pick → e
+  ↳ Text "GLYPH "e" · 9 CUTS" 279×37
+  ↳ Text "**rundeer** type lab" 215×45
+  ↳ Random Date → DECEMBER 2026
+  ↳ Text "DECEMBER 2026" 186×35
+  ↳ Grid 3×3 · 9 blocks · cell 315×315
+  ↳ Layout specimen/masthead_right · 5 blocks
+  ↳ Canvas 15 images 1080×1350 [wired] (15/15 positions, 15/15 scales wired)

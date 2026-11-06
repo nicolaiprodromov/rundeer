@@ -1,0 +1,110 @@
+▶ Running graph (2 terminal nodes)
+
+▶ Resolving n64 (preview)…
+  ↳ Pick → a bouquet of wilted flowers taped to a chain-link fence
+  ↳ Pick → Overexposed black and white snapshot, pale washed-out tones,
+  ↳ image · "a bouquet of wilted flowers taped to a chain-link "
+  ↳ run promo-4
+  ↳ Resizing .rundeer/outputs/zine_photo_0_01.png 1080×1528 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/zine_photo_0_01_3dc7aafa122e.png
+  ↳ Halftone dot cell=7.547553406052975 ∠22.27013833327875
+  ↳ Coord 1080×1528
+  ↳ Mapping rot=0.1375376790203226° scale=(1,1)
+  ↳ Render (bilinear, clamp)
+  ↳ Sensor Noise seed=19925 grain=2
+  ↳ Blurring .rundeer/data/cache/media/zine_photo_0_01_3dc7aafa122e.png (r=6)…
+  ↳ → .rundeer/data/cache/blurred/zine_photo_0_01_3dc7aafa122e_blur6.png
+  ↳ Pick → square
+  ↳ Halftone square cell=15.522034509436029 ∠63.088921596418864
+  ↳ Mapping rot=-0.012775132748512052° scale=(1,1)
+  ↳ Render (bilinear, clamp)
+  ↳ Sensor Noise seed=98661 grain=2
+  ↳ Pick → F7F3EA
+  ↳ Pick → F15060
+  ↳ Mix multiply
+  ↳ Pick → 765BA7
+  ↳ Mix multiply
+  ↳ Sensor Noise seed=6064 grain=2
+  ↳ Text "**rundeer** press" 206×43
+  ↳ Text "ISSUE **26**" 187×54
+  ↳ Pick → **DEAD** AIR
+  ↳ Text "**DEAD** AIR" 699×181
+  ↳ Pick → "ink is just slow light"
+  ↳ Text ""ink is just slow light"" 364×54
+  ↳ Random Date → APRIL 2027
+  ↳ Text "APRIL 2027" 195×39
+  ↳ Math(add) → 1
+  ↳ Text "P. 1" 90×39
+  ↳ Layout zine/cover_top · 6 blocks
+  ↳ Canvas 7 images 1080×1528 [wired] (7/7 positions, 7/7 scales wired)
+  ↳ Pick → a dog sleeping under a flickering neon sign
+  ↳ Pick → High-key black and white photograph, bright white background
+  ↳ image · "a dog sleeping under a flickering neon sign. High-"
+  ↳ run promo-5
+  ↳ Resizing .rundeer/outputs/zine_photo_1_01.png 1080×1528 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/zine_photo_1_01_0bb53888ec73.png
+  ↳ Halftone dot cell=8.452639578971317 ∠25.50293401208136
+  ↳ Coord 1080×1528
+  ↳ Mapping rot=-0.13815142999161953° scale=(1,1)
+  ↳ Render (bilinear, clamp)
+  ↳ Sensor Noise seed=396 grain=2
+  ↳ Blurring .rundeer/data/cache/media/zine_photo_1_01_0bb53888ec73.png (r=6)…
+  ↳ → .rundeer/data/cache/blurred/zine_photo_1_01_0bb53888ec73_blur6.png
+  ↳ Pick → dot
+  ↳ Halftone dot cell=13.004259372781316 ∠39.41156918573313
+  ↳ Mapping rot=0.035312245126066344° scale=(1,1)
+  ↳ Render (bilinear, clamp)
+  ↳ Sensor Noise seed=49486 grain=2
+  ↳ Pick → E9E4D8
+  ↳ Pick → FF6C2F
+  ↳ Mix multiply
+  ↳ Pick → 407060
+  ↳ Mix multiply
+  ↳ Sensor Noise seed=32414 grain=2
+  ↳ Text "**rundeer** press" 206×43
+  ↳ Text "ISSUE **23**" 186×54
+  ↳ Pick → **SIGNAL** LOSS
+  ↳ Text "**SIGNAL** LOSS" 995×181
+  ↳ Pick → "we were here before the algorithm"
+  ↳ Text ""we were here before the algorithm"" 624×54
+  ↳ Random Date → NOVEMBER 2027
+  ↳ Text "NOVEMBER 2027" 248×39
+  ↳ Math(add) → 2
+  ↳ Text "P. 2" 90×39
+  ↳ Layout zine/cover_top · 6 blocks
+  ↳ Canvas 7 images 1080×1528 [wired] (7/7 positions, 7/7 scales wired)
+▶ Resolving n65 (export)…
+  ↳ Exporting bundle (2 images)…
+  ↳ → 2 files
+  ↳ Resizing .rundeer/outputs/zine_photo_1_01.png 1080×1528 [wired] (fill [wired])
+  ↳ → .rundeer/data/cache/media/zine_photo_1_01_0bb53888ec73.png
+  ↳ Halftone dot cell=9.061384737379658 ∠21.74827154690974
+  ↳ Coord 1080×1528
+  ↳ Mapping rot=0.18564439746657413° scale=(1,1)
+  ↳ Render (bilinear, clamp)
+  ↳ Sensor Noise seed=44981 grain=2
+  ↳ Blurring .rundeer/data/cache/media/zine_photo_1_01_0bb53888ec73.png (r=6)…
+  ↳ → .rundeer/data/cache/blurred/zine_photo_1_01_0bb53888ec73_blur6.png
+  ↳ Pick → square
+  ↳ Halftone square cell=14.157244127939318 ∠85.15463217175501
+  ↳ Mapping rot=0.6022990945786815° scale=(1,1)
+  ↳ Render (bilinear, clamp)
+  ↳ Sensor Noise seed=24244 grain=2
+  ↳ Pick → E9E4D8
+  ↳ Pick → F15060
+  ↳ Mix multiply
+  ↳ Pick → 0078BF
+  ↳ Mix multiply
+  ↳ Sensor Noise seed=79471 grain=2
+  ↳ Text "**rundeer** press" 206×43
+  ↳ Text "ISSUE **19**" 180×54
+  ↳ Pick → **OVER** EXPOSED
+  ↳ Text "**OVER** EXPOSED" 1150×181
+  ↳ Pick → "the copier never lies"
+  ↳ Text ""the copier never lies"" 384×54
+  ↳ Random Date → JUNE 2027
+  ↳ Text "JUNE 2027" 178×39
+  ↳ Math(add) → 1
+  ↳ Text "P. 1" 90×39
+  ↳ Layout zine/centered · 6 blocks
+  ↳ Canvas 7 images 1080×1528 [wired] (7/7 positions, 7/7 scales wired)

@@ -1,0 +1,3652 @@
+{
+  "version": 2,
+  "nodes": {
+    "n1": {
+      "id": "n1",
+      "type": "integer-input",
+      "x": -4400,
+      "y": 0,
+      "props": {
+        "value": 30
+      },
+      "width": 260,
+      "title": "Poster Count",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "integer",
+        "value": 30
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 1
+    },
+    "n2": {
+      "id": "n2",
+      "type": "loop-decompose",
+      "x": -4400,
+      "y": 160,
+      "props": {
+        "times": 6,
+        "loop_id": "posters"
+      },
+      "width": 260,
+      "title": "Posters",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": null,
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n3": {
+      "id": "n3",
+      "type": "text-op",
+      "x": -4400,
+      "y": 420,
+      "props": {
+        "op": "format",
+        "extra": "poster_tex_{a}"
+      },
+      "width": 260,
+      "title": "Texture File Name",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "poster_tex_29"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n4": {
+      "id": "n4",
+      "type": "vector-input",
+      "x": -4400,
+      "y": 600,
+      "props": {
+        "x": 1080,
+        "y": 1350,
+        "z": 0
+      },
+      "width": 260,
+      "title": "Poster Size",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "vector",
+        "value": [
+          1080,
+          1350,
+          0
+        ]
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n5": {
+      "id": "n5",
+      "type": "palette",
+      "x": -4400,
+      "y": 780,
+      "props": {
+        "harmony": "random",
+        "light": 0.3,
+        "contrast": 2
+      },
+      "width": 260,
+      "title": "Palette",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "color",
+        "value": "#c3f2aa"
+      },
+      "lastOutputs": {
+        "accent": "#76488a",
+        "ink": "#121d0c"
+      },
+      "lastRunMs": 148,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n6": {
+      "id": "n6",
+      "type": "pick",
+      "x": -3900,
+      "y": 0,
+      "props": {
+        "list": "",
+        "file": "poster/texture_words.txt",
+        "count": 1,
+        "sep": ", "
+      },
+      "width": 280,
+      "title": "Texture Word",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "beat"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 316,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n7": {
+      "id": "n7",
+      "type": "pick",
+      "x": -3900,
+      "y": 200,
+      "props": {
+        "list": "",
+        "file": "poster/texture_styles.txt",
+        "count": 1,
+        "sep": ", "
+      },
+      "width": 280,
+      "title": "Letter Style",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "squished bouncy"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 281,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n8": {
+      "id": "n8",
+      "type": "pick",
+      "x": -3900,
+      "y": 400,
+      "props": {
+        "list": "",
+        "file": "poster/texture_layouts.txt",
+        "count": 1,
+        "sep": ", "
+      },
+      "width": 280,
+      "title": "Arrangement",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "Two huge rows of the word fill the frame, the bottom row mirrored like a reflection, letters packed tightly and bleeding off the sides."
+      },
+      "lastOutputs": null,
+      "lastRunMs": 294,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n9": {
+      "id": "n9",
+      "type": "text-input",
+      "x": -3900,
+      "y": 600,
+      "props": {
+        "value": "Pure flat white letters on a pure flat black background. No shading, no gradients, no texture, no outlines, no other text or elements.",
+        "highlight_pairs": ""
+      },
+      "width": 420,
+      "title": "Mask Rules",
+      "height": 200,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "text",
+        "value": "Pure flat white letters on a pure flat black background. No shading, no gradients, no texture, no outlines, no other text or elements."
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n10": {
+      "id": "n10",
+      "type": "text-op",
+      "x": -3400,
+      "y": 0,
+      "props": {
+        "op": "format",
+        "extra": "Giant {b} lettering spelling the word \"{a}\" in lowercase."
+      },
+      "width": 260,
+      "title": "Lettering Sentence",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "Giant squished bouncy lettering spelling the word \"beat\" in lowercase."
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n11": {
+      "id": "n11",
+      "type": "text-join",
+      "x": -3400,
+      "y": 200,
+      "props": {
+        "sep": " "
+      },
+      "width": 260,
+      "title": "+ Arrangement",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "text",
+        "value": "Giant squished bouncy lettering spelling the word \"beat\" in lowercase. Two huge rows of the word fill the frame, the bottom row mirrored like a reflection, letters packed tightly and bleeding off the sides."
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n12": {
+      "id": "n12",
+      "type": "text-join",
+      "x": -3400,
+      "y": 400,
+      "props": {
+        "sep": " "
+      },
+      "width": 260,
+      "title": "Texture Prompt",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "text",
+        "value": "Giant squished bouncy lettering spelling the word \"beat\" in lowercase. Two huge rows of the word fill the frame, the bottom row mirrored like a reflection, letters packed tightly and bleeding off the sides. Pure flat white letters on a pure flat black background. No shading, no gradients, no texture, no outlines, no other text or elements."
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n13": {
+      "id": "n13",
+      "type": "cmd-image",
+      "x": -3372.769178277026,
+      "y": -966.1568498200467,
+      "props": {
+        "style": "none",
+        "iterations": 1,
+        "concurrency": "",
+        "output_dir": ".rundeer/outputs",
+        "output_name": "live_letters",
+        "model": "grok-imagine-image-2.0",
+        "aspect_ratio": "3:4",
+        "resolution": "2k",
+        "quality": "medium",
+        "reference_ids": "",
+        "pad_reference": true,
+        "ref_quality": 85
+      },
+      "width": 420,
+      "title": "AI Letter Texture",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/outputs/poster_tex_29_01.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 2564904,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n14": {
+      "id": "n14",
+      "type": "resize-media",
+      "x": -2808.084092276254,
+      "y": -321.155360035553,
+      "props": {
+        "size": "1080,1350",
+        "mode": "fill"
+      },
+      "width": 260,
+      "title": "Fit Poster",
+      "height": 246,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/media/poster_tex_29_01_9757daff9100.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 24654,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n15": {
+      "id": "n15",
+      "type": "coordinate",
+      "x": -2900,
+      "y": 200,
+      "props": {
+        "width": 1080,
+        "height": 1350,
+        "dpi": 72,
+        "space": "uv"
+      },
+      "width": 260,
+      "title": "UV",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/uv/coord_540f43bb139b757c.npy",
+        "image": ".rundeer/data/cache/uv/coord_540f43bb139b757c.preview.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 969,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n16": {
+      "id": "n16",
+      "type": "random",
+      "x": -2900,
+      "y": 400,
+      "props": {
+        "mode": "float",
+        "min": 0.45,
+        "max": 1,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Smear Y",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 0.8989616153604163
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n17": {
+      "id": "n17",
+      "type": "random",
+      "x": -2900,
+      "y": 560,
+      "props": {
+        "mode": "float",
+        "min": 0.7,
+        "max": 1.3,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Smear X",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 0.9949485703157486
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n18": {
+      "id": "n18",
+      "type": "random",
+      "x": -2900,
+      "y": 720,
+      "props": {
+        "mode": "float",
+        "min": -30,
+        "max": 30,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Smear Rotation",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": -8.43128221959805
+      },
+      "lastOutputs": null,
+      "lastRunMs": 2,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n19": {
+      "id": "n19",
+      "type": "random",
+      "x": -2900,
+      "y": 880,
+      "props": {
+        "mode": "float",
+        "min": -0.5,
+        "max": 0.5,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Smear Shift",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": -0.11161855479898297
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n20": {
+      "id": "n20",
+      "type": "mapping",
+      "x": -2550,
+      "y": 200,
+      "props": {
+        "location_x": 0,
+        "location_y": 0,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 0.72,
+        "pivot_x": 0.5,
+        "pivot_y": 0.5
+      },
+      "width": 260,
+      "title": "Smear",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "vector-map",
+        "value": ".rundeer/data/cache/uv/map_a6c14b66c7faa75e.npy"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 3832,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n21": {
+      "id": "n21",
+      "type": "uv-render",
+      "x": -2250,
+      "y": 0,
+      "props": {
+        "interp": "bilinear",
+        "extension": "mirror"
+      },
+      "width": 320,
+      "title": "Smeared Letters",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/uv/render_2f428d61945d3f95.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 25426,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n22": {
+      "id": "n22",
+      "type": "random",
+      "x": -2250,
+      "y": 300,
+      "props": {
+        "mode": "float",
+        "min": 18,
+        "max": 60,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Blur Radius",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 46.90698276360806
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n23": {
+      "id": "n23",
+      "type": "blur-image",
+      "x": -1950,
+      "y": 0,
+      "props": {
+        "radius": 38
+      },
+      "width": 260,
+      "title": "Soft Edge",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/blurred/render_cffbc0ee36d6ff20_blur46p91.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 22326,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n24": {
+      "id": "n24",
+      "type": "random",
+      "x": -1900,
+      "y": 300,
+      "props": {
+        "mode": "float",
+        "min": 0.1,
+        "max": 0.3,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Grain Amount",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 0.23260849241033324
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n25": {
+      "id": "n25",
+      "type": "random",
+      "x": -1900,
+      "y": 460,
+      "props": {
+        "mode": "integer",
+        "min": 0,
+        "max": 99999,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Grain Seed",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 61036
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n26": {
+      "id": "n26",
+      "type": "sensor-noise",
+      "x": -1900,
+      "y": 0,
+      "props": {
+        "amount": 0.2,
+        "grain": 1,
+        "mono": true,
+        "seed": 7
+      },
+      "width": 260,
+      "title": "Sensor Noise",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/snoise_25d25314485f8ce8.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 17845,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n27": {
+      "id": "n27",
+      "type": "random",
+      "x": -1580,
+      "y": 300,
+      "props": {
+        "mode": "float",
+        "min": -0.12,
+        "max": 0.12,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Dither Offset",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": -0.09390820666424654
+      },
+      "lastOutputs": null,
+      "lastRunMs": 2,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n28": {
+      "id": "n28",
+      "type": "math-op",
+      "x": -1580,
+      "y": 0,
+      "props": {
+        "a": 0,
+        "b": 0,
+        "op": "add",
+        "eps": 0.0001
+      },
+      "width": 260,
+      "title": "Shift Threshold",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/math_add_348533b3af29ab4c.npy"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 7631,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n29": {
+      "id": "n29",
+      "type": "ramp",
+      "x": -1260,
+      "y": 0,
+      "props": {
+        "fac": 0.5,
+        "stops": [
+          {
+            "pos": 0,
+            "color": "#000000"
+          },
+          {
+            "pos": 0.6,
+            "color": "#ffffff"
+          }
+        ],
+        "interp": "constant"
+      },
+      "width": 260,
+      "title": "Grain Dither",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/ramp_constant_324b739155c5ada0.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 14464,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n30": {
+      "id": "n30",
+      "type": "ramp",
+      "x": -1260,
+      "y": 250,
+      "props": {
+        "fac": 0.5,
+        "interp": "constant",
+        "stops": [
+          {
+            "pos": 0,
+            "color": "#000000"
+          },
+          {
+            "pos": 0.5,
+            "color": "#ffffff"
+          }
+        ]
+      },
+      "width": 260,
+      "title": "Flat Cut",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/ramp_constant_ba1184749b8323da.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 12821,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n31": {
+      "id": "n31",
+      "type": "random",
+      "x": -1260,
+      "y": 500,
+      "props": {
+        "mode": "integer",
+        "min": 0,
+        "max": 1,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Grain or Flat",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 1
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n32": {
+      "id": "n32",
+      "type": "switch",
+      "x": -940,
+      "y": 0,
+      "props": {
+        "sel": false
+      },
+      "width": 260,
+      "title": "Grain / Flat",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/ramp_constant_795904c916be531f.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n33": {
+      "id": "n33",
+      "type": "random",
+      "x": -940,
+      "y": 250,
+      "props": {
+        "mode": "float",
+        "min": 0,
+        "max": 1,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Smooth Roll",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 0.7363124906574608
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n34": {
+      "id": "n34",
+      "type": "math-op",
+      "x": -940,
+      "y": 410,
+      "props": {
+        "a": 0,
+        "b": 0.75,
+        "op": "greater",
+        "eps": 0.0001
+      },
+      "width": 260,
+      "title": "Smooth Chance",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": false
+      },
+      "lastOutputs": null,
+      "lastRunMs": 154,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n35": {
+      "id": "n35",
+      "type": "switch",
+      "x": -620,
+      "y": 0,
+      "props": {
+        "sel": false
+      },
+      "width": 260,
+      "title": "Texture / Smooth",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/ramp_constant_795904c916be531f.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n36": {
+      "id": "n36",
+      "type": "mix",
+      "x": -300,
+      "y": 0,
+      "props": {
+        "factor": 0.5,
+        "a": "#000000",
+        "b": "#ffffff",
+        "mode": "mix",
+        "clamp": true
+      },
+      "width": 260,
+      "title": "Duotone",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/mix_mix_d9e1244f9671e5b2.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 13705,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n37": {
+      "id": "n37",
+      "type": "random",
+      "x": -2550,
+      "y": 1200,
+      "props": {
+        "mode": "float",
+        "min": -0.08,
+        "max": 0.08,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Outline X",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 0.014942121546643636
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n38": {
+      "id": "n38",
+      "type": "random",
+      "x": -2550,
+      "y": 1360,
+      "props": {
+        "mode": "float",
+        "min": -0.08,
+        "max": 0.08,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Outline Y",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": -0.058279583378357105
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n39": {
+      "id": "n39",
+      "type": "random",
+      "x": -2550,
+      "y": 1520,
+      "props": {
+        "mode": "float",
+        "min": -10,
+        "max": 10,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Outline Rotation",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": -9.273746523184286
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n40": {
+      "id": "n40",
+      "type": "random",
+      "x": -2550,
+      "y": 1680,
+      "props": {
+        "mode": "float",
+        "min": 0.75,
+        "max": 1,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Outline Scale X",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 0.8823794585483784
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n41": {
+      "id": "n41",
+      "type": "random",
+      "x": -2550,
+      "y": 1840,
+      "props": {
+        "mode": "float",
+        "min": 0.75,
+        "max": 1,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Outline Scale Y",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 0.9433463911188944
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n42": {
+      "id": "n42",
+      "type": "mapping",
+      "x": -2250,
+      "y": 1200,
+      "props": {
+        "location_x": 0.04,
+        "location_y": -0.03,
+        "rotation": 3,
+        "scale_x": 0.9,
+        "scale_y": 0.8,
+        "pivot_x": 0.5,
+        "pivot_y": 0.5
+      },
+      "width": 260,
+      "title": "Outline Offset",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "vector-map",
+        "value": ".rundeer/data/cache/uv/map_0fc1e315e7422011.npy"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 3825,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n43": {
+      "id": "n43",
+      "type": "uv-render",
+      "x": -1950,
+      "y": 1200,
+      "props": {
+        "interp": "bilinear",
+        "extension": "mirror"
+      },
+      "width": 320,
+      "title": "Offset Letters",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/uv/render_d17b0833b42aa9e6.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 25845,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n44": {
+      "id": "n44",
+      "type": "blur-image",
+      "x": -1900,
+      "y": 1200,
+      "props": {
+        "radius": 3
+      },
+      "width": 260,
+      "title": "Edge Soften",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/blurred/render_a224c620d4226617_blur3.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 8583,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n45": {
+      "id": "n45",
+      "type": "random",
+      "x": -1580,
+      "y": 1450,
+      "props": {
+        "mode": "float",
+        "min": -0.15,
+        "max": 0.15,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Band Shift",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": -0.10292407378220467
+      },
+      "lastOutputs": null,
+      "lastRunMs": 2,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n46": {
+      "id": "n46",
+      "type": "math-op",
+      "x": -1580,
+      "y": 1200,
+      "props": {
+        "a": 0,
+        "b": 0,
+        "op": "add",
+        "eps": 0.0001
+      },
+      "width": 260,
+      "title": "Shift Band",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/math_add_5b82149e90f3d4dc.npy"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 5724,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n47": {
+      "id": "n47",
+      "type": "ramp",
+      "x": -1260,
+      "y": 1200,
+      "props": {
+        "fac": 0.5,
+        "interp": "linear",
+        "stops": [
+          {
+            "pos": 0,
+            "color": "#000000"
+          },
+          {
+            "pos": 0.36,
+            "color": "#000000"
+          },
+          {
+            "pos": 0.5,
+            "color": "#ffffff"
+          },
+          {
+            "pos": 0.64,
+            "color": "#000000"
+          },
+          {
+            "pos": 1,
+            "color": "#000000"
+          }
+        ]
+      },
+      "width": 260,
+      "title": "Contour Band",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/ramp_linear_e53e24f6b23898c1.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 15553,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n48": {
+      "id": "n48",
+      "type": "mix",
+      "x": 20,
+      "y": 0,
+      "props": {
+        "factor": 0.5,
+        "a": "#000000",
+        "b": "#ffffff",
+        "mode": "mix",
+        "clamp": true
+      },
+      "width": 260,
+      "title": "Background",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": ".rundeer/data/cache/uv/mix_mix_b18bd801884a8a6b.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 14810,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n49": {
+      "id": "n49",
+      "type": "text-input",
+      "x": -1900,
+      "y": 2300,
+      "props": {
+        "value": "**rundeer**",
+        "highlight_pairs": ""
+      },
+      "width": 280,
+      "title": "Brand",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "text",
+        "value": "**rundeer**"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n50": {
+      "id": "n50",
+      "type": "text-image",
+      "x": -900,
+      "y": 2300,
+      "props": {
+        "text": "**rundeer**",
+        "font": "NeueMontreal-Regular.otf",
+        "bold_font": "NeueMontreal-Bold.ttf",
+        "size": 56,
+        "color": "#ffffff",
+        "shape": "none",
+        "bg": "#4e3c8f",
+        "stroke": 0,
+        "stroke_color": "#ffffff",
+        "pad_x": 0,
+        "pad_y": 0,
+        "tracking": 0,
+        "split": "",
+        "gap": 12
+      },
+      "width": 300,
+      "title": "Brand Text",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/graphics/text_d60717a973c81bc0.png",
+        "image": ".rundeer/data/cache/graphics/text_d60717a973c81bc0.png"
+      },
+      "lastOutputs": {
+        "dims": [
+          201,
+          68,
+          0
+        ]
+      },
+      "lastRunMs": 475,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n51": {
+      "id": "n51",
+      "type": "pick",
+      "x": -1900,
+      "y": 2560,
+      "props": {
+        "list": "",
+        "file": "poster/series.txt",
+        "count": 1,
+        "sep": ", "
+      },
+      "width": 280,
+      "title": "Series",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "**ECHO** CHAMBER"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 318,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n52": {
+      "id": "n52",
+      "type": "text-image",
+      "x": -900,
+      "y": 2560,
+      "props": {
+        "text": "**BRUTUS** LIVE",
+        "font": "NeueMontreal-Regular.otf",
+        "bold_font": "NeueMontreal-Bold.ttf",
+        "size": 84,
+        "color": "#ffffff",
+        "shape": "box",
+        "bg": "#4e3c8f",
+        "stroke": 0,
+        "stroke_color": "#ffffff",
+        "pad_x": 14,
+        "pad_y": 4,
+        "tracking": 0,
+        "split": "",
+        "gap": 12
+      },
+      "width": 300,
+      "title": "Series Text",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/graphics/text_9d752e1a2b274712.png",
+        "image": ".rundeer/data/cache/graphics/text_9d752e1a2b274712.png"
+      },
+      "lastOutputs": {
+        "dims": [
+          680,
+          109,
+          0
+        ]
+      },
+      "lastRunMs": 974,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n53": {
+      "id": "n53",
+      "type": "rand-date",
+      "x": -1900,
+      "y": 2820,
+      "props": {
+        "start": "",
+        "span": 180,
+        "fmt": "{WEEKDAY}, {MONTH} {D}, {YYYY}"
+      },
+      "width": 280,
+      "title": "Date",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "text",
+        "value": "FRIDAY, APRIL 23, 2027"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 148,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n54": {
+      "id": "n54",
+      "type": "text-image",
+      "x": -900,
+      "y": 2820,
+      "props": {
+        "text": "TUESDAY, MAY 19, 2026",
+        "font": "NeueMontreal-Regular.otf",
+        "bold_font": "NeueMontreal-Bold.ttf",
+        "size": 50,
+        "color": "#ffffff",
+        "shape": "box",
+        "bg": "#4e3c8f",
+        "stroke": 0,
+        "stroke_color": "#ffffff",
+        "pad_x": 12,
+        "pad_y": 3,
+        "tracking": 0,
+        "split": "",
+        "gap": 12
+      },
+      "width": 300,
+      "title": "Date Text",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/graphics/text_f906ddecbdaf3fed.png",
+        "image": ".rundeer/data/cache/graphics/text_f906ddecbdaf3fed.png"
+      },
+      "lastOutputs": {
+        "dims": [
+          546,
+          67,
+          0
+        ]
+      },
+      "lastRunMs": 772,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n55": {
+      "id": "n55",
+      "type": "pick",
+      "x": -1900,
+      "y": 3080,
+      "props": {
+        "list": "",
+        "file": "poster/venues.txt",
+        "count": 1,
+        "sep": ", "
+      },
+      "width": 280,
+      "title": "Venue",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "WAREHOUSE B"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 316,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n56": {
+      "id": "n56",
+      "type": "text-image",
+      "x": -900,
+      "y": 3080,
+      "props": {
+        "text": "BERLIN ROOM",
+        "font": "NeueMontreal-Regular.otf",
+        "bold_font": "NeueMontreal-Bold.ttf",
+        "size": 46,
+        "color": "#ffffff",
+        "shape": "box",
+        "bg": "#4e3c8f",
+        "stroke": 0,
+        "stroke_color": "#ffffff",
+        "pad_x": 12,
+        "pad_y": 3,
+        "tracking": 0,
+        "split": "",
+        "gap": 12
+      },
+      "width": 300,
+      "title": "Venue Text",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/graphics/text_3cb39acc02628c4c.png",
+        "image": ".rundeer/data/cache/graphics/text_3cb39acc02628c4c.png"
+      },
+      "lastOutputs": {
+        "dims": [
+          349,
+          62,
+          0
+        ]
+      },
+      "lastRunMs": 547,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n57": {
+      "id": "n57",
+      "type": "pick",
+      "x": -1900,
+      "y": 3340,
+      "props": {
+        "list": "",
+        "file": "poster/genres.txt",
+        "count": 3,
+        "sep": ", "
+      },
+      "width": 280,
+      "title": "Genres",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "TECHNO, DANCE, JAZZ"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 327,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n58": {
+      "id": "n58",
+      "type": "text-image",
+      "x": -900,
+      "y": 3340,
+      "props": {
+        "text": "POP, DANCE, ALTERNATIVE",
+        "font": "NeueMontreal-Regular.otf",
+        "bold_font": "NeueMontreal-Bold.ttf",
+        "size": 30,
+        "color": "#ffffff",
+        "shape": "pill",
+        "bg": "#4e3c8f",
+        "stroke": 2,
+        "stroke_color": "#ffffff",
+        "pad_x": 16,
+        "pad_y": 5,
+        "tracking": 0,
+        "split": ",",
+        "gap": 12
+      },
+      "width": 300,
+      "title": "Genres Text",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/graphics/text_515ea0fcbb38c811.png",
+        "image": ".rundeer/data/cache/graphics/text_515ea0fcbb38c811.png"
+      },
+      "lastOutputs": {
+        "dims": [
+          416,
+          47,
+          0
+        ]
+      },
+      "lastRunMs": 668,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n59": {
+      "id": "n59",
+      "type": "pick",
+      "x": -1900,
+      "y": 3600,
+      "props": {
+        "list": "",
+        "file": "poster/artists.txt",
+        "count": 1,
+        "sep": ", "
+      },
+      "width": 280,
+      "title": "Headliner",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "MARLOWE"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 370,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n60": {
+      "id": "n60",
+      "type": "random",
+      "x": -1400,
+      "y": 3600,
+      "props": {
+        "mode": "float",
+        "min": 120,
+        "max": 200,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Headliner Size",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 163.41732500357944
+      },
+      "lastOutputs": null,
+      "lastRunMs": 2,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n61": {
+      "id": "n61",
+      "type": "text-image",
+      "x": -900,
+      "y": 3600,
+      "props": {
+        "text": "BASTIEN",
+        "font": "NeueMontreal-Regular.otf",
+        "bold_font": "NeueMontreal-Bold.ttf",
+        "size": 175,
+        "color": "#ffffff",
+        "shape": "box",
+        "bg": "#4e3c8f",
+        "stroke": 0,
+        "stroke_color": "#ffffff",
+        "pad_x": 22,
+        "pad_y": 0,
+        "tracking": 0,
+        "split": "",
+        "gap": 12
+      },
+      "width": 300,
+      "title": "Headliner Text",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/graphics/text_d8dc2e1a5fe0f6e5.png",
+        "image": ".rundeer/data/cache/graphics/text_d8dc2e1a5fe0f6e5.png"
+      },
+      "lastOutputs": {
+        "dims": [
+          858,
+          197,
+          0
+        ]
+      },
+      "lastRunMs": 1567,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n62": {
+      "id": "n62",
+      "type": "random",
+      "x": -2400,
+      "y": 3860,
+      "props": {
+        "mode": "integer",
+        "min": 18,
+        "max": 22,
+        "charset": "alphanumeric"
+      },
+      "width": 260,
+      "title": "Doors Hour",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 20
+      },
+      "lastOutputs": null,
+      "lastRunMs": 3,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n63": {
+      "id": "n63",
+      "type": "pick",
+      "x": -2400,
+      "y": 4060,
+      "props": {
+        "list": "00\n30",
+        "file": "",
+        "count": 1,
+        "sep": ", "
+      },
+      "width": 280,
+      "title": "Minutes",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "00"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 321,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n64": {
+      "id": "n64",
+      "type": "text-op",
+      "x": -1900,
+      "y": 3860,
+      "props": {
+        "op": "format",
+        "extra": "OPEN DOORS: {a}:{b}"
+      },
+      "width": 260,
+      "title": "Doors Line",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "OPEN DOORS: 20:00"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n65": {
+      "id": "n65",
+      "type": "text-image",
+      "x": -900,
+      "y": 3860,
+      "props": {
+        "text": "OPEN DOORS: 21:00",
+        "font": "NeueMontreal-Regular.otf",
+        "bold_font": "NeueMontreal-Bold.ttf",
+        "size": 50,
+        "color": "#ffffff",
+        "shape": "box",
+        "bg": "#4e3c8f",
+        "stroke": 0,
+        "stroke_color": "#ffffff",
+        "pad_x": 12,
+        "pad_y": 3,
+        "tracking": 0,
+        "split": "",
+        "gap": 12
+      },
+      "width": 300,
+      "title": "Doors Text",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/graphics/text_7f3faef2fdac7148.png",
+        "image": ".rundeer/data/cache/graphics/text_7f3faef2fdac7148.png"
+      },
+      "lastOutputs": {
+        "dims": [
+          495,
+          67,
+          0
+        ]
+      },
+      "lastRunMs": 622,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n66": {
+      "id": "n66",
+      "type": "math-op",
+      "x": -2400,
+      "y": 4260,
+      "props": {
+        "a": 0,
+        "b": 1,
+        "op": "add",
+        "eps": 0.0001
+      },
+      "width": 260,
+      "title": "Show Hour",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": 21
+      },
+      "lastOutputs": null,
+      "lastRunMs": 146,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n67": {
+      "id": "n67",
+      "type": "text-op",
+      "x": -1900,
+      "y": 4120,
+      "props": {
+        "op": "format",
+        "extra": "**SHOW TIME: {a}:{b}**"
+      },
+      "width": 260,
+      "title": "Show Line",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "any",
+        "value": "**SHOW TIME: 21:00**"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n68": {
+      "id": "n68",
+      "type": "text-image",
+      "x": -900,
+      "y": 4120,
+      "props": {
+        "text": "**SHOW TIME: 22:00**",
+        "font": "NeueMontreal-Regular.otf",
+        "bold_font": "NeueMontreal-Bold.ttf",
+        "size": 50,
+        "color": "#ffffff",
+        "shape": "box",
+        "bg": "#4e3c8f",
+        "stroke": 0,
+        "stroke_color": "#ffffff",
+        "pad_x": 12,
+        "pad_y": 3,
+        "tracking": 0,
+        "split": "",
+        "gap": 12
+      },
+      "width": 300,
+      "title": "Show Time Text",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/graphics/text_c59e3b53693c2872.png",
+        "image": ".rundeer/data/cache/graphics/text_c59e3b53693c2872.png"
+      },
+      "lastOutputs": {
+        "dims": [
+          450,
+          67,
+          0
+        ]
+      },
+      "lastRunMs": 622,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n69": {
+      "id": "n69",
+      "type": "layout",
+      "x": 500,
+      "y": 2300,
+      "props": {
+        "size": "1080,1350",
+        "preset": "random",
+        "margin": 60,
+        "row_gap": 12,
+        "col_gap": 14
+      },
+      "width": 280,
+      "title": "Layout",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "vector",
+        "value": [
+          [
+            60,
+            1222,
+            0
+          ],
+          [
+            60,
+            501,
+            0
+          ],
+          [
+            60,
+            139,
+            0
+          ],
+          [
+            60,
+            218,
+            0
+          ],
+          [
+            423,
+            226,
+            0
+          ],
+          [
+            60,
+            292,
+            0
+          ],
+          [
+            60,
+            60,
+            0
+          ],
+          [
+            569,
+            60,
+            0
+          ]
+        ]
+      },
+      "lastOutputs": {
+        "scales": [
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ],
+        "preset": "bottom_left"
+      },
+      "lastRunMs": 315,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n70": {
+      "id": "n70",
+      "type": "vector-input",
+      "x": 500,
+      "y": 1900,
+      "props": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "width": 260,
+      "title": "BG Origin",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "vector",
+        "value": [
+          0,
+          0,
+          0
+        ]
+      },
+      "lastOutputs": null,
+      "lastRunMs": 2,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n71": {
+      "id": "n71",
+      "type": "vector-input",
+      "x": 500,
+      "y": 2080,
+      "props": {
+        "x": 1,
+        "y": 1,
+        "z": 0
+      },
+      "width": 260,
+      "title": "BG Scale",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "vector",
+        "value": [
+          1,
+          1,
+          0
+        ]
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n72": {
+      "id": "n72",
+      "type": "canvas",
+      "x": 1000,
+      "y": 0,
+      "props": {
+        "size": "1080,1350"
+      },
+      "width": 552,
+      "title": "Poster",
+      "height": 1196,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image",
+        "value": ".rundeer/data/cache/media/canvas_ef9fe307ddea.png"
+      },
+      "lastOutputs": null,
+      "lastRunMs": 13309,
+      "lastRunStatus": "done",
+      "lastRunCount": 30
+    },
+    "n73": {
+      "id": "n73",
+      "type": "loop-output",
+      "x": 1608.3244292542286,
+      "y": -7.607534250551566,
+      "props": {
+        "loop_id": "posters"
+      },
+      "width": 260,
+      "title": "Collect Posters",
+      "height": null,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image-bundle",
+        "value": [
+          ".rundeer/data/cache/media/canvas_2b37d84c333e.png",
+          ".rundeer/data/cache/media/canvas_e12df53eaa21.png",
+          ".rundeer/data/cache/media/canvas_18c730d21325.png",
+          ".rundeer/data/cache/media/canvas_5db99c02ac73.png",
+          ".rundeer/data/cache/media/canvas_b63c1bdc6643.png",
+          ".rundeer/data/cache/media/canvas_7ff4612d445b.png",
+          ".rundeer/data/cache/media/canvas_878b05a32cbb.png",
+          ".rundeer/data/cache/media/canvas_b51c6b400ea0.png",
+          ".rundeer/data/cache/media/canvas_42f2b596a374.png",
+          ".rundeer/data/cache/media/canvas_a4f2934da72b.png",
+          ".rundeer/data/cache/media/canvas_149377f2d385.png",
+          ".rundeer/data/cache/media/canvas_8fac69aa2b06.png",
+          ".rundeer/data/cache/media/canvas_231dc5769bd7.png",
+          ".rundeer/data/cache/media/canvas_dcb60ed27daf.png",
+          ".rundeer/data/cache/media/canvas_b4dab4d2d710.png",
+          ".rundeer/data/cache/media/canvas_dfa081adf11b.png",
+          ".rundeer/data/cache/media/canvas_7f4a4f3a5e08.png",
+          ".rundeer/data/cache/media/canvas_57995c3dce0c.png",
+          ".rundeer/data/cache/media/canvas_2254bb0b43ce.png",
+          ".rundeer/data/cache/media/canvas_cc0dcb0385f7.png",
+          ".rundeer/data/cache/media/canvas_401226afad78.png",
+          ".rundeer/data/cache/media/canvas_f80dd2da3a12.png",
+          ".rundeer/data/cache/media/canvas_f594f9dfe797.png",
+          ".rundeer/data/cache/media/canvas_5ad44a3fb67c.png",
+          ".rundeer/data/cache/media/canvas_7be32db8b225.png",
+          ".rundeer/data/cache/media/canvas_1d9f0c589c87.png",
+          ".rundeer/data/cache/media/canvas_f7ee337c972d.png",
+          ".rundeer/data/cache/media/canvas_df5f8c42cf4c.png",
+          ".rundeer/data/cache/media/canvas_4b40a02e656c.png",
+          ".rundeer/data/cache/media/canvas_21ec6e2e20bf.png"
+        ]
+      },
+      "lastOutputs": null,
+      "lastRunMs": 3,
+      "lastRunStatus": "done",
+      "lastRunCount": 1
+    },
+    "n74": {
+      "id": "n74",
+      "type": "preview",
+      "x": 2432.8674180163134,
+      "y": -285.4327781237352,
+      "props": {},
+      "width": 934,
+      "title": "Posters",
+      "height": 1247,
+      "previewMode": "slider",
+      "previewIndex": 13,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "image-bundle",
+        "value": [
+          ".rundeer/data/cache/media/canvas_2b37d84c333e.png",
+          ".rundeer/data/cache/media/canvas_e12df53eaa21.png",
+          ".rundeer/data/cache/media/canvas_18c730d21325.png",
+          ".rundeer/data/cache/media/canvas_5db99c02ac73.png",
+          ".rundeer/data/cache/media/canvas_b63c1bdc6643.png",
+          ".rundeer/data/cache/media/canvas_7ff4612d445b.png",
+          ".rundeer/data/cache/media/canvas_878b05a32cbb.png",
+          ".rundeer/data/cache/media/canvas_b51c6b400ea0.png",
+          ".rundeer/data/cache/media/canvas_42f2b596a374.png",
+          ".rundeer/data/cache/media/canvas_a4f2934da72b.png",
+          ".rundeer/data/cache/media/canvas_149377f2d385.png",
+          ".rundeer/data/cache/media/canvas_8fac69aa2b06.png",
+          ".rundeer/data/cache/media/canvas_231dc5769bd7.png",
+          ".rundeer/data/cache/media/canvas_dcb60ed27daf.png",
+          ".rundeer/data/cache/media/canvas_b4dab4d2d710.png",
+          ".rundeer/data/cache/media/canvas_dfa081adf11b.png",
+          ".rundeer/data/cache/media/canvas_7f4a4f3a5e08.png",
+          ".rundeer/data/cache/media/canvas_57995c3dce0c.png",
+          ".rundeer/data/cache/media/canvas_2254bb0b43ce.png",
+          ".rundeer/data/cache/media/canvas_cc0dcb0385f7.png",
+          ".rundeer/data/cache/media/canvas_401226afad78.png",
+          ".rundeer/data/cache/media/canvas_f80dd2da3a12.png",
+          ".rundeer/data/cache/media/canvas_f594f9dfe797.png",
+          ".rundeer/data/cache/media/canvas_5ad44a3fb67c.png",
+          ".rundeer/data/cache/media/canvas_7be32db8b225.png",
+          ".rundeer/data/cache/media/canvas_1d9f0c589c87.png",
+          ".rundeer/data/cache/media/canvas_f7ee337c972d.png",
+          ".rundeer/data/cache/media/canvas_df5f8c42cf4c.png",
+          ".rundeer/data/cache/media/canvas_4b40a02e656c.png",
+          ".rundeer/data/cache/media/canvas_21ec6e2e20bf.png"
+        ]
+      },
+      "lastOutputs": null,
+      "lastRunMs": 1,
+      "lastRunStatus": "done",
+      "lastRunCount": 1
+    },
+    "n75": {
+      "id": "n75",
+      "type": "export",
+      "x": 1950,
+      "y": 632,
+      "props": {
+        "name": "live_posters/poster.png",
+        "fps": 0,
+        "fmt": "mp4",
+        "crf": 18,
+        "loop": 0
+      },
+      "width": 280,
+      "title": "Export Posters",
+      "height": 472,
+      "previewMode": null,
+      "previewIndex": 0,
+      "previewZoom": 1,
+      "previewPanX": 0,
+      "previewPanY": 0,
+      "textZoom": 1,
+      "collapsed": false,
+      "foldLocked": false,
+      "minimized": false,
+      "muted": false,
+      "collapsedPanels": {},
+      "lastResult": {
+        "kind": "filepath",
+        "value": [
+          ".rundeer/outputs/poster_000.png",
+          ".rundeer/outputs/poster_001.png",
+          ".rundeer/outputs/poster_002.png",
+          ".rundeer/outputs/poster_003.png",
+          ".rundeer/outputs/poster_004.png",
+          ".rundeer/outputs/poster_005.png",
+          ".rundeer/outputs/poster_006.png",
+          ".rundeer/outputs/poster_007.png",
+          ".rundeer/outputs/poster_008.png",
+          ".rundeer/outputs/poster_009.png",
+          ".rundeer/outputs/poster_010.png",
+          ".rundeer/outputs/poster_011.png",
+          ".rundeer/outputs/poster_012.png",
+          ".rundeer/outputs/poster_013.png",
+          ".rundeer/outputs/poster_014.png",
+          ".rundeer/outputs/poster_015.png",
+          ".rundeer/outputs/poster_016.png",
+          ".rundeer/outputs/poster_017.png",
+          ".rundeer/outputs/poster_018.png",
+          ".rundeer/outputs/poster_019.png",
+          ".rundeer/outputs/poster_020.png",
+          ".rundeer/outputs/poster_021.png",
+          ".rundeer/outputs/poster_022.png",
+          ".rundeer/outputs/poster_023.png",
+          ".rundeer/outputs/poster_024.png",
+          ".rundeer/outputs/poster_025.png",
+          ".rundeer/outputs/poster_026.png",
+          ".rundeer/outputs/poster_027.png",
+          ".rundeer/outputs/poster_028.png",
+          ".rundeer/outputs/poster_029.png"
+        ]
+      },
+      "lastOutputs": null,
+      "lastRunMs": 10884,
+      "lastRunStatus": "done",
+      "lastRunCount": 1
+    }
+  },
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "n1",
+      "fromSocket": "out",
+      "toNode": "n2",
+      "toSocket": "times"
+    },
+    {
+      "id": "e2",
+      "fromNode": "n2",
+      "fromSocket": "index",
+      "toNode": "n3",
+      "toSocket": "a"
+    },
+    {
+      "id": "e3",
+      "fromNode": "n6",
+      "fromSocket": "out",
+      "toNode": "n10",
+      "toSocket": "a"
+    },
+    {
+      "id": "e4",
+      "fromNode": "n7",
+      "fromSocket": "out",
+      "toNode": "n10",
+      "toSocket": "b"
+    },
+    {
+      "id": "e5",
+      "fromNode": "n10",
+      "fromSocket": "out",
+      "toNode": "n11",
+      "toSocket": "a"
+    },
+    {
+      "id": "e6",
+      "fromNode": "n8",
+      "fromSocket": "out",
+      "toNode": "n11",
+      "toSocket": "b"
+    },
+    {
+      "id": "e7",
+      "fromNode": "n11",
+      "fromSocket": "out",
+      "toNode": "n12",
+      "toSocket": "a"
+    },
+    {
+      "id": "e8",
+      "fromNode": "n9",
+      "fromSocket": "out",
+      "toNode": "n12",
+      "toSocket": "b"
+    },
+    {
+      "id": "e9",
+      "fromNode": "n12",
+      "fromSocket": "out",
+      "toNode": "n13",
+      "toSocket": "subject"
+    },
+    {
+      "id": "e10",
+      "fromNode": "n3",
+      "fromSocket": "out",
+      "toNode": "n13",
+      "toSocket": "output_name"
+    },
+    {
+      "id": "e11",
+      "fromNode": "n13",
+      "fromSocket": "out",
+      "toNode": "n14",
+      "toSocket": "in"
+    },
+    {
+      "id": "e12",
+      "fromNode": "n4",
+      "fromSocket": "out",
+      "toNode": "n14",
+      "toSocket": "size"
+    },
+    {
+      "id": "e13",
+      "fromNode": "n15",
+      "fromSocket": "uv",
+      "toNode": "n20",
+      "toSocket": "uv"
+    },
+    {
+      "id": "e14",
+      "fromNode": "n16",
+      "fromSocket": "out",
+      "toNode": "n20",
+      "toSocket": "scale_y"
+    },
+    {
+      "id": "e15",
+      "fromNode": "n17",
+      "fromSocket": "out",
+      "toNode": "n20",
+      "toSocket": "scale_x"
+    },
+    {
+      "id": "e16",
+      "fromNode": "n18",
+      "fromSocket": "out",
+      "toNode": "n20",
+      "toSocket": "rotation"
+    },
+    {
+      "id": "e17",
+      "fromNode": "n19",
+      "fromSocket": "out",
+      "toNode": "n20",
+      "toSocket": "location_x"
+    },
+    {
+      "id": "e18",
+      "fromNode": "n20",
+      "fromSocket": "out",
+      "toNode": "n21",
+      "toSocket": "uv"
+    },
+    {
+      "id": "e19",
+      "fromNode": "n14",
+      "fromSocket": "out",
+      "toNode": "n21",
+      "toSocket": "pixel"
+    },
+    {
+      "id": "e20",
+      "fromNode": "n21",
+      "fromSocket": "out",
+      "toNode": "n23",
+      "toSocket": "in"
+    },
+    {
+      "id": "e21",
+      "fromNode": "n22",
+      "fromSocket": "out",
+      "toNode": "n23",
+      "toSocket": "radius"
+    },
+    {
+      "id": "e22",
+      "fromNode": "n23",
+      "fromSocket": "out",
+      "toNode": "n26",
+      "toSocket": "image"
+    },
+    {
+      "id": "e23",
+      "fromNode": "n24",
+      "fromSocket": "out",
+      "toNode": "n26",
+      "toSocket": "amount"
+    },
+    {
+      "id": "e24",
+      "fromNode": "n25",
+      "fromSocket": "out",
+      "toNode": "n26",
+      "toSocket": "seed"
+    },
+    {
+      "id": "e25",
+      "fromNode": "n26",
+      "fromSocket": "out",
+      "toNode": "n28",
+      "toSocket": "a"
+    },
+    {
+      "id": "e26",
+      "fromNode": "n27",
+      "fromSocket": "out",
+      "toNode": "n28",
+      "toSocket": "b"
+    },
+    {
+      "id": "e27",
+      "fromNode": "n28",
+      "fromSocket": "out",
+      "toNode": "n29",
+      "toSocket": "fac"
+    },
+    {
+      "id": "e28",
+      "fromNode": "n23",
+      "fromSocket": "out",
+      "toNode": "n30",
+      "toSocket": "fac"
+    },
+    {
+      "id": "e29",
+      "fromNode": "n31",
+      "fromSocket": "out",
+      "toNode": "n32",
+      "toSocket": "sel"
+    },
+    {
+      "id": "e30",
+      "fromNode": "n29",
+      "fromSocket": "out",
+      "toNode": "n32",
+      "toSocket": "a"
+    },
+    {
+      "id": "e31",
+      "fromNode": "n30",
+      "fromSocket": "out",
+      "toNode": "n32",
+      "toSocket": "b"
+    },
+    {
+      "id": "e32",
+      "fromNode": "n33",
+      "fromSocket": "out",
+      "toNode": "n34",
+      "toSocket": "a"
+    },
+    {
+      "id": "e33",
+      "fromNode": "n34",
+      "fromSocket": "out",
+      "toNode": "n35",
+      "toSocket": "sel"
+    },
+    {
+      "id": "e34",
+      "fromNode": "n32",
+      "fromSocket": "out",
+      "toNode": "n35",
+      "toSocket": "a"
+    },
+    {
+      "id": "e35",
+      "fromNode": "n23",
+      "fromSocket": "out",
+      "toNode": "n35",
+      "toSocket": "b"
+    },
+    {
+      "id": "e36",
+      "fromNode": "n35",
+      "fromSocket": "out",
+      "toNode": "n36",
+      "toSocket": "factor"
+    },
+    {
+      "id": "e37",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n36",
+      "toSocket": "a"
+    },
+    {
+      "id": "e38",
+      "fromNode": "n5",
+      "fromSocket": "accent",
+      "toNode": "n36",
+      "toSocket": "b"
+    },
+    {
+      "id": "e39",
+      "fromNode": "n15",
+      "fromSocket": "uv",
+      "toNode": "n42",
+      "toSocket": "uv"
+    },
+    {
+      "id": "e40",
+      "fromNode": "n37",
+      "fromSocket": "out",
+      "toNode": "n42",
+      "toSocket": "location_x"
+    },
+    {
+      "id": "e41",
+      "fromNode": "n38",
+      "fromSocket": "out",
+      "toNode": "n42",
+      "toSocket": "location_y"
+    },
+    {
+      "id": "e42",
+      "fromNode": "n39",
+      "fromSocket": "out",
+      "toNode": "n42",
+      "toSocket": "rotation"
+    },
+    {
+      "id": "e43",
+      "fromNode": "n40",
+      "fromSocket": "out",
+      "toNode": "n42",
+      "toSocket": "scale_x"
+    },
+    {
+      "id": "e44",
+      "fromNode": "n41",
+      "fromSocket": "out",
+      "toNode": "n42",
+      "toSocket": "scale_y"
+    },
+    {
+      "id": "e45",
+      "fromNode": "n42",
+      "fromSocket": "out",
+      "toNode": "n43",
+      "toSocket": "uv"
+    },
+    {
+      "id": "e46",
+      "fromNode": "n14",
+      "fromSocket": "out",
+      "toNode": "n43",
+      "toSocket": "pixel"
+    },
+    {
+      "id": "e47",
+      "fromNode": "n43",
+      "fromSocket": "out",
+      "toNode": "n44",
+      "toSocket": "in"
+    },
+    {
+      "id": "e48",
+      "fromNode": "n44",
+      "fromSocket": "out",
+      "toNode": "n46",
+      "toSocket": "a"
+    },
+    {
+      "id": "e49",
+      "fromNode": "n45",
+      "fromSocket": "out",
+      "toNode": "n46",
+      "toSocket": "b"
+    },
+    {
+      "id": "e50",
+      "fromNode": "n46",
+      "fromSocket": "out",
+      "toNode": "n47",
+      "toSocket": "fac"
+    },
+    {
+      "id": "e51",
+      "fromNode": "n47",
+      "fromSocket": "out",
+      "toNode": "n48",
+      "toSocket": "factor"
+    },
+    {
+      "id": "e52",
+      "fromNode": "n36",
+      "fromSocket": "out",
+      "toNode": "n48",
+      "toSocket": "a"
+    },
+    {
+      "id": "e53",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n48",
+      "toSocket": "b"
+    },
+    {
+      "id": "e54",
+      "fromNode": "n49",
+      "fromSocket": "out",
+      "toNode": "n50",
+      "toSocket": "text"
+    },
+    {
+      "id": "e55",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n50",
+      "toSocket": "color"
+    },
+    {
+      "id": "e56",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n50",
+      "toSocket": "bg"
+    },
+    {
+      "id": "e57",
+      "fromNode": "n51",
+      "fromSocket": "out",
+      "toNode": "n52",
+      "toSocket": "text"
+    },
+    {
+      "id": "e58",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n52",
+      "toSocket": "color"
+    },
+    {
+      "id": "e59",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n52",
+      "toSocket": "bg"
+    },
+    {
+      "id": "e60",
+      "fromNode": "n53",
+      "fromSocket": "out",
+      "toNode": "n54",
+      "toSocket": "text"
+    },
+    {
+      "id": "e61",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n54",
+      "toSocket": "color"
+    },
+    {
+      "id": "e62",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n54",
+      "toSocket": "bg"
+    },
+    {
+      "id": "e63",
+      "fromNode": "n55",
+      "fromSocket": "out",
+      "toNode": "n56",
+      "toSocket": "text"
+    },
+    {
+      "id": "e64",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n56",
+      "toSocket": "color"
+    },
+    {
+      "id": "e65",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n56",
+      "toSocket": "bg"
+    },
+    {
+      "id": "e66",
+      "fromNode": "n57",
+      "fromSocket": "out",
+      "toNode": "n58",
+      "toSocket": "text"
+    },
+    {
+      "id": "e67",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n58",
+      "toSocket": "color"
+    },
+    {
+      "id": "e68",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n58",
+      "toSocket": "bg"
+    },
+    {
+      "id": "e69",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n58",
+      "toSocket": "stroke_color"
+    },
+    {
+      "id": "e70",
+      "fromNode": "n59",
+      "fromSocket": "out",
+      "toNode": "n61",
+      "toSocket": "text"
+    },
+    {
+      "id": "e71",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n61",
+      "toSocket": "color"
+    },
+    {
+      "id": "e72",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n61",
+      "toSocket": "bg"
+    },
+    {
+      "id": "e73",
+      "fromNode": "n60",
+      "fromSocket": "out",
+      "toNode": "n61",
+      "toSocket": "size"
+    },
+    {
+      "id": "e74",
+      "fromNode": "n62",
+      "fromSocket": "out",
+      "toNode": "n64",
+      "toSocket": "a"
+    },
+    {
+      "id": "e75",
+      "fromNode": "n63",
+      "fromSocket": "out",
+      "toNode": "n64",
+      "toSocket": "b"
+    },
+    {
+      "id": "e76",
+      "fromNode": "n64",
+      "fromSocket": "out",
+      "toNode": "n65",
+      "toSocket": "text"
+    },
+    {
+      "id": "e77",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n65",
+      "toSocket": "color"
+    },
+    {
+      "id": "e78",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n65",
+      "toSocket": "bg"
+    },
+    {
+      "id": "e79",
+      "fromNode": "n62",
+      "fromSocket": "out",
+      "toNode": "n66",
+      "toSocket": "a"
+    },
+    {
+      "id": "e80",
+      "fromNode": "n66",
+      "fromSocket": "out",
+      "toNode": "n67",
+      "toSocket": "a"
+    },
+    {
+      "id": "e81",
+      "fromNode": "n63",
+      "fromSocket": "out",
+      "toNode": "n67",
+      "toSocket": "b"
+    },
+    {
+      "id": "e82",
+      "fromNode": "n67",
+      "fromSocket": "out",
+      "toNode": "n68",
+      "toSocket": "text"
+    },
+    {
+      "id": "e83",
+      "fromNode": "n5",
+      "fromSocket": "ink",
+      "toNode": "n68",
+      "toSocket": "color"
+    },
+    {
+      "id": "e84",
+      "fromNode": "n5",
+      "fromSocket": "base",
+      "toNode": "n68",
+      "toSocket": "bg"
+    },
+    {
+      "id": "e85",
+      "fromNode": "n50",
+      "fromSocket": "dims",
+      "toNode": "n69",
+      "toSocket": "dims"
+    },
+    {
+      "id": "e86",
+      "fromNode": "n52",
+      "fromSocket": "dims",
+      "toNode": "n69",
+      "toSocket": "dims"
+    },
+    {
+      "id": "e87",
+      "fromNode": "n54",
+      "fromSocket": "dims",
+      "toNode": "n69",
+      "toSocket": "dims"
+    },
+    {
+      "id": "e88",
+      "fromNode": "n56",
+      "fromSocket": "dims",
+      "toNode": "n69",
+      "toSocket": "dims"
+    },
+    {
+      "id": "e89",
+      "fromNode": "n58",
+      "fromSocket": "dims",
+      "toNode": "n69",
+      "toSocket": "dims"
+    },
+    {
+      "id": "e90",
+      "fromNode": "n61",
+      "fromSocket": "dims",
+      "toNode": "n69",
+      "toSocket": "dims"
+    },
+    {
+      "id": "e91",
+      "fromNode": "n65",
+      "fromSocket": "dims",
+      "toNode": "n69",
+      "toSocket": "dims"
+    },
+    {
+      "id": "e92",
+      "fromNode": "n68",
+      "fromSocket": "dims",
+      "toNode": "n69",
+      "toSocket": "dims"
+    },
+    {
+      "id": "e93",
+      "fromNode": "n4",
+      "fromSocket": "out",
+      "toNode": "n69",
+      "toSocket": "size"
+    },
+    {
+      "id": "e94",
+      "fromNode": "n4",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "size"
+    },
+    {
+      "id": "e95",
+      "fromNode": "n48",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e96",
+      "fromNode": "n50",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e97",
+      "fromNode": "n52",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e98",
+      "fromNode": "n54",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e99",
+      "fromNode": "n56",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e100",
+      "fromNode": "n58",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e101",
+      "fromNode": "n61",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e102",
+      "fromNode": "n65",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e103",
+      "fromNode": "n68",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "images"
+    },
+    {
+      "id": "e104",
+      "fromNode": "n70",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "positions"
+    },
+    {
+      "id": "e105",
+      "fromNode": "n69",
+      "fromSocket": "positions",
+      "toNode": "n72",
+      "toSocket": "positions"
+    },
+    {
+      "id": "e106",
+      "fromNode": "n71",
+      "fromSocket": "out",
+      "toNode": "n72",
+      "toSocket": "scales"
+    },
+    {
+      "id": "e107",
+      "fromNode": "n69",
+      "fromSocket": "scales",
+      "toNode": "n72",
+      "toSocket": "scales"
+    },
+    {
+      "id": "e108",
+      "fromNode": "n72",
+      "fromSocket": "out",
+      "toNode": "n73",
+      "toSocket": "item"
+    },
+    {
+      "id": "e109",
+      "fromNode": "n73",
+      "fromSocket": "out",
+      "toNode": "n74",
+      "toSocket": "in"
+    },
+    {
+      "id": "e110",
+      "fromNode": "n73",
+      "fromSocket": "out",
+      "toNode": "n75",
+      "toSocket": "in"
+    }
+  ],
+  "_nextId": 76
+}
