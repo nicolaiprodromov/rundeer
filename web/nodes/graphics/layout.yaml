@@ -1,0 +1,50 @@
+layout:
+  label: Layout
+  category: Graphics
+  desc: Arrange blocks on a canvas from a JSON preset in .rundeer/presets/layouts (random = new preset each resolve; group/name or group/random for presets in a subfolder). Wire block Dims in order; Positions and Scales come out as bundles in the same order, ready for Canvas.
+  defaultWidth: 280
+  in:
+  - id: dims
+    label: Dims
+    type: vector
+    multi: true
+  - id: size
+    label: Size
+    kind: text
+    default: 1080,1350
+    placeholder: width,height
+    passthroughWired: true
+    type: vector
+  - id: preset
+    label: Preset
+    kind: text
+    default: random
+    placeholder: random | left_stack | ...
+    type: text
+  - id: margin
+    label: Margin
+    kind: float
+    default: 60
+    type: float
+  - id: row_gap
+    label: Row Gap
+    kind: float
+    default: 12
+    type: float
+  - id: col_gap
+    label: Column Gap
+    kind: float
+    default: 14
+    type: float
+  out:
+  - id: positions
+    label: Positions
+    type: vector
+  - id: scales
+    label: Scales
+    type: vector
+  - id: preset
+    label: Preset
+    type: text
+  src: web/nodes/graphics/layout.js
+  api: /api/graphics/layout

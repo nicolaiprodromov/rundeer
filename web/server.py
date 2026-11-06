@@ -18,7 +18,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
-from urllib.parse import parse_qs, quote, unquote, urlparse, urlunparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from rundeer import __version__
 from rundeer.core import paths as rpaths
@@ -106,7 +106,8 @@ def serve(
                     log_line(f"agent disabled (settings)", dim=True)
                     _ = effective_port
         except Exception as exc:
-            log_line(f"agent failed to start: {exc}", dim=True)
+            httpd.agent_error = f"{type(exc).__name__}: {exc}"
+            log_line(f"agent failed to start: {httpd.agent_error}", dim=True)
 
     try:
         from web.nodes.terminal.pty_ws import start_pty_ws_server
@@ -355,6 +356,24 @@ class RundeerWebHandler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/uv/ramp":
                 from web.nodes.operations.ramp import ramp as _uv_ramp
                 self._send_json(_uv_ramp(self.server.project_root, payload))
+            elif parsed.path == "/api/graphics/sensor-noise":
+                from web.nodes.graphics.sensor_noise import sensor_noise as _g_snoise
+                self._send_json(_g_snoise(self.server.project_root, payload))
+            elif parsed.path == "/api/graphics/text":
+                from web.nodes.graphics.text import text_image as _g_text
+                self._send_json(_g_text(self.server.project_root, payload))
+            elif parsed.path == "/api/graphics/barcode":
+                from web.nodes.graphics.barcode import barcode as _g_bar
+                self._send_json(_g_bar(self.server.project_root, payload))
+            elif parsed.path == "/api/graphics/halftone":
+                from web.nodes.graphics.halftone import halftone as _g_ht
+                self._send_json(_g_ht(self.server.project_root, payload))
+            elif parsed.path == "/api/graphics/layout":
+                from web.nodes.graphics.layout import layout as _g_layout
+                self._send_json(_g_layout(self.server.project_root, payload))
+            elif parsed.path == "/api/pick":
+                from web.nodes.operations.pick import pick as _op_pick
+                self._send_json(_op_pick(self.server.project_root, payload))
             elif parsed.path == "/api/uv/render":
                 from web.nodes.output.uv_render import render as _uv_render
                 self._send_json(_uv_render(self.server.project_root, payload))
@@ -792,7 +811,7 @@ def config_path(root: Path) -> Path:
 def _agent_state(server: "RundeerWebServer") -> Dict[str, Any]:
     handle = getattr(server, "agent_handle", None)
     if handle is None:
-        return {"enabled": False, "reason": "agent server not running"}
+        return {"enabled": False, "reason": getattr(server, "agent_error", None) or "agent server not running"}
     settings = getattr(server, "agent_settings", None)
     out: Dict[str, Any] = {
         "enabled": True,
@@ -818,23 +837,9 @@ def read_project_config(root: Path) -> Dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
-def chat_completions_url(base_url: str) -> str:
-    raw = (base_url or "https://api.x.ai/v1").strip() or "https://api.x.ai/v1"
-    if "://" not in raw:
-        raw = f"https://{raw}"
-    parsed = urlparse(raw)
-    path = parsed.path.rstrip("/")
-    if path.endswith("/chat/completions"):
-        final_path = path
-    elif path.endswith("/v1"):
-        final_path = f"{path}/chat/completions"
-    else:
-        final_path = f"{path}/v1/chat/completions" if path else "/v1/chat/completions"
-    return urlunparse(parsed._replace(path=final_path, params="", query="", fragment=""))
-
-
 def env_summary(root: Path) -> Dict[str, bool]:
-    keys = ["GROK_IMAGINE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
+    from rundeer.core.models import PROVIDER_KEY_MAP
+    keys = list(PROVIDER_KEY_MAP.values())
     return {key: bool(os.environ.get(key) or env_file_has_key(root, key)) for key in keys}
 
 
@@ -1038,7 +1043,7 @@ def _generate_thumbnail(src: Path, dest: Path, size: int) -> None:
                 ]
                 try:
                     subprocess.run(cmd, check=True, capture_output=True, timeout=30)
-                    tmp_ff.rename(dest)
+                    tmp_ff.replace(dest)
                 except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
                     tmp_ff.unlink(missing_ok=True)
                     _write_placeholder_thumb(dest, size)
@@ -1494,7 +1499,7 @@ def run_process(server: RundeerWebServer, run_id: str) -> None:
         command = list(record["command"])
         record["status"] = "running"
         write_run_record(server.project_root, record)
-    proc = subprocess.Popen(command, cwd=server.project_root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, start_new_session=True)
+    proc = subprocess.Popen(command, cwd=server.project_root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1, start_new_session=True)
     with server.runs_lock:
         server.run_processes[run_id] = proc
         if record.get("status") == "cancelling":
@@ -1769,6 +1774,7 @@ def build_run_config(root: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
                 or "1:1"
             ),
             "resolution": clean_str(image.get("resolution")) or clean_str(payload.get("imageResolution")) or None,
+            "quality": clean_str(image.get("quality")) or None,
         },
         "video": {
             "model": clean_str(video.get("model")) or clean_str(payload.get("videoModel")) or "grok-imagine-video",

@@ -1,0 +1,52 @@
+wave:
+  label: Wave
+  category: Operations
+  desc: Periodic value from a loop index. phase = cycles * t / n + shift; out = offset + amp * shape(phase). Wire Loop index into T and count into N for seamless loops.
+  in:
+  - id: t
+    label: T
+    kind: float
+    default: 0
+    passthroughWired: true
+    type: float
+  - id: n
+    label: N
+    kind: float
+    default: 24
+    passthroughWired: true
+    type: float
+  - id: shape
+    label: Shape
+    kind: select
+    options: [sine, cosine, triangle, saw, square]
+    default: sine
+    type: text
+  - id: cycles
+    label: Cycles
+    kind: float
+    default: 1
+    passthroughWired: true
+    type: float
+  - id: shift
+    label: Shift
+    kind: float
+    default: 0
+    passthroughWired: true
+    type: float
+  - id: amp
+    label: Amp
+    kind: float
+    default: 1
+    passthroughWired: true
+    type: float
+  - id: offset
+    label: Offset
+    kind: float
+    default: 0
+    passthroughWired: true
+    type: float
+  out:
+  - id: out
+    label: Out
+    type: float
+  src: web/nodes/operations/wave.js

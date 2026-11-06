@@ -16,4 +16,5 @@ loop-output:
     label: Bundle
     type: any
   traits: [heavy, producesBundle]
+  lazy: [item]
   src: web/nodes/loop/loop-output.js

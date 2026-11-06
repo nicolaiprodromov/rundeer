@@ -197,6 +197,8 @@ def _parse_one(yaml_path: Path, data: Dict[str, Any]) -> List[Dict[str, Any]]:
             node_def["traits"] = body["traits"]
         if "pairWith" in body:
             node_def["pairWith"] = str(body["pairWith"])
+        if isinstance(body.get("lazy"), list):
+            node_def["lazy"] = [str(x) for x in body["lazy"]]
         results.append(node_def)
     return results
 
