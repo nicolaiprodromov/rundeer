@@ -46,8 +46,8 @@
   text-transform: uppercase;
   color: var(--node-accent, var(--muted));
   background: transparent;
-  border-top: 1px solid color-mix(in oklch, var(--node-accent, var(--gold)) 24%, var(--line));
-  border-left: 3px solid var(--node-accent, var(--gold));
+  border-top: 1px solid color-mix(in oklch, var(--node-accent, var(--accent)) 24%, var(--line));
+  border-left: 3px solid var(--node-accent, var(--accent));
 }
 
 .ne-add-menu-item {
@@ -67,14 +67,13 @@
 }
 .ne-add-menu-item:hover,
 .ne-add-menu-item.is-active {
-  background: color-mix(in oklch, var(--node-accent, var(--gold)) 18%, var(--surface-2));
+  background: color-mix(in oklch, var(--node-accent, var(--accent)) 18%, var(--surface-2));
   color: var(--text);
 }
 
 .ne-add-menu-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
   flex: 0 0 auto;
   background: var(--node-accent, var(--muted));
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--node-accent, var(--muted)) 22%, transparent);
@@ -145,8 +144,8 @@
   outline: none;
 }
 .ne-app-dialog-field input:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 1px color-mix(in oklch, var(--gold) 35%, transparent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent) 35%, transparent);
 }
 .ne-app-dialog-actions {
   display: flex;
@@ -169,8 +168,8 @@
 }
 .ne-help-modal.is-hidden { display: none; }
 .ne-help-card {
-  width: min(720px, 100%);
-  max-height: 84vh;
+  width: min(780px, 100%);
+  max-height: 88vh;
   background: var(--bg);
   border: 1px solid var(--line-strong);
   display: flex;
@@ -202,7 +201,7 @@
   line-height: 22px;
   cursor: pointer;
 }
-.ne-help-close:hover { color: var(--gold); border-color: var(--gold-soft); }
+.ne-help-close:hover { color: var(--accent); border-color: var(--accent-2); }
 .ne-help-body {
   padding: 16px 22px 22px;
   overflow-y: auto;
@@ -217,9 +216,20 @@
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--accent);
 }
 .ne-help-body h3:first-child { margin-top: 0; }
+.ne-help-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin: 0 0 18px;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+.ne-help-video + h3 { margin-top: 0; }
 .ne-help-body p, .ne-help-body ul, .ne-help-body ol { margin: 0 0 8px; }
 .ne-help-body code {
   font-family: var(--font-mono);

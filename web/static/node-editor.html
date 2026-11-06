@@ -128,8 +128,8 @@
               <div class="ne-agent-confirm-bar" id="agentConfirmBar" hidden></div>
             </div>
             <div class="ne-agent-disabled" id="agentDisabledBody">
-              <div class="ne-agent-empty-msg">
-                Agent disabled. Set an LLM API key and <code>RUNDEER_LLM_MODEL</code> in <code>.env</code> and restart <code>rundeer web</code>.
+              <div class="ne-agent-empty-msg" id="agentDisabledMsg">
+                Agent disabled. Set <code>XAI_API_KEY</code> and <code>ANTHROPIC_API_KEY</code> in <code>.env</code> and restart <code>rundeer web</code>.
               </div>
             </div>
           </section>
@@ -433,23 +433,32 @@
       <div class="ne-help-modal is-hidden" id="helpModal" role="dialog" aria-label="Quick start">
         <div class="ne-help-card">
           <header class="ne-help-head">
-            <h2>loops, bundles &amp; previews</h2>
+            <h2>quick start</h2>
             <button class="ne-help-close" id="helpClose" type="button" title="Close">×</button>
           </header>
           <div class="ne-help-body">
-            <h3>What is a bundle?</h3>
-            <p>A <strong>bundle</strong> is just a list of values traveling on a single wire. You get one whenever a command emits multiple iterations or a Loop · Output collects them.</p>
-            <h3>How loops work</h3>
-            <ol>
-              <li>Add a <strong>Loop · Decompose</strong>, feed it a bundle.</li>
-              <li>Connect <code>Item</code> through whatever runs per-item.</li>
-              <li>Add a <strong>Loop · Output</strong> with the same <code>loop_id</code>.</li>
-            </ol>
+            <video class="ne-help-video" id="helpVideo" src="/static/media/rundeer-promo.mp4" muted loop playsinline preload="none" disablepictureinpicture disableremoteplayback aria-hidden="true" tabindex="-1"></video>
+            <h3>1 · The workspace</h3>
+            <p><strong>Tree</strong> is the node canvas where you build graphs. <strong>Explore</strong> browses and previews every file in the project. <strong>Settings</strong> holds recent runs, saved graphs, config and shortcuts.</p>
+            <h3>2 · Add nodes</h3>
+            <p>Press <kbd>Shift</kbd>+<kbd>A</kbd> on the canvas to search node types, or <kbd>T</kbd> to open the node menu and drag one in. Drop images or videos straight onto the canvas to turn them into <strong>File</strong> nodes.</p>
+            <h3>3 · Wire them up</h3>
+            <p>Drag from an output socket to an input of a matching type. A typical chain: <strong>String</strong> → <strong>Prompt</strong> → Grok Imagine <strong>Image</strong> or <strong>Video</strong> → <strong>Preview</strong>. Use <strong>Operations</strong> nodes (resize, crop, mix, blur, export…) to shape results in between.</p>
+            <h3>4 · Run &amp; inspect</h3>
+            <p>Hit <kbd>▶</kbd> in the floating palette or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>. <kbd>P</kbd> shows the live run log, <kbd>R</kbd> opens past runs. Select a node and press <kbd>Alt</kbd>+<kbd>P</kbd> to attach a preview; step through items with <kbd>←</kbd> <kbd>→</kbd>.</p>
+            <h3>5 · Bundles &amp; loops</h3>
+            <p>A <strong>bundle</strong> is a list of values on one wire, produced by multi-iteration commands or bundle nodes. To process each item: <strong>Loop · Decompose</strong> → per-item nodes on <code>Item</code> → <strong>Loop · Output</strong> with the same <code>loop_id</code>.</p>
+            <h3>6 · Agents</h3>
+            <p>Press <kbd>N</kbd> for the palette and ask the agent to build, connect, debug or run a graph. Type <code>@</code> to mention files, drop images on the input to attach them, and pick or edit agent brains from the selector.</p>
+            <h3>7 · Save &amp; organize</h3>
+            <p>Graphs autosave per tab; <kbd>Ctrl</kbd>+<kbd>S</kbd> saves by name, <kbd>Ctrl</kbd>+<kbd>O</kbd> loads JSON. Open more graphs with <kbd>+</kbd> next to the tab name.</p>
             <h3>Handy shortcuts</h3>
             <ul>
-              <li><kbd>T</kbd> node menu · <kbd>R</kbd> runs panel · <kbd>N</kbd> palette</li>
-              <li><kbd>G</kbd> grab · <kbd>S</kbd> scale · <kbd>Ctrl</kbd>+<kbd>X</kbd> cut · <kbd>Shift</kbd>+<kbd>A</kbd> add node</li>
+              <li><kbd>G</kbd> grab · <kbd>S</kbd> scale · <kbd>Shift</kbd>+<kbd>D</kbd> duplicate · <kbd>F</kbd> auto connect · <kbd>E</kbd> reroute</li>
+              <li><kbd>M</kbd> mute · <kbd>H</kbd> collapse · <kbd>F2</kbd> rename · <kbd>A</kbd> select all · <kbd>Ctrl</kbd>+<kbd>X</kbd> cut</li>
               <li><kbd>Shift</kbd>+<kbd>C</kbd> fit to view · <kbd>Home</kbd> frame all</li>
+              <li><kbd>Ctrl</kbd>+<kbd>RMB</kbd> drag across wires to cut · drag a wire off an input to detach</li>
+              <li>All shortcuts can be rebound in <strong>Settings</strong>.</li>
             </ul>
           </div>
         </div>

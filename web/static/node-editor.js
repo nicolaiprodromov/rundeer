@@ -568,11 +568,15 @@ function primaryNodeResult(node, outputs) {
   if (!outSock) return null;
   const value = outputs ? outputs[outSock.id] : undefined;
   let kind = outSock.type || "any";
-  if (Array.isArray(value)) {
-    if (kind === "image" || kind === "any") kind = "image-bundle";
-    else if (kind === "video") kind = "video-bundle";
-  }
+  if (Array.isArray(value)) kind = bundleKind(kind, value);
   return { kind, value: value === undefined ? "" : value };
+}
+
+function bundleKind(kind, value) {
+  const first = String(value.find((v) => v) || "");
+  if (kind === "video" || (kind === "any" && /\.(mp4|mov|webm|mkv)$/i.test(first))) return "video-bundle";
+  if (kind === "image" || kind === "any") return "image-bundle";
+  return kind;
 }
 
 function secondaryOutputs(node, outputs) {
@@ -721,6 +725,7 @@ const ix = {
   panStartX: 0, panStartY: 0,
   panVpX: 0, panVpY: 0,
   wire: null,
+  detach: null,
   reroutePlacement: null,
   boxStart: null,
   selection: new Set(),
@@ -1735,11 +1740,7 @@ function buildNodeCompactSocket(nodeId, isOutput, socketIds) {
     if (!isOutput) {
       const existing = graph.edges.filter((edge) => edge.toNode === nodeId && ids.includes(edge.toSocket)).at(-1);
       if (existing) {
-        graph.edges = graph.edges.filter((edge) => edge.id !== existing.id);
-        const fromDef = NODE_BY_TYPE[graph.nodes[existing.fromNode]?.type];
-        const fromSockDef = fromDef?.outputs?.find((sock) => sock.id === existing.fromSocket);
-        renderGraph();
-        startWire(e, existing.fromNode, existing.fromSocket, fromSockDef?.type || "any", true);
+        armDetach(e, existing);
         return;
       }
     }
@@ -3298,11 +3299,7 @@ function buildSocketRow(nodeId, sock, isInput, opts = {}) {
         existing = sock.multi ? matches[matches.length - 1] : matches[0];
       }
       if (existing) {
-        graph.edges = graph.edges.filter((edge) => edge.id !== existing.id);
-        const fromDef = NODE_BY_TYPE[graph.nodes[existing.fromNode]?.type];
-        const fromSockDef = fromDef?.outputs?.find((s) => s.id === existing.fromSocket);
-        renderGraph();
-        startWire(e, existing.fromNode, existing.fromSocket, fromSockDef?.type || "any", true);
+        armDetach(e, existing);
         return;
       }
     }
@@ -3604,7 +3601,6 @@ function renderLoopRegions() {
     rect.setAttribute("y", String(minY - pad - 14));
     rect.setAttribute("width",  String(Math.max(60, (maxX - minX) + pad * 2)));
     rect.setAttribute("height", String(Math.max(60, (maxY - minY) + pad * 2 + 14)));
-    rect.setAttribute("rx", "12");
     rect.setAttribute("class", "ne-loop-region");
     rect.dataset.loopId = loopId;
     layer.appendChild(rect);
@@ -3647,12 +3643,7 @@ function renderConnections() {
     pathEl.dataset.edgeId = edge.id;
     if (muted) pathEl.classList.add("is-muted");
     pathEl.style.opacity = muted ? "0.2" : "0.92";
-    pathEl.style.cursor = "pointer";
     pathEl.style.pointerEvents = "stroke";
-    pathEl.addEventListener("click", (e) => {
-      e.stopPropagation();
-      removeEdge(edge.id);
-    });
     g.appendChild(pathEl);
   }
 }
@@ -3772,11 +3763,38 @@ function startWire(e, nodeId, socketId, socketType, isFromOutput, opts = {}) {
     startX: pos.x,
     startY: pos.y,
     aggregateSocketIds: opts.aggregateSocketIds || null,
+    detached: opts.detached || null,
   };
   updateWireDraft(pos.x, pos.y, pos.x, pos.y);
   document.getElementById("wireDraft").style.display = "";
   document.body.classList.add("is-wiring");
   highlightCompatibleSockets(socketType, isFromOutput);
+}
+
+const DETACH_PX = 5;
+
+function armDetach(e, edge) {
+  ix.detach = { edge, x: e.clientX, y: e.clientY };
+}
+
+function pullDetach(e) {
+  const d = ix.detach;
+  if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < DETACH_PX) return false;
+  ix.detach = null;
+  const index = graph.edges.indexOf(d.edge);
+  if (index < 0 || !getSocketCanvasPos(d.edge.fromNode, d.edge.fromSocket, true)) return false;
+  graph.edges = graph.edges.filter((x) => x !== d.edge);
+  renderGraph();
+  startWire(e, d.edge.fromNode, d.edge.fromSocket, outputSocketDef(d.edge.fromNode, d.edge.fromSocket)?.type || "any", true, { detached: { edge: d.edge, index } });
+  return true;
+}
+
+function keepDetached(d, toNode, toSocket, aggIds) {
+  if (!d || d.edge.toNode !== toNode) return false;
+  if (d.edge.toSocket !== canonicalInputSocketId(toNode, toSocket) && !aggIds?.includes(d.edge.toSocket)) return false;
+  graph.edges = [...graph.edges.slice(0, d.index), d.edge, ...graph.edges.slice(d.index)];
+  renderGraph();
+  return true;
 }
 
 function updateWireDraft(fromX, fromY, toX, toY) {
@@ -3815,6 +3833,7 @@ function endWire(targetNodeId, targetSocketId, targetType, targetIsOutput, targe
     const toSocket = targetAggregateSocketIds
       ? (resolveAggregateSocketId(targetNodeId, targetAggregateSocketIds, false, w.fromType) || targetSocketId)
       : targetSocketId;
+    if (keepDetached(w.detached, targetNodeId, toSocket, targetAggregateSocketIds)) return;
     addEdge(w.fromNode, fromSocket, targetNodeId, toSocket);
   } else {
     const fromSocket = targetAggregateSocketIds
@@ -3886,6 +3905,7 @@ function endLazyConnect(e) {
 
 function cancelWire() {
   ix.wire = null;
+  ix.detach = null;
   clearCompatibleHighlights();
   document.body.classList.remove("is-wiring");
   const draft = document.getElementById("wireDraft");
@@ -4376,7 +4396,7 @@ function onCanvasMousedown(e) {
   
   if (e.button === 2 && (e.ctrlKey || e.metaKey)) {
     const c = screenToCanvas(e.clientX, e.clientY);
-    ix.cutting = { points: [c] };
+    ix.cutting = { points: [c], edgeId: e.target.dataset?.edgeId || null };
     e.preventDefault();
     return;
   }
@@ -4491,6 +4511,8 @@ function onMousemove(e) {
     return;
   }
 
+  if (ix.detach && !pullDetach(e)) return;
+
   if (ix.wire) {
     const pos = screenToCanvas(e.clientX, e.clientY);
     updateWireDraft(ix.wire.startX, ix.wire.startY, pos.x, pos.y);
@@ -4559,6 +4581,11 @@ function onMouseup(e) {
     ix.draggingNode = null;
     document.body.classList.remove("is-dragging-node");
     scheduleAutosave();
+    return;
+  }
+
+  if (ix.detach) {
+    ix.detach = null;
     return;
   }
 
@@ -4675,23 +4702,22 @@ function drawCutPath() {
 
 function finishCut() {
   const pts = ix.cutting?.points || [];
+  const hitId = ix.cutting?.edgeId;
   ix.cutting = null;
   document.getElementById("cutPath").style.display = "none";
-  if (pts.length < 2) return;
 
-  const toRemove = [];
-  for (const edge of graph.edges) {
+  const toRemove = hitId && graph.edges.some((e) => e.id === hitId) ? [hitId] : [];
+  for (const edge of pts.length < 2 ? [] : graph.edges) {
+    if (edge.id === hitId) continue;
     if (graph.nodes[edge.fromNode]?.hidden || graph.nodes[edge.toNode]?.hidden) continue;
     const fromPos = getSocketCanvasPos(edge.fromNode, edge.fromSocket, true);
-    const toPos = getSocketCanvasPos(edge.toNode, edge.toSocket, false);
+    const toPos = getSocketCanvasPos(edge.toNode, edge.toSocket, false, edge.id);
     if (!fromPos || !toPos) continue;
     
     if (intersectsBezier(fromPos, toPos, pts)) toRemove.push(edge.id);
   }
   if (toRemove.length > 0) {
-    graph.edges = graph.edges.filter((e) => !toRemove.includes(e.id));
-    renderGraph();
-    scheduleAutosave();
+    toRemove.forEach((id) => removeEdge(id));
     setHint(`cut ${toRemove.length} link${toRemove.length > 1 ? "s" : ""}`);
     setTimeout(clearHint, 1500);
   }
@@ -6484,11 +6510,7 @@ async function runGraph(opts = {}) {
         const outSock = (NODE_BY_TYPE[node.type].outputs || [])[0];
         const value = outSock ? res[outSock.id] : (res.in || "");
         let kind = outSock?.type || "any";
-        if (Array.isArray(value)) {
-          
-          if (kind === "image" || kind === "any") kind = "image-bundle";
-          else if (kind === "video") kind = "video-bundle";
-        }
+        if (Array.isArray(value)) kind = bundleKind(kind, value);
         node.lastResult = { kind, value };
         if (node._uvImage) {
           node.lastResult.image = node._uvImage;
@@ -6599,7 +6621,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
   }
 
   const inputs = {};
-  const skipInputResolution = node.type === "loop-output" ? new Set(["item"]) : new Set();
+  const skipInputResolution = new Set(def.lazy || []);
   
   
   
@@ -6629,7 +6651,7 @@ async function resolveNode(nodeId, cache, loopCtx, opts) {
         let v = sourceOutputs[edge.fromSocket];
         v = adaptForDest(v, edge, sock.type);
         if (v != null && v !== "") {
-          if (Array.isArray(v) && sock.type !== "vector") values.push(...v); else values.push(v);
+          if (Array.isArray(v) && (sock.type !== "vector" || Array.isArray(v[0]))) values.push(...v); else values.push(v);
         }
       }
       inputs[sock.id] = values;
@@ -8613,7 +8635,7 @@ async function loadState() {
     const projectEl = document.getElementById("projectRoot");
     if (projectEl) projectEl.textContent = data.projectRoot || "?";
     const env = data.env || {};
-    const keysOk = Boolean(env.GROK_IMAGINE_API_KEY || env.OPENAI_API_KEY || env.ANTHROPIC_API_KEY);
+    const keysOk = Boolean(env.XAI_API_KEY && env.ANTHROPIC_API_KEY);
     const keyEl = document.getElementById("keyStatus");
     if (keyEl) {
       keyEl.textContent = keysOk ? "ok" : "missing";
@@ -8623,6 +8645,8 @@ async function loadState() {
     const stylesEl = document.getElementById("stylesStat");
     if (stylesEl) stylesEl.textContent = String((data.styles || []).length);
     
+    const offMsg = document.getElementById("agentDisabledMsg");
+    if (offMsg && data.agent && !data.agent.enabled && data.agent.reason) offMsg.textContent = `Agent disabled: ${data.agent.reason}`;
     if (data.agent && data.agent.enabled && data.agent.port && window.AgentChat && !window.AgentChat._inited) {
       window.AgentChat._inited = true;
       const wsProto = location.protocol === "https:" ? "wss:" : "ws:";
@@ -9890,22 +9914,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   const helpBtn = document.getElementById("helpBtn");
   const helpModal = document.getElementById("helpModal");
   const helpClose = document.getElementById("helpClose");
+  const helpVid = document.getElementById("helpVideo");
+  const helpShow = (on) => {
+    helpModal.classList.toggle("is-hidden", !on);
+    if (!helpVid) return;
+    if (on) helpVid.play().catch(() => {});
+    else helpVid.pause();
+  };
   if (helpBtn && helpModal) {
     helpBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      helpModal.classList.remove("is-hidden");
+      helpShow(true);
     });
-    if (helpClose) {
-      helpClose.addEventListener("click", () => helpModal.classList.add("is-hidden"));
-    }
+    if (helpClose) helpClose.addEventListener("click", () => helpShow(false));
     helpModal.addEventListener("click", (e) => {
-      if (e.target === helpModal) helpModal.classList.add("is-hidden");
+      if (e.target === helpModal) helpShow(false);
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !helpModal.classList.contains("is-hidden")) {
-        helpModal.classList.add("is-hidden");
-      }
+      if (e.key === "Escape" && !helpModal.classList.contains("is-hidden")) helpShow(false);
     });
   }
 
