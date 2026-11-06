@@ -1,0 +1,62 @@
+barcode:
+  label: Barcode
+  category: Graphics
+  defaultWidth: 300
+  defaultHeight: 220
+  resizable: true
+  desc: Render text as a scannable Code 128 (B) barcode image. Dark Bars swaps Color/Background when needed so bars always print darker (scannable). Outputs the image and its Dims for Layout/Grid.
+  in:
+  - id: text
+    label: Text
+    kind: text
+    default: RDR-0001
+    passthroughWired: true
+    type: text
+  - id: bar
+    label: Bar Width
+    kind: int
+    default: 3
+    min: 1
+    step: 1
+    passthroughWired: true
+    type: integer
+  - id: height
+    label: Height
+    kind: float
+    default: 160
+    passthroughWired: true
+    type: float
+  - id: quiet
+    label: Quiet Zone
+    kind: int
+    default: 10
+    min: 0
+    step: 1
+    type: integer
+  - id: color
+    label: Color
+    kind: color
+    default: '#000000'
+    passthroughWired: true
+    type: color
+  - id: bg
+    label: Background
+    kind: color
+    default: '#ffffff'
+    passthroughWired: true
+    type: color
+  - id: dark_bars
+    label: Dark Bars
+    kind: checkbox
+    default: true
+    type: boolean
+  out:
+  - id: out
+    label: Image
+    type: image
+  - id: dims
+    label: Dims
+    type: vector
+  traits: [preview]
+  src: web/nodes/graphics/barcode.js
+  api: /api/graphics/barcode
