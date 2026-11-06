@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="docs/gg.png" alt="rundeer" width="780">
+    <img src="docs/promo/out/rundeer-promo.gif" alt="rundeer" width="780">
     <h1>rundeer</h1>
     <p><strong>Batch-first AI image and video generation for artists, prompt engineers, and visual workflow hackers.</strong></p>
     <p>
@@ -215,7 +215,8 @@ CLI flags win over config files. If no config path is provided, rundeer reads `.
     "image": {
         "model": "your-image-model",
         "aspect_ratio": "1:1",
-        "resolution": "1k"
+        "resolution": "1k",
+        "quality": "medium"
     },
     "video": {
         "model": "your-video-model",
@@ -244,7 +245,14 @@ CLI flags win over config files. If no config path is provided, rundeer reads `.
 }
 ```
 
-rundeer loads environment values only from the project-root `.env` file. It does not read parent `.env` files, or `.rundeer/.env`. Use `VISION_API_KEY` for image and video generation, `MODEL_API_KEY` for definition scripts and Prompt/Prompt Filter nodes that call language models, and `BASE_URL` as the shared API endpoint. `BASE_URL` may be the API root (`https://api.x.ai`) or the OpenAI-compatible base (`https://api.x.ai/v1`); rundeer normalizes the final path per call.
+rundeer loads environment values only from the project-root `.env` file. It does not read parent `.env` files, or `.rundeer/.env`. rundeer runs on two providers:
+
+| Variable | Provider | Used for |
+|---|---|---|
+| `XAI_API_KEY` | xAI | Grok Imagine image and video generation, edits, extends, and Grok language models (`xai/grok-4.7`) for agents and prompt nodes. |
+| `ANTHROPIC_API_KEY` | Anthropic | Claude models (`anthropic/claude-opus-5-5`, `anthropic/claude-sonnet-5-5`, `anthropic/claude-haiku-5-5`) for agents and prompt nodes. |
+
+Language models are addressed as `<provider>/<model>`. The rundeer model is set in `web/config/settings.yaml` under `Agent.Provider` (`<provider>/<model>/<agent name>`). The agent, Prompt Filter nodes, and definition scripts such as `@fractal` all use it; the agent panel lists every model each configured key can reach.
 
 ## Styles And References
 
@@ -303,7 +311,7 @@ python3 rundeer.py benchmark position --dry-run
 ## Requirements
 
 - Python 3.10 or newer.
-- A provider API key in the local `.env` file for real generation calls.
+- `XAI_API_KEY` and `ANTHROPIC_API_KEY` in the local `.env` file for real generation and agent calls.
 - `ffmpeg` for video grids. Individual video outputs still download without it.
 - Python dependencies from `requirements.txt`: `docopt`, `Pillow`, `requests`, `numpy`, `scikit-image`, and the provider SDK.
 
