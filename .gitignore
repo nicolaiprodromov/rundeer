@@ -35,3 +35,5 @@ repomix-output.*
 .niku/
 
 design-export/
+promo/out/
+promo/capture/chk/
